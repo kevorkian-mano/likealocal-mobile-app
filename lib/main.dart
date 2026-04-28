@@ -4,14 +4,31 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/app_export.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'core/providers/user_provider.dart';
+import 'core/providers/gems_provider.dart';
+import 'core/providers/connectivity_provider.dart';
+
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
   ]).then((value) {
-    runApp(MyApp());
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => GemsProvider()),
+          ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
+          ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ],
+        child: MyApp(),
+      ),
+    );
   });
 }
 

@@ -27,19 +27,48 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
-  void _handleSignIn() {
+  bool _isLoading = false;
+
+  void _handleSignIn() async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacementNamed(context, '/share_hidden_gem_screen');
+      setState(() => _isLoading = true);
+      try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.explorePageWithNotifScreen);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign In Failed: ${e.toString()}')),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _handleForgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password reset link sent to your email'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  void _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email to reset password')),
+      );
+      return;
+    }
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.resetPassword(email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset link sent to your email')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
   void _handleSocialSignIn(String provider) {
@@ -323,17 +352,23 @@ class _SignInPageState extends State<SignInPage> {
                                           ),
                                         ],
                                       ),
-                                      child: const Text(
-                                        'Sign In',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontFamily: 'Plus Jakarta Sans',
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.56,
-                                        ),
-                                      ),
+                                      child: _isLoading 
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                          )
+                                        : const Text(
+                                            'Sign In',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontFamily: 'Plus Jakarta Sans',
+                                              fontWeight: FontWeight.w700,
+                                              height: 1.56,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                   const SizedBox(height: 32),

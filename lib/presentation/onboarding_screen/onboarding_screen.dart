@@ -29,9 +29,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: double.infinity,
             height: double.infinity,
             decoration: BoxDecoration(
+              color: appTheme.midnightPine,
               image: DecorationImage(
                 image: AssetImage(ImageConstant.imgScenicLocalStreet),
                 fit: BoxFit.cover,
+                opacity: 0.6,
               ),
             ),
             child: Container(
@@ -39,122 +41,116 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0x66661B30), appTheme.colorBF1B30],
+                  colors: [
+                    appTheme.midnightPine.withOpacity(0.2),
+                    appTheme.midnightPine.withOpacity(0.9),
+                  ],
                 ),
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(left: 32.h, top: 60.h),
-                      child: Text(
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.h),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         provider.onboardingModel.appTitle ?? 'LikeALocal',
                         style: TextStyleHelper
                             .instance
-                            .headline30ExtraBoldPlusJakartaSans
-                            .copyWith(height: 1.27),
+                            .headline30ExtraBoldOutfit
+                            .copyWith(color: appTheme.sunlightGold),
                       ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(top: 116.h),
-                      alignment: Alignment.centerRight,
-                      child: CustomImageView(
-                        imagePath: ImageConstant.imgDecorativeBlurs,
-                        height: 192.h,
-                        width: 112.h,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(
-                        top: 40.h,
-                        right: 24.h,
-                        bottom: 18.h,
-                      ),
-                      width: double.infinity,
-                      height: 350.h,
-                      child: Stack(
-                        alignment: Alignment.centerRight,
-                        children: [
-                          Align(
-                            alignment: Alignment.topLeft,
-                            child: Container(
-                              margin: EdgeInsets.only(top: 16.h),
-                              child: CustomImageView(
-                                imagePath: ImageConstant.imgOverlayBlur,
-                                height: 192.h,
-                                width: 112.h,
-                                fit: BoxFit.cover,
+                      SizedBox(height: 100.h),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(milliseconds: 1000),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: Text(
+                                provider.onboardingModel.mainHeading ?? 'Explore like\na local.',
+                                style: TextStyleHelper.instance.display48BoldOutfit.copyWith(height: 1.1),
                               ),
                             ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8.h),
-                            margin: EdgeInsets.only(left: 24.h),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          );
+                        },
+                      ),
+                      SizedBox(height: 16.h),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(milliseconds: 1000),
+                        curve: Interval(0.5, 1.0),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: Text(
+                                provider.onboardingModel.subHeading ?? 'The best authentic experiences,\ncurated by the people who live there.',
+                                style: TextStyleHelper.instance.title18RegularInter.copyWith(height: 1.5, color: appTheme.paleSand.withOpacity(0.8)),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 44.h),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(seconds: 2),
+                        builder: (context, value, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: appTheme.sunlightGold.withOpacity(0.2 * (1 - value.abs())),
+                                  blurRadius: 15 * (1 - value.abs()),
+                                  spreadRadius: 5 * (1 - value.abs()),
+                                )
+                              ],
+                            ),
+                            child: CustomButton(
+                              text: provider.onboardingModel.getStartedText ?? 'Get Started',
+                              backgroundColor: appTheme.deepForest,
+                              textColor: Colors.white,
+                              borderRadius: 12,
+                              fontFamily: 'Outfit',
+                              fontSize: 18.fSize,
+                              fontWeight: FontWeight.w700,
+                              padding: EdgeInsets.symmetric(vertical: 18.h),
+                              width: double.infinity,
+                              onPressed: provider.onGetStartedPressed,
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 24.h),
+                      Center(
+                        child: GestureDetector(
+                          onTap: provider.onLoginPressed,
+                          child: RichText(
+                            text: TextSpan(
                               children: [
-                                Text(
-                                  provider.onboardingModel.mainHeading ??
-                                      'Explore like\na local.',
-                                  style: TextStyleHelper
-                                      .instance
-                                      .display48BoldPlusJakartaSans
-                                      .copyWith(height: 1.25),
+                                TextSpan(
+                                  text: 'Already have an account? ',
+                                  style: TextStyleHelper.instance.body14MediumInter,
                                 ),
-                                Container(
-                                  margin: EdgeInsets.only(top: 16.h),
-                                  child: Text(
-                                    provider.onboardingModel.subHeading ??
-                                        'The best authentic experiences,\ncurated by the people who live there.',
-                                    style: TextStyleHelper
-                                        .instance
-                                        .title18RegularInter
-                                        .copyWith(height: 1.56),
-                                  ),
-                                ),
-                                CustomButton(
-                                  text:
-                                      provider.onboardingModel.getStartedText ??
-                                      'Get Started',
-                                  backgroundColor: appTheme.gray_300_01,
-                                  textColor: appTheme.gray_900_01,
-                                  borderRadius: 34,
-                                  fontFamily: 'Plus Jakarta Sans',
-                                  fontSize: 18.fSize,
-                                  fontWeight: FontWeight.w700,
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 20.h,
-                                    horizontal: 30.h,
-                                  ),
-                                  margin: EdgeInsets.only(top: 44.h),
-                                  width: double.infinity,
-                                  onPressed: provider.onGetStartedPressed,
-                                ),
-                                GestureDetector(
-                                  onTap: provider.onLoginPressed,
-                                  child: Container(
-                                    margin: EdgeInsets.only(top: 24.h),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      provider.onboardingModel.loginText ??
-                                          'Log In',
-                                      style: TextStyleHelper
-                                          .instance
-                                          .body14MediumInter
-                                          .copyWith(height: 1.21),
-                                    ),
+                                TextSpan(
+                                  text: 'Log In',
+                                  style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                                    color: appTheme.sunlightGold,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 40.h),
+                    ],
+                  ),
                 ),
               ),
             ),

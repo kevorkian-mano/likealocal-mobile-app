@@ -1,6 +1,11 @@
+import 'package:provider/provider.dart';
+import '../../../core/providers/gems_provider.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/models/hidden_gem_model.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/app_export.dart';
 import '../models/share_hidden_gem_model.dart';
@@ -17,17 +22,46 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
 
-  @override
-  void dispose() {
-    placeTitleController.dispose();
-    locationController.dispose();
-    descriptionController.dispose();
-    localTipsController.dispose();
-    super.dispose();
+  ShareHiddenGemProvider() {
+    _initListeners();
+    loadDraft();
+  }
+
+  void _initListeners() {
+    placeTitleController.addListener(() => saveDraft());
+    locationController.addListener(() => saveDraft());
+    descriptionController.addListener(() => saveDraft());
+    localTipsController.addListener(() => saveDraft());
+  }
+
+  Future<void> loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    placeTitleController.text = prefs.getString('draft_title') ?? '';
+    locationController.text = prefs.getString('draft_location') ?? '';
+    descriptionController.text = prefs.getString('draft_description') ?? '';
+    localTipsController.text = prefs.getString('draft_tips') ?? '';
+    shareHiddenGemModel.selectedCategory = prefs.getString('draft_category');
+    shareHiddenGemModel.selectedMediaPath = prefs.getString('draft_media');
+    notifyListeners();
+  }
+
+  Future<void> saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('draft_title', placeTitleController.text);
+    await prefs.setString('draft_location', locationController.text);
+    await prefs.setString('draft_description', descriptionController.text);
+    await prefs.setString('draft_tips', localTipsController.text);
+    if (shareHiddenGemModel.selectedCategory != null) {
+      await prefs.setString('draft_category', shareHiddenGemModel.selectedCategory!);
+    }
+    if (shareHiddenGemModel.selectedMediaPath != null) {
+      await prefs.setString('draft_media', shareHiddenGemModel.selectedMediaPath!);
+    }
   }
 
   void updateCategory(String? value) {
     shareHiddenGemModel.selectedCategory = value;
+    saveDraft();
     notifyListeners();
   }
 
@@ -126,6 +160,15 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     return null;
   }
 
+  @override
+  void dispose() {
+    placeTitleController.dispose();
+    locationController.dispose();
+    descriptionController.dispose();
+    localTipsController.dispose();
+    super.dispose();
+  }
+
   Future<void> publishToommunity(BuildContext context) async {
     if (!formKey.currentState!.validate()) {
       return;
@@ -140,47 +183,76 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(Duration(seconds: 2));
+      final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      if (userProvider.user == null) throw Exception('User not logged in');
 
-      // Clear form after successful submission
-      _clearForm();
+      final newGem = HiddenGem(
+        id: '',
+        name: placeTitleController.text,
+        description: descriptionController.text,
+        category: shareHiddenGemModel.selectedCategory!,
+        vibe: 'Local Favorite', // Default vibe for contributions
+        rating: 0.0,
+        imageUrl: shareHiddenGemModel.selectedMediaPath ?? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+        latitude: 38.7223, // Placeholder Lisbon Lat
+        longitude: -9.1393, // Placeholder Lisbon Lng
+        localsTip: localTipsController.text,
+        recommendedDishes: [],
+        contributorId: userProvider.user!.id,
+      );
+
+      await gemsProvider.addGem(newGem, userProvider.user!);
+
+      // Clear draft after successful submission
+      await _clearForm();
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hidden gem published successfully!'),
-          backgroundColor: appTheme.gray_900_01,
-          duration: Duration(seconds: 3),
+          content: Text('Hidden gem submitted for moderation!'),
+          backgroundColor: const Color(0xFF1B3022),
+          duration: const Duration(seconds: 3),
         ),
       );
 
-      // Navigate to explore screen after successful submission
-      NavigatorService.pushNamed(AppRoutes.onboardingScreen);
+      Navigator.pop(context);
     } catch (e) {
-      _showErrorMessage('Failed to publish. Please try again.');
+      _showErrorMessage(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red[800]),
+      );
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 
-  void _clearForm() {
+  Future<void> _clearForm() async {
     placeTitleController.clear();
     locationController.clear();
     descriptionController.clear();
     localTipsController.clear();
     shareHiddenGemModel = ShareHiddenGemModel();
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('draft_title');
+    await prefs.remove('draft_location');
+    await prefs.remove('draft_description');
+    await prefs.remove('draft_tips');
+    await prefs.remove('draft_category');
+    await prefs.remove('draft_media');
+    
     notifyListeners();
   }
 
   void _showPermissionDeniedMessage(String message) {
-    // In a real app, you would show this to the user
     debugPrint(message);
   }
 
   void _showErrorMessage(String message) {
-    // In a real app, you would show this to the user
     debugPrint(message);
   }
 }
+

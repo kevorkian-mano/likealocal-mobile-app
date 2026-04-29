@@ -51,6 +51,30 @@ class AppNavigationScreenState extends State<AppNavigationScreen> {
                           AppRoutes.shareHiddenGemScreen,
                         ),
                       ),
+                      _buildScreenTitle(
+                        context,
+                        screenTitle: "Admin Intelligence Dashboard",
+                        onTapScreenTitle: () => onTapScreenTitle(
+                          context,
+                          AppRoutes.adminDashboard,
+                        ),
+                      ),
+                      _buildScreenTitle(
+                        context,
+                        screenTitle: "Super User Impact Dashboard",
+                        onTapScreenTitle: () => onTapScreenTitle(
+                          context,
+                          AppRoutes.superUserDashboard,
+                        ),
+                      ),
+                      _buildScreenTitle(
+                        context,
+                        screenTitle: "Social Chat Hub",
+                        onTapScreenTitle: () => onTapScreenTitle(
+                          context,
+                          AppRoutes.chatListScreen,
+                        ),
+                      ),
                     ],
                   ),
                 ),

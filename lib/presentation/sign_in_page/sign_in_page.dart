@@ -1,3 +1,6 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
+import '../../routes/app_routes.dart';
 import 'package:flutter/material.dart';
 
 class SignInPage extends StatefulWidget {
@@ -523,3 +526,4 @@ class _SignInPageState extends State<SignInPage> {
     );
   }
 }
+

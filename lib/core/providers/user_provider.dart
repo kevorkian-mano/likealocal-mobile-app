@@ -1,7 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+
 
 class UserProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -60,6 +63,48 @@ class UserProvider extends ChangeNotifier {
     await _authService.signOut();
   }
 
+  /// Updates any subset of the user's profile fields in Firestore.
+  /// Called by VibePickerScreen (selectedVibes) and UserProfilePage (bio, avatarUrl).
+  Future<void> updateProfile({
+    String? bio,
+    String? avatarUrl,
+    List<String>? selectedVibes,
+  }) async {
+    if (_user == null) return;
+
+    final Map<String, dynamic> updates = {};
+    if (bio != null) updates['bio'] = bio;
+    if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
+    if (selectedVibes != null) updates['selectedVibes'] = selectedVibes;
+
+    if (updates.isEmpty) return;
+
+    try {
+      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+          .collection('users')
+          .doc(_user!.id)
+          .update(updates);
+
+      // Refresh local state immediately
+      _user = UserModel(
+        id: _user!.id,
+        fullName: _user!.fullName,
+        email: _user!.email,
+        avatarUrl: avatarUrl ?? _user!.avatarUrl,
+        bio: bio ?? _user!.bio,
+        selectedVibes: selectedVibes ?? _user!.selectedVibes,
+        karmaPoints: _user!.karmaPoints,
+        isSuperUser: _user!.isSuperUser,
+        isAdmin: _user!.isAdmin,
+        isPro: _user!.isPro,
+      );
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+
   Future<void> addKarmaPoints(int points) async {
     if (_user == null) return;
     
@@ -67,7 +112,7 @@ class UserProvider extends ChangeNotifier {
     bool shouldPromote = newPoints >= 500 && !_user!.isSuperUser;
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(_user!.id).update({
+      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').collection('users').doc(_user!.id).update({
         'karmaPoints': newPoints,
         if (shouldPromote) 'isSuperUser': true,
       });
@@ -94,7 +139,7 @@ class UserProvider extends ChangeNotifier {
   Future<void> purchasePro() async {
     if (_user == null) return;
     try {
-      await FirebaseFirestore.instance.collection('users').doc(_user!.id).update({
+      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').collection('users').doc(_user!.id).update({
         'isPro': true,
       });
       _user = UserModel(
@@ -134,3 +179,4 @@ class UserProvider extends ChangeNotifier {
     }
   }
 }
+

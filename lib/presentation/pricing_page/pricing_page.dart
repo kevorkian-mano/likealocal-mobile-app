@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 
@@ -292,3 +294,4 @@ class PricingPage extends StatelessWidget {
     );
   }
 }
+

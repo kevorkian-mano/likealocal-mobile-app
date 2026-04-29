@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../routes/app_routes.dart';
@@ -255,3 +257,4 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
     );
   }
 }
+

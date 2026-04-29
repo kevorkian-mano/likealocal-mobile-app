@@ -1,3 +1,7 @@
+import 'package:provider/provider.dart';
+import '../../core/models/user_model.dart';
+import '../../core/providers/user_provider.dart';
+import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart';
 
 import '../../routes/app_routes.dart';
@@ -240,7 +244,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('PRO MEMBER', style: TextStyleHelper.instance.title18BoldPlusJakartaSans.copyWith(color: Colors.white)),
+                    Text('PRO MEMBER', style: TextStyleHelper.instance.title18SemiBold.copyWith(color: Colors.white)),
                     Text('Full Access Unlocked', style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.white.withOpacity(0.9))),
                   ],
                 ),
@@ -279,12 +283,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 								children: [
 									Text(
 										'Pro Travel Planner',
-										style: TextStyleHelper.instance.title14BoldPlusJakartaSans.copyWith(color: Colors.white),
+										style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.white),
 									),
 									const SizedBox(height: 4),
 									Text(
 										'Unlock unlimited pins and offline maps.',
-										style: TextStyleHelper.instance.body11RegularInter.copyWith(color: Colors.white.withOpacity(0.8)),
+										style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.white.withOpacity(0.8)),
 									),
 								],
 							),
@@ -299,7 +303,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
                 child: Text(
                   'Upgrade',
-                  style: TextStyleHelper.instance.body12BoldInter.copyWith(color: const Color(0xFF1B3022)),
+                  style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF1B3022)),
                 ),
               ),
             ),
@@ -341,14 +345,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
         children: [
           Text(
             title,
-            style: TextStyleHelper.instance.label10BoldInter.copyWith(
+            style: TextStyleHelper.instance.body12MediumInter.copyWith(
               color: const Color(0xFF424942),
               letterSpacing: 1.2,
             ),
           ),
           Text(
             action,
-            style: TextStyleHelper.instance.body12BoldInter.copyWith(
+            style: TextStyleHelper.instance.body12MediumInter.copyWith(
               color: const Color(0xFF1B3022),
             ),
           ),
@@ -383,12 +387,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 							children: [
 								Text(
 									title,
-									style: TextStyleHelper.instance.title14SemiBoldInter,
+									style: TextStyleHelper.instance.body14BoldInter,
 								),
 								const SizedBox(height: 4),
 								Text(
 									subtitle,
-									style: TextStyleHelper.instance.body12RegularInter.copyWith(color: const Color(0xFF424942)),
+									style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF424942)),
 								),
 							],
 						),
@@ -424,12 +428,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 							children: [
 								Text(
 									title,
-									style: TextStyleHelper.instance.title14SemiBoldInter,
+									style: TextStyleHelper.instance.body14BoldInter,
 								),
 								const SizedBox(height: 4),
 								Text(
 									subtitle,
-									style: TextStyleHelper.instance.body12RegularInter.copyWith(color: const Color(0xFF424942)),
+									style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF424942)),
 								),
 							],
 						),
@@ -465,7 +469,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 							child: Center(
                 child: Text(
                   'Log Out',
-                  style: TextStyleHelper.instance.body16BoldInter.copyWith(color: const Color(0xFF1B3022)),
+                  style: TextStyleHelper.instance.title16RegularInter.copyWith(color: const Color(0xFF1B3022)),
                 ),
               ),
 						),
@@ -476,8 +480,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 							showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text('Delete Account?', style: TextStyleHelper.instance.title18BoldPlusJakartaSans),
-                  content: Text('This action is permanent and will delete all your shared gems and karma points.', style: TextStyleHelper.instance.body14RegularInter),
+                  title: Text('Delete Account?', style: TextStyleHelper.instance.title18SemiBold),
+                  content: Text('This action is permanent and will delete all your shared gems and karma points.', style: TextStyleHelper.instance.body14MediumInter),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                     TextButton(
@@ -494,7 +498,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 						},
 						child: Text(
 							'Delete Account Permanently',
-							style: TextStyleHelper.instance.body12BoldInter.copyWith(color: Colors.red[800]),
+							style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.red[800]),
 						),
 					),
 				],
@@ -522,7 +526,7 @@ class _StatItem extends StatelessWidget {
 			children: [
         Text(
           value,
-          style: TextStyleHelper.instance.display24BoldPlusJakartaSans.copyWith(
+          style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
             color: valueColor ?? const Color(0xFF1B3022),
             shadows: hasGlow ? [
               Shadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 10),
@@ -532,9 +536,23 @@ class _StatItem extends StatelessWidget {
 				const SizedBox(height: 4),
 				Text(
 					label,
-					style: TextStyleHelper.instance.label10BoldInter.copyWith(color: const Color(0xFF424942)),
+					style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF424942)),
 				),
 			],
 		);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

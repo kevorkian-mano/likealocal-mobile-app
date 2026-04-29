@@ -1,3 +1,6 @@
+import 'package:provider/provider.dart';
+import '../../core/models/hidden_gem_model.dart';
+import '../../core/providers/gems_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/mock_data/mock_gems.dart';
@@ -33,7 +36,7 @@ class PlaceDetailsScreen extends StatelessWidget {
                   height: 380,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: NetworkImage(gem.imageUrl),
+                      image: NetworkImage(gem!.imageUrl),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -85,7 +88,7 @@ class PlaceDetailsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          gem.name,
+                          gem!.name,
                           style: TextStyleHelper.instance.headline30ExtraBoldOutfit.copyWith(
                             color: Color(0xFF191C1A),
                           ),
@@ -109,7 +112,7 @@ class PlaceDetailsScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 24),
                   Text(
-                    gem.description,
+                    gem!.description,
                     style: TextStyleHelper.instance.body14MediumInter.copyWith(
                       height: 1.7,
                       color: Color(0xFF3A302A).withOpacity(0.8),
@@ -260,7 +263,7 @@ class PlaceDetailsScreen extends StatelessWidget {
         color: Color(0xFFFFD700),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black24, blurRadius: 10, offset: Offset(0, 4))
+          BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
         ],
       ),
       child: Row(
@@ -479,7 +482,7 @@ class PlaceDetailsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         image: DecorationImage(
-                          image: NetworkImage(gem.imageUrl),
+                          image: NetworkImage(gem!.imageUrl),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -495,7 +498,7 @@ class PlaceDetailsScreen extends StatelessWidget {
                         padding: EdgeInsets.all(8),
                         alignment: Alignment.bottomLeft,
                         child: Text(
-                          gem.name,
+                          gem!.name,
                           style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -563,3 +566,6 @@ class PlaceDetailsScreen extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -9,7 +9,12 @@ class UserModel {
   final List<String> selectedVibes;
   final int karmaPoints;
   final bool isPro;
+  final bool isSuperUser;
+  final bool isAdmin;
+  final int chatsStartedToday;
   final DateTime? lastContributionTime;
+  final DateTime? lastChatResetDate;
+
 
   UserModel({
     required this.id,
@@ -51,6 +56,7 @@ class UserModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'fullName': fullName,
       'email': email,
       'avatarUrl': avatarUrl,

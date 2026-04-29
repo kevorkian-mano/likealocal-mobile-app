@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 
@@ -695,3 +697,4 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 }
+

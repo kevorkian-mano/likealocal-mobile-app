@@ -1,3 +1,7 @@
+import 'package:provider/provider.dart';
+import '../../../core/providers/gems_provider.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/models/hidden_gem_model.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -251,3 +255,4 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     debugPrint(message);
   }
 }
+

@@ -1,9 +1,10 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class ChatProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
 
   Future<void> startNewChat(UserModel user, String targetUserId) async {
     // 1. Prevent messaging self
@@ -37,3 +38,4 @@ class ChatProvider extends ChangeNotifier {
     print('Starting chat with $targetUserId');
   }
 }
+

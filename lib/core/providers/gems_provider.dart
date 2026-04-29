@@ -1,11 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/hidden_gem_model.dart';
+import '../models/user_model.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
 
+
 class GemsProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
   List<HiddenGem> _gems = [];
   bool _isLoading = true;
   Position? _userLocation;
@@ -57,11 +60,9 @@ class GemsProvider extends ChangeNotifier {
     });
   }
 
-  // Filtered list for regular users
-  List<HiddenGem> get approvedGems => _gems.where((gem) => gem.isApproved).toList();
-  
   // List for moderators/admins
   List<HiddenGem> get pendingGems => _gems.where((gem) => !gem.isApproved).toList();
+
 
   Future<void> approveGem(String gemId, String contributorId) async {
     try {
@@ -129,3 +130,4 @@ class GemsProvider extends ChangeNotifier {
     await batch.commit();
   }
 }
+

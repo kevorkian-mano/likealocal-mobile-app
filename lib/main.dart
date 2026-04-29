@@ -5,14 +5,30 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_export.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 import 'core/providers/user_provider.dart';
 import 'core/providers/gems_provider.dart';
 import 'core/providers/connectivity_provider.dart';
+import 'core/providers/chat_provider.dart';
+import 'presentation/onboarding_screen/provider/onboarding_provider.dart';
+import 'core/utils/database_seeder.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Enable Firestore offline persistence (works in low-connectivity areas)
+  FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
+  // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
+  assert(() { DatabaseSeeder.seed(); return true; }());
   
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([
@@ -25,6 +41,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => GemsProvider()),
           ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
           ChangeNotifierProvider(create: (_) => ChatProvider()),
+          ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ],
         child: MyApp(),
       ),
@@ -65,3 +82,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

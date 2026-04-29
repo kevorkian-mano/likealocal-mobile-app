@@ -1,3 +1,6 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/gems_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/mock_data/mock_gems.dart';
@@ -372,3 +375,4 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 }
+

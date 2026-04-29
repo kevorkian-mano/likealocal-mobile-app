@@ -1,3 +1,9 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/gems_provider.dart';
+import '../../core/providers/user_provider.dart';
+import '../../core/services/location_service.dart';
+import '../../widgets/custom_button.dart';
+import '../place_details_screen/place_details_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/mock_data/mock_gems.dart';
@@ -358,7 +364,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PlaceDetailsScreen(gemId: selectedGem!.id),
+        builder: (context) => PlaceDetailsScreen(gem: selectedGem),
       ),
     );
   }
@@ -434,7 +440,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PlaceDetailsScreen(gemId: gem.id),
+            builder: (context) => PlaceDetailsScreen(gem: gem),
           ),
         );
       },
@@ -601,7 +607,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                 ],
               ),
               SizedBox(height: 32),
-              CustomButton(text: 'Apply Filters', onTap: () => Navigator.pop(context)),
+              CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
               SizedBox(height: 16),
             ],
           ),
@@ -627,3 +633,5 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     );
   }
 }
+
+

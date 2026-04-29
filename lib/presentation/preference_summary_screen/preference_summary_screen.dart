@@ -1,3 +1,4 @@
+import '../../widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 
@@ -43,7 +44,7 @@ class PreferenceSummaryScreen extends StatelessWidget {
             SizedBox(height: 64),
             CustomButton(
               text: 'Start Exploring',
-              onTap: () => Navigator.pushNamed(context, AppRoutes.explorePageWithNotifScreen),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.explorePageWithNotifScreen),
             ),
           ],
         ),
@@ -90,3 +91,5 @@ class PreferenceSummaryScreen extends StatelessWidget {
     );
   }
 }
+
+

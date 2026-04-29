@@ -1,3 +1,6 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/gems_provider.dart';
+import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/mock_data/mock_gems.dart';
@@ -105,7 +108,7 @@ class AdminModerationQueueScreen extends StatelessWidget {
                         children: [
                           Text(
                             gem.name,
-                            style: TextStyleHelper.instance.title16SemiBoldInter.copyWith(color: const Color(0xFF191C1A)),
+                            style: TextStyleHelper.instance.title16RegularInter.copyWith(color: const Color(0xFF191C1A)),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -129,7 +132,7 @@ class AdminModerationQueueScreen extends StatelessWidget {
                               ),
                               child: Text(
                                 'Full Preview',
-                                style: TextStyleHelper.instance.label10BoldInter.copyWith(color: const Color(0xFF1B3022)),
+                                style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF1B3022)),
                               ),
                             ),
                           ),
@@ -176,8 +179,8 @@ class AdminModerationQueueScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$action Gem?', style: TextStyleHelper.instance.title18BoldPlusJakartaSans),
-        content: Text('Are you sure you want to $action this contribution to the public map?', style: TextStyleHelper.instance.body14RegularInter),
+        title: Text('$action Gem?', style: TextStyleHelper.instance.title18SemiBold),
+        content: Text('Are you sure you want to $action this contribution to the public map?', style: TextStyleHelper.instance.body14MediumInter),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
@@ -237,3 +240,17 @@ class AdminModerationQueueScreen extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

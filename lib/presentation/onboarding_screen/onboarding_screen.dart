@@ -61,7 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             .headline30ExtraBoldOutfit
                             .copyWith(color: appTheme.sunlightGold),
                       ),
-                      SizedBox(height: 100.h),
+                      Spacer(),
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
                         duration: Duration(milliseconds: 1000),

@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/gems_provider.dart';
+import '../../core/providers/user_provider.dart';
+import '../../core/models/user_model.dart';
+import '../../theme/text_style_helper.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/app_export.dart';
 import '../../core/models/super_user_insight_model.dart';
@@ -76,7 +81,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Super User Access Only',
-                style: TextStyleHelper.instance.title22BoldOutfit.copyWith(color: const Color(0xFF1B3022)),
+                style: TextStyleHelper.instance.title20BoldOutfit.copyWith(color: const Color(0xFF1B3022)),
               ),
               const SizedBox(height: 12),
               Text(
@@ -255,8 +260,8 @@ class SuperUserDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyleHelper.instance.title14SemiBoldInter.copyWith(color: const Color(0xFF191C1A))),
-                  Text(subtitle, style: TextStyleHelper.instance.body11RegularInter.copyWith(color: const Color(0xFF4D6353))),
+                  Text(title, style: TextStyleHelper.instance.body14BoldInter.copyWith(color: const Color(0xFF191C1A))),
+                  Text(subtitle, style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF4D6353))),
                 ],
               ),
             ),
@@ -502,3 +507,18 @@ class _RadarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _RadarPainter oldDelegate) => true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

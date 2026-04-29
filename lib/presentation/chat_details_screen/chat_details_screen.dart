@@ -170,6 +170,66 @@ class ChatDetailsScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildQuickSuggestions() {
+    final suggestions = ["Entrance fee?", "Best time?", "Safe for solo?", "Hidden menu?"];
+    return Container(
+      height: 50,
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        itemCount: suggestions.length,
+        separatorBuilder: (context, index) => SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          return ActionChip(
+            label: Text(suggestions[index], style: TextStyle(fontSize: 12, color: Color(0xFF1B3022))),
+            backgroundColor: Colors.white,
+            side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.2)),
+            onPressed: () {},
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 10, 20, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0x33C1C9C1))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Color(0xFFF9F7F2),
+                borderRadius: BorderRadius.circular(9999),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Ask a local...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(fontSize: 14, color: Color(0xFF4D6353)),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Color(0xFF1B3022),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.send, color: Colors.white, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AnimatedDot extends StatefulWidget {
@@ -235,63 +295,3 @@ class _BubblePainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
-  Widget _buildQuickSuggestions() {
-    final suggestions = ["Entrance fee?", "Best time?", "Safe for solo?", "Hidden menu?"];
-    return Container(
-      height: 50,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        scrollDirection: Axis.horizontal,
-        itemCount: suggestions.length,
-        separatorBuilder: (context, index) => SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          return ActionChip(
-            label: Text(suggestions[index], style: TextStyle(fontSize: 12, color: Color(0xFF1B3022))),
-            backgroundColor: Colors.white,
-            side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.2)),
-            onPressed: () {},
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildInputArea() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 10, 20, 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0x33C1C9C1))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Color(0xFFF9F7F2),
-                borderRadius: BorderRadius.circular(9999),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Ask a local...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(fontSize: 14, color: Color(0xFF4D6353)),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Color(0xFF1B3022),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.send, color: Colors.white, size: 20),
-          ),
-        ],
-      ),
-    );
-  }
-}

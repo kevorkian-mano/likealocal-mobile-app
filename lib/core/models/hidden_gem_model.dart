@@ -61,6 +61,7 @@ class HiddenGem {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'name': name,
       'description': description,
       'category': category,

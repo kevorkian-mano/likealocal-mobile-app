@@ -23,6 +23,7 @@ class ExplorePageWithNotifScreen extends StatefulWidget {
 
 class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen> {
   String _searchQuery = '';
+  bool _superUserOnly = false;
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +197,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
 
                               final userVibes = userProvider.user?.selectedVibes ?? [];
                               var displayGems = gemsProvider.approvedGems;
+
+                              if (_superUserOnly) {
+                                displayGems = displayGems.where((gem) => gemsProvider.isSuperUserContributor(gem.contributorId)).toList();
+                              }
 
                               // 1. Keyword Search Filtering (FR2-3)
                               if (_searchQuery.isNotEmpty) {
@@ -426,6 +431,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
   Widget _buildCard(BuildContext context, HiddenGem gem) {
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userLoc = gemsProvider.userLocation;
+    final isLocalLegend = gemsProvider.isSuperUserContributor(gem.contributorId);
     
     String distanceText = '--- km away';
     if (userLoc != null) {
@@ -490,6 +496,22 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                     top: 12,
                     left: 12,
                     child: _buildTrendingBadge(),
+                  ),
+                if (isLocalLegend)
+                  Positioned(
+                    top: gem.isTrending ? 52 : 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'LOCAL LEGEND',
+                        style: TextStyle(color: Color(0xFF1B3022), fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -581,55 +603,67 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
-              SizedBox(height: 24),
-              _buildFilterToggle('Super User Recommendations', 'Filter by Local Legends only (FR2-8)'),
-              SizedBox(height: 24),
-              Text('Price vs. Vibe Intensity', style: TextStyleHelper.instance.body14BoldInter),
-              SizedBox(height: 8),
-              Text('Balance your budget against the experience depth (FR2-9)', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              Slider(
-                value: 0.5,
-                onChanged: (_) {},
-                activeColor: Color(0xFF1B3022),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        bool localSuperUserOnly = _superUserOnly;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Budget', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  Text('Deep Experience', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
+                  SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Super User Recommendations', style: TextStyleHelper.instance.body14BoldInter),
+                            Text('Filter by Local Legends only (FR2-8)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: localSuperUserOnly,
+                        onChanged: (value) => setModalState(() => localSuperUserOnly = value),
+                        activeColor: Color(0xFF1B3022),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  Text('Price vs. Vibe Intensity', style: TextStyleHelper.instance.body14BoldInter),
+                  SizedBox(height: 8),
+                  Text('Balance your budget against the experience depth (FR2-9)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Slider(
+                    value: 0.5,
+                    onChanged: (_) {},
+                    activeColor: Color(0xFF1B3022),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Budget', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('Deep Experience', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 32),
+                  CustomButton(
+                    text: 'Apply Filters',
+                    onPressed: () {
+                      setState(() => _superUserOnly = localSuperUserOnly);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  SizedBox(height: 16),
                 ],
               ),
-              SizedBox(height: 32),
-              CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
-              SizedBox(height: 16),
-            ],
-          ),
+            );
+          },
         );
       },
-    );
-  }
-
-  Widget _buildFilterToggle(String title, String subtitle) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyleHelper.instance.body14BoldInter),
-              Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          ),
-        ),
-        Switch(value: false, onChanged: (_) {}, activeColor: Color(0xFF1B3022)),
-      ],
     );
   }
 }

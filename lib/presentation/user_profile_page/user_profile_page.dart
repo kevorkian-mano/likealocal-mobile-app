@@ -195,6 +195,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
 					user.fullName,
 					style: TextStyleHelper.instance.title20BoldPlusJakartaSans,
 				),
+				if (user.isSuperUser) ...[
+					const SizedBox(height: 10),
+					Container(
+						padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+						decoration: BoxDecoration(
+							color: const Color(0xFFFFD700).withOpacity(0.18),
+							borderRadius: BorderRadius.circular(9999),
+							border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.35)),
+						),
+						child: Text(
+							'Local Legend',
+							style: TextStyleHelper.instance.body12BoldInter.copyWith(color: const Color(0xFF1B3022)),
+						),
+					),
+				],
 				const SizedBox(height: 4),
 				GestureDetector(
           onTap: () => _editBio(context, userProvider),

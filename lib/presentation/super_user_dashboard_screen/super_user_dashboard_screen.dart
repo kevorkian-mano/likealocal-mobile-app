@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/models/hidden_gem_model.dart';
 import '../../core/models/user_model.dart';
 import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart' hide Badge;
@@ -31,12 +32,24 @@ class SuperUserDashboardScreen extends StatelessWidget {
         final totalSaves = userGems.fold<int>(0, (sum, g) => sum + g.saves);
         final totalReach = totalViews + (totalSaves * 5); // Saves weighted higher
         
+        final approvedCount = userGems.where((g) => g.isApproved).length;
+        final trendingCount = userGems.where((g) => g.isTrending).length;
         final karma = user.karmaPoints;
-        final level = (karma / 100).floor() + 1;
-        final progress = (karma % 100) / 100.0;
-        
+        final reputationScore = (karma * 0.45) + (approvedCount * 18) + (totalViews * 0.02) + (totalSaves * 0.25) + (trendingCount * 12);
+        final level = (reputationScore / 100).floor() + 1;
+        final progress = (reputationScore % 100) / 100.0;
+
         // Influence logic: 1km per 2 approved gems
-        final influenceRadius = (userGems.where((g) => g.isApproved).length / 2).clamp(1.0, 5.0);
+        final influenceRadius = (approvedCount / 2).clamp(1.0, 5.0);
+        final insights = SuperUserInsight(
+          totalPinsEarned: totalSaves,
+          totalViews: totalViews,
+          cityInfluenceRadius: influenceRadius,
+          reputationLevel: level,
+          nextLevelProgress: progress,
+          earnedBadges: _buildBadges(user, userGems, approvedCount, trendingCount, totalSaves),
+          weeklyImpact: SuperUserInsight.mock.weeklyImpact,
+        );
 
         return Scaffold(
           backgroundColor: const Color(0xFFF9F7F2),
@@ -49,13 +62,15 @@ class SuperUserDashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildReputationCard(level, progress, totalReach),
+                      _buildReputationCard(level, progress, totalReach, reputationScore),
                       const SizedBox(height: 24),
                       _buildSuperActions(gemsProvider.pendingGems.length),
                       const SizedBox(height: 32),
                       _buildCityInfluenceSection(influenceRadius),
                       const SizedBox(height: 32),
                       _buildImpactChart(totalViews, totalSaves),
+                      const SizedBox(height: 32),
+                      _buildBadgesSection(insights),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -127,7 +142,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReputationCard(int level, double progress, int totalReach) {
+  Widget _buildReputationCard(int level, double progress, int totalReach, double reputationScore) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1500),
@@ -159,7 +174,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
                         style: TextStyleHelper.instance.title20BoldOutfit.copyWith(color: Colors.white),
                       ),
                       Text(
-                        'Local Impact Score: $totalReach',
+                        'Reputation Score: ${reputationScore.toStringAsFixed(0)}',
                         style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
                       ),
                     ],
@@ -200,11 +215,43 @@ class SuperUserDashboardScreen extends StatelessWidget {
                 '${(progress * 100).toInt()}% to next level',
                 style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Local impact: $totalReach',
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  List<Badge> _buildBadges(
+    UserModel user,
+    List<HiddenGem> userGems,
+    int approvedCount,
+    int trendingCount,
+    int totalSaves,
+  ) {
+    final badges = <Badge>[
+      Badge(name: 'Local Legend', icon: '🏆', color: 0xFF1B3022),
+    ];
+
+    if (approvedCount >= 3) {
+      badges.add(Badge(name: 'Trusted Publisher', icon: '✅', color: 0xFF3E5641));
+    }
+    if (totalSaves >= 25) {
+      badges.add(Badge(name: 'Community Magnet', icon: '📌', color: 0xFFBDB76B));
+    }
+    if (trendingCount > 0) {
+      badges.add(Badge(name: 'Trend Setter', icon: '🔥', color: 0xFFFFD700));
+    }
+    if (user.karmaPoints >= 1000) {
+      badges.add(Badge(name: 'High Karma', icon: '✨', color: 0xFFBEAFA7));
+    }
+
+    return badges;
   }
 
   Widget _buildSuperActions(int pendingCount) {

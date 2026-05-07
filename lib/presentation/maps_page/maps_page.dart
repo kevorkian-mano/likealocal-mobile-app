@@ -128,13 +128,7 @@ class _MapsPageState extends State<MapsPage> {
                     ),
                   ],
                 ),
-                _buildHeader(context),
-                Positioned(
-                  top: 68,
-                  left: 0,
-                  right: 0,
-                  child: _buildCategoryBar(),
-                ),
+                  _buildTopOverlay(context),
               ],
             );
           },
@@ -168,41 +162,60 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildTopOverlay(BuildContext context) {
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.only(top: 8, bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withOpacity(0.96),
           border: const Border(bottom: BorderSide(color: Color(0x33C1C9C1))),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'LikeALocal Maps',
-              style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-                color: const Color(0xFF191C1A),
-                letterSpacing: -0.5,
-              ),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, AppRoutes.userProfilePage),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.person, color: Colors.white, size: 20),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'LikeALocal Maps',
+                      style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
+                        color: const Color(0xFF191C1A),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.userProfilePage),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildCategoryBar(),
+            ],
+          ),
         ),
       ),
     );

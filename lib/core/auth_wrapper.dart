@@ -72,7 +72,7 @@ class AuthWrapper extends StatelessWidget {
         if (userProvider.isAuthenticated) {
           return const ExplorePageWithNotifScreen();
         } else {
-          return OnboardingScreen();
+          return OnboardingScreen.builder(context);
         }
       },
     );

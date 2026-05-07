@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,9 +11,12 @@ import '../services/location_service.dart';
 
 class GemsProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
+  StreamSubscription? _gemsSubscription;
+  StreamSubscription? _usersSubscription;
   List<HiddenGem> _gems = [];
   bool _isLoading = true;
   Position? _userLocation;
+  Set<String> _superUserIds = {};
 
   List<HiddenGem> get gems => _gems;
   bool get isLoading => _isLoading;
@@ -19,7 +24,15 @@ class GemsProvider extends ChangeNotifier {
 
   GemsProvider() {
     _initGemsListener();
+    _initSuperUserListener();
     updateLocation();
+  }
+
+  @override
+  void dispose() {
+    _gemsSubscription?.cancel();
+    _usersSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> updateLocation() async {
@@ -29,25 +42,54 @@ class GemsProvider extends ChangeNotifier {
 
   // Filtered and sorted list for regular users
   List<HiddenGem> get approvedGems {
-    var approved = _gems.where((gem) => gem.isApproved).toList();
-    
-    if (_userLocation != null) {
-      approved.sort((a, b) {
-        double distA = LocationService.calculateDistance(
-          _userLocation!.latitude, _userLocation!.longitude, a.latitude, a.longitude
-        );
-        double distB = LocationService.calculateDistance(
-          _userLocation!.latitude, _userLocation!.longitude, b.latitude, b.longitude
-        );
-        return distA.compareTo(distB);
-      });
-    }
+    final approved = _gems.where((gem) => gem.isApproved).toList();
+    approved.sort(_compareDiscoveryPriority);
     return approved;
+  }
+
+  bool isSuperUserContributor(String contributorId) => _superUserIds.contains(contributorId);
+
+  List<HiddenGem> superUserRecommendations() {
+    return approvedGems.where((gem) => isSuperUserContributor(gem.contributorId)).toList();
+  }
+
+  int _compareDiscoveryPriority(HiddenGem a, HiddenGem b) {
+    final aIsSuperUser = isSuperUserContributor(a.contributorId);
+    final bIsSuperUser = isSuperUserContributor(b.contributorId);
+
+    if (aIsSuperUser != bIsSuperUser) {
+      return aIsSuperUser ? -1 : 1;
+    }
+
+    if (a.isTrending != b.isTrending) {
+      return a.isTrending ? -1 : 1;
+    }
+
+    if (_userLocation != null) {
+      final distanceA = LocationService.calculateDistance(
+        _userLocation!.latitude,
+        _userLocation!.longitude,
+        a.latitude,
+        a.longitude,
+      );
+      final distanceB = LocationService.calculateDistance(
+        _userLocation!.latitude,
+        _userLocation!.longitude,
+        b.latitude,
+        b.longitude,
+      );
+
+      if (distanceA != distanceB) {
+        return distanceA.compareTo(distanceB);
+      }
+    }
+
+    return b.rating.compareTo(a.rating);
   }
 
   void _initGemsListener() {
     _isLoading = true;
-    _firestore.collection('gems').snapshots().listen((snapshot) {
+    _gemsSubscription = _firestore.collection('gems').snapshots().listen((snapshot) {
       _gems = snapshot.docs.map((doc) {
         return HiddenGem.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
@@ -57,6 +99,18 @@ class GemsProvider extends ChangeNotifier {
       print('Firestore Stream Error: $error');
       _isLoading = false;
       notifyListeners();
+    });
+  }
+
+  void _initSuperUserListener() {
+    _usersSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
+      _superUserIds = snapshot.docs
+          .where((doc) => doc.data()['isSuperUser'] == true)
+          .map((doc) => doc.id)
+          .toSet();
+      notifyListeners();
+    }, onError: (error) {
+      print('User Stream Error: $error');
     });
   }
 

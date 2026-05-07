@@ -1,4 +1,7 @@
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
+import '../../routes/app_routes.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -14,7 +17,9 @@ class _SignUpPageState extends State<SignUpPage> {
   late TextEditingController _confirmPasswordController;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _agreeToTerms = false;
+  bool _termsAccepted = false;
+  bool _isLoading = false;
+  String _passwordStrength = '';
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -35,19 +40,43 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _handleCreateAccount() {
-    if (!_agreeToTerms) {
+  void _onPasswordChanged(String value) {
+    if (value.isEmpty) {
+      setState(() => _passwordStrength = '');
+    } else if (value.length < 8) {
+      setState(() => _passwordStrength = 'Too short');
+    } else if (!RegExp(r'[0-9]').hasMatch(value)) {
+      setState(() => _passwordStrength = 'Weak (add a number)');
+    } else {
+      setState(() => _passwordStrength = 'Strong');
+    }
+  }
+
+  void _handleCreateAccount() async {
+    if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to Terms & Conditions'),
-          duration: Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Please accept the Terms & Conditions')),
       );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacementNamed(context, '/share_hidden_gem_screen');
+      setState(() => _isLoading = true);
+      try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.signUp(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+          _nameController.text.trim(),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.vibePickerScreen);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration Failed: ${e.toString()}')),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -168,7 +197,6 @@ class _SignUpPageState extends State<SignUpPage> {
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 8,
                           children: [
                             Text(
                               'Full Name',
@@ -180,6 +208,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 height: 1.43,
                               ),
                             ),
+                            const SizedBox(height: 8),
                             TextFormField(
                               controller: _nameController,
                               validator: (value) {
@@ -276,12 +305,13 @@ class _SignUpPageState extends State<SignUpPage> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              onChanged: _onPasswordChanged,
                               validator: (value) {
                                 if (value?.isEmpty ?? true) {
                                   return 'Please enter a password';
                                 }
-                                if (value!.length < 6) {
-                                  return 'Password must be at least 6 characters';
+                                if (value!.length < 8) {
+                                  return 'Password must be at least 8 characters';
                                 }
                                 return null;
                               },
@@ -314,6 +344,18 @@ class _SignUpPageState extends State<SignUpPage> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               ),
                             ),
+                            if (_passwordStrength.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4, left: 16),
+                                child: Text(
+                                  'Strength: $_passwordStrength',
+                                  style: TextStyle(
+                                    color: _passwordStrength == 'Strong' ? Colors.green : Colors.red,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                         // Confirm Password Field
@@ -384,18 +426,18 @@ class _SignUpPageState extends State<SignUpPage> {
                           spacing: 12,
                           children: [
                             Checkbox(
-                              value: _agreeToTerms,
+                              value: _termsAccepted,
                               onChanged: (value) {
                                 setState(() {
-                                  _agreeToTerms = value ?? false;
+                                  _termsAccepted = value ?? false;
                                 });
                               },
                               fillColor: WidgetStateProperty.all(
-                                _agreeToTerms ? const Color(0xFF1B3022) : const Color(0xFFF0F4EC),
+                                _termsAccepted ? const Color(0xFF1B3022) : const Color(0xFFF0F4EC),
                               ),
                               side: BorderSide(
                                 width: 1,
-                                color: _agreeToTerms ? const Color(0xFF1B3022) : const Color(0x4CC3C8BC),
+                                color: _termsAccepted ? const Color(0xFF1B3022) : const Color(0x4CC3C8BC),
                               ),
                             ),
                             Expanded(
@@ -491,17 +533,23 @@ class _SignUpPageState extends State<SignUpPage> {
                           )
                         ],
                       ),
-                      child: const Text(
-                        'Create Account',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: 'Plus Jakarta Sans',
-                          fontWeight: FontWeight.w700,
-                          height: 1.50,
-                        ),
-                      ),
+                      child: _isLoading 
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Create Account',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'Plus Jakarta Sans',
+                              fontWeight: FontWeight.w700,
+                              height: 1.50,
+                            ),
+                          ),
                     ),
                   ),
                   // Divider
@@ -649,3 +697,4 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 }
+

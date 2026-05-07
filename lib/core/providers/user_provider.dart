@@ -64,11 +64,14 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// Updates any subset of the user's profile fields in Firestore.
-  /// Called by VibePickerScreen (selectedVibes) and UserProfilePage (bio, avatarUrl).
   Future<void> updateProfile({
     String? bio,
     String? avatarUrl,
     List<String>? selectedVibes,
+    bool? acceptsMessages,
+    bool? isDndEnabled,
+    int? dndStartHour,
+    int? dndEndHour,
   }) async {
     if (_user == null) return;
 
@@ -76,6 +79,10 @@ class UserProvider extends ChangeNotifier {
     if (bio != null) updates['bio'] = bio;
     if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
     if (selectedVibes != null) updates['selectedVibes'] = selectedVibes;
+    if (acceptsMessages != null) updates['acceptsMessages'] = acceptsMessages;
+    if (isDndEnabled != null) updates['isDndEnabled'] = isDndEnabled;
+    if (dndStartHour != null) updates['dndStartHour'] = dndStartHour;
+    if (dndEndHour != null) updates['dndEndHour'] = dndEndHour;
 
     if (updates.isEmpty) return;
 
@@ -85,18 +92,15 @@ class UserProvider extends ChangeNotifier {
           .doc(_user!.id)
           .update(updates);
 
-      // Refresh local state immediately
-      _user = UserModel(
-        id: _user!.id,
-        fullName: _user!.fullName,
-        email: _user!.email,
-        avatarUrl: avatarUrl ?? _user!.avatarUrl,
-        bio: bio ?? _user!.bio,
-        selectedVibes: selectedVibes ?? _user!.selectedVibes,
-        karmaPoints: _user!.karmaPoints,
-        isSuperUser: _user!.isSuperUser,
-        isAdmin: _user!.isAdmin,
-        isPro: _user!.isPro,
+      // Refresh local state immediately using copyWith
+      _user = _user!.copyWith(
+        avatarUrl: avatarUrl,
+        bio: bio,
+        selectedVibes: selectedVibes,
+        acceptsMessages: acceptsMessages,
+        isDndEnabled: isDndEnabled,
+        dndStartHour: dndStartHour,
+        dndEndHour: dndEndHour,
       );
       notifyListeners();
     } catch (e) {
@@ -118,17 +122,9 @@ class UserProvider extends ChangeNotifier {
       });
       
       // Local refresh
-      _user = UserModel(
-        id: _user!.id,
-        fullName: _user!.fullName,
-        email: _user!.email,
-        avatarUrl: _user!.avatarUrl,
-        bio: _user!.bio,
-        selectedVibes: _user!.selectedVibes,
+      _user = _user!.copyWith(
         karmaPoints: newPoints,
-        isSuperUser: shouldPromote ? true : _user!.isSuperUser,
-        isAdmin: _user!.isAdmin,
-        isPro: _user!.isPro,
+        isSuperUser: shouldPromote ? true : null,
       );
       notifyListeners();
     } catch (e) {
@@ -142,16 +138,7 @@ class UserProvider extends ChangeNotifier {
       await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').collection('users').doc(_user!.id).update({
         'isPro': true,
       });
-      _user = UserModel(
-        id: _user!.id,
-        fullName: _user!.fullName,
-        email: _user!.email,
-        avatarUrl: _user!.avatarUrl,
-        bio: _user!.bio,
-        selectedVibes: _user!.selectedVibes,
-        karmaPoints: _user!.karmaPoints,
-        isSuperUser: _user!.isSuperUser,
-        isAdmin: _user!.isAdmin,
+      _user = _user!.copyWith(
         isPro: true,
       );
       notifyListeners();
@@ -177,6 +164,62 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // FR5-5: Block a user — adds to blockedUsers list
+  Future<void> blockUser(String targetUserId) async {
+    if (_user == null) return;
+    try {
+      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+          .collection('users')
+          .doc(_user!.id)
+          .update({
+        'blockedUsers': FieldValue.arrayUnion([targetUserId]),
+      });
+      _user = _user!.copyWith(
+        blockedUsers: [..._user!.blockedUsers, targetUserId],
+      );
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // FR11-6: Admin ban a user
+  Future<void> banUser(String targetUserId) async {
+    if (_user == null || !_user!.isAdmin) return;
+    await _authService.banUser(targetUserId);
+  }
+
+  // FR11-6: Admin unban a user
+  Future<void> unbanUser(String targetUserId) async {
+    if (_user == null || !_user!.isAdmin) return;
+    await _authService.unbanUser(targetUserId);
+  }
+
+  // FR11-7: Broadcast notification (admin only)
+  Future<void> broadcastNotification(String title, String message) async {
+    if (_user == null || !_user!.isAdmin) return;
+    await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+        .collection('notifications')
+        .add({
+      'title': title,
+      'message': message,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isActive': true,
+      'createdBy': _user!.id,
+    });
+  }
+
+  // FR11-7: Stream of active admin notifications
+  Stream<List<Map<String, dynamic>>> getActiveNotifications() {
+    return FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+        .collection('notifications')
+        .where('isActive', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((s) => s.docs.map((d) => {...d.data(), 'id': d.id}).toList());
   }
 }
 

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
+import '../../core/providers/chat_provider.dart';
+import '../../core/providers/user_provider.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 
 class ChatListScreen extends StatelessWidget {
   const ChatListScreen({Key? key}) : super(key: key);
@@ -11,37 +15,54 @@ class ChatListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chats = ChatPreview.mockList;
+    final user = Provider.of<UserProvider>(context).user;
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
 
     return Scaffold(
       backgroundColor: Color(0xFFF9F7F2),
       appBar: _buildAppBar(context),
+      bottomNavigationBar: const AppBottomNavBar(selectedIndex: 3),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchAndFilter(),
           Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              itemCount: chats.length,
-              separatorBuilder: (context, index) => SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: Duration(milliseconds: 600),
-                  curve: Interval(index * 0.1, 1.0, curve: Curves.easeOutCubic),
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 30 * (1 - value)),
-                        child: _buildChatItem(context, chats[index]),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+            child: user == null
+                ? Center(child: Text('Sign in to view chats'))
+                : StreamBuilder<List<ChatPreview>>(
+                    stream: chatProvider.getMyChats(user.id),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator(color: Color(0xFF1B3022)));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(child: Text('No conversations yet.'));
+                      }
+                      
+                      final chats = snapshot.data!;
+                      return ListView.separated(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        itemCount: chats.length,
+                        separatorBuilder: (context, index) => SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: Duration(milliseconds: 600),
+                            curve: Interval(index * 0.1, 1.0, curve: Curves.easeOutCubic),
+                            builder: (context, value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 30 * (1 - value)),
+                                  child: _buildChatItem(context, chats[index]),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
           ),
         ],
       ),

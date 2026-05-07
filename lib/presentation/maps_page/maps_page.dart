@@ -1,11 +1,12 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
+import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/mock_data/mock_gems.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 
 class MapsPage extends StatefulWidget {
   const MapsPage({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class MapsPage extends StatefulWidget {
 class _MapsPageState extends State<MapsPage> {
   GoogleMapController? _mapController;
   String _selectedCategory = 'All';
+  bool _superUserOnly = false; // FR7-5: Local legends only filter
 
   final String _mapStyle = '''
   [
@@ -48,6 +50,11 @@ class _MapsPageState extends State<MapsPage> {
               approvedGems = approvedGems.where((gem) => 
                 gem.vibe.toLowerCase().contains(_selectedCategory.toLowerCase())
               ).toList();
+            }
+
+            // FR7-5: Super User Filter
+            if (_superUserOnly) {
+              approvedGems = approvedGems.where((g) => g.contributorIsSuperUser).toList();
             }
 
             // Create Visual Heatmap (FR3-9)
@@ -109,7 +116,7 @@ class _MapsPageState extends State<MapsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildPinsCard(context),
+                            _buildPinsCard(context, !Provider.of<UserProvider>(context, listen: false).isAuthenticated),
                             const SizedBox(height: 24),
                             Text('Nearby Secret Spots', style: TextStyleHelper.instance.title20BoldOutfit),
                             const SizedBox(height: 12),
@@ -134,7 +141,7 @@ class _MapsPageState extends State<MapsPage> {
           },
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: AppBottomNavBar(selectedIndex: 1),
     );
   }
 
@@ -144,20 +151,42 @@ class _MapsPageState extends State<MapsPage> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: categories.map((cat) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            label: Text(cat),
-            selected: _selectedCategory == cat,
-            onSelected: (val) => setState(() => _selectedCategory = cat),
-            selectedColor: const Color(0xFF1B3022),
-            labelStyle: TextStyle(
-              color: _selectedCategory == cat ? Colors.white : const Color(0xFF1B3022),
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: const Text('🌟 Legends Only'),
+              selected: _superUserOnly,
+              onSelected: (val) => setState(() => _superUserOnly = val),
+              selectedColor: const Color(0xFFFFD700).withOpacity(0.3),
+              checkmarkColor: const Color(0xFF1B3022),
+              labelStyle: TextStyle(
+                color: const Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+                side: BorderSide(color: _superUserOnly ? const Color(0xFFFFD700) : const Color(0xFF1B3022).withOpacity(0.2)),
+              ),
             ),
           ),
-        )).toList(),
+          ...categories.map((cat) => Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(cat),
+              selected: _selectedCategory == cat,
+              onSelected: (val) => setState(() => _selectedCategory = cat),
+              selectedColor: const Color(0xFF1B3022),
+              labelStyle: TextStyle(
+                color: _selectedCategory == cat ? Colors.white : const Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          )).toList(),
+        ],
       ),
     );
   }
@@ -221,7 +250,66 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 
-  Widget _buildPinsCard(BuildContext context) {
+  Widget _buildPinsCard(BuildContext context, bool isGuest) {
+    if (isGuest) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9F7F2),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: const Color(0xFFD7E8DE)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.info_outline, color: Color(0xFF1B3022), size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Guest Mode',
+                  style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
+                    color: const Color(0xFF191C1A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sign up to unlock detailed maps, save favorite spots, and get tailored recommendations.',
+              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                color: const Color(0xFF4D6353),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
+                  child: const Text('View Plans', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.signUpPage),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B3022),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -269,44 +357,6 @@ class _MapsPageState extends State<MapsPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomBar() {
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0x33C1C9C1))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.explore_outlined, 'Explore'),
-          _buildNavItem(Icons.map, 'Map', isSelected: true),
-          _buildNavItem(Icons.add_circle_outline, 'Add'),
-          _buildNavItem(Icons.chat_bubble_outline, 'Guide'),
-          _buildNavItem(Icons.person_outline, 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: isSelected ? Color(0xFF3E5641) : Colors.grey[400]),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Color(0xFF3E5641) : Colors.grey[400],
-            fontSize: 10,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-          ),
-        ),
-      ],
     );
   }
 

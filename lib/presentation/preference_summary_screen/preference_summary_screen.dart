@@ -44,6 +44,7 @@ class PreferenceSummaryScreen extends StatelessWidget {
             SizedBox(height: 64),
             CustomButton(
               text: 'Start Exploring',
+              margin: EdgeInsets.zero,
               onPressed: () => Navigator.pushNamed(context, AppRoutes.explorePageWithNotifScreen),
             ),
           ],

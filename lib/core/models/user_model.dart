@@ -14,6 +14,15 @@ class UserModel {
   final int chatsStartedToday;
   final DateTime? lastContributionTime;
   final DateTime? lastChatResetDate;
+  final int contributionStreak;
+  final List<String> badges;
+  final List<String> savedGems; // FR3-3
+  final bool acceptsMessages; // FR5-2
+  final bool isDndEnabled;    // FR5-3
+  final int dndStartHour;     // FR5-3 (0-23)
+  final int dndEndHour;       // FR5-3 (0-23)
+  final List<String> blockedUsers; // FR5-5
+  final bool isBanned;             // FR11-6
 
 
   UserModel({
@@ -30,7 +39,17 @@ class UserModel {
     this.lastContributionTime,
     this.chatsStartedToday = 0,
     this.lastChatResetDate,
+    this.contributionStreak = 0,
+    this.badges = const [],
+    this.savedGems = const [],
+    this.acceptsMessages = true,
+    this.isDndEnabled = false,
+    this.dndStartHour = 22,
+    this.dndEndHour = 8,
+    this.blockedUsers = const [],
+    this.isBanned = false,
   });
+
 
   factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
     return UserModel(
@@ -51,6 +70,63 @@ class UserModel {
       lastChatResetDate: map['lastChatResetDate'] != null 
           ? (map['lastChatResetDate'] as Timestamp).toDate() 
           : null,
+      contributionStreak: map['contributionStreak'] ?? 0,
+      badges: List<String>.from(map['badges'] ?? []),
+      savedGems: List<String>.from(map['savedGems'] ?? []),
+      acceptsMessages: map['acceptsMessages'] ?? true,
+      isDndEnabled: map['isDndEnabled'] ?? false,
+      dndStartHour: map['dndStartHour'] ?? 22,
+      dndEndHour: map['dndEndHour'] ?? 8,
+      blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
+      isBanned: map['isBanned'] ?? false,
+    );
+  }
+
+  UserModel copyWith({
+    String? fullName,
+    String? avatarUrl,
+    String? bio,
+    List<String>? selectedVibes,
+    int? karmaPoints,
+    bool? isSuperUser,
+    bool? isAdmin,
+    bool? isPro,
+    DateTime? lastContributionTime,
+    int? chatsStartedToday,
+    DateTime? lastChatResetDate,
+    int? contributionStreak,
+    List<String>? badges,
+    List<String>? savedGems,
+    bool? acceptsMessages,
+    bool? isDndEnabled,
+    int? dndStartHour,
+    int? dndEndHour,
+    List<String>? blockedUsers,
+    bool? isBanned,
+  }) {
+    return UserModel(
+      id: id,
+      fullName: fullName ?? this.fullName,
+      email: email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
+      selectedVibes: selectedVibes ?? this.selectedVibes,
+      karmaPoints: karmaPoints ?? this.karmaPoints,
+      isSuperUser: isSuperUser ?? this.isSuperUser,
+      isAdmin: isAdmin ?? this.isAdmin,
+      isPro: isPro ?? this.isPro,
+      lastContributionTime: lastContributionTime ?? this.lastContributionTime,
+      chatsStartedToday: chatsStartedToday ?? this.chatsStartedToday,
+      lastChatResetDate: lastChatResetDate ?? this.lastChatResetDate,
+      contributionStreak: contributionStreak ?? this.contributionStreak,
+      badges: badges ?? this.badges,
+      savedGems: savedGems ?? this.savedGems,
+      acceptsMessages: acceptsMessages ?? this.acceptsMessages,
+      isDndEnabled: isDndEnabled ?? this.isDndEnabled,
+      dndStartHour: dndStartHour ?? this.dndStartHour,
+      dndEndHour: dndEndHour ?? this.dndEndHour,
+      blockedUsers: blockedUsers ?? this.blockedUsers,
+      isBanned: isBanned ?? this.isBanned,
     );
   }
 
@@ -73,6 +149,16 @@ class UserModel {
       'lastChatResetDate': lastChatResetDate != null 
           ? Timestamp.fromDate(lastChatResetDate!) 
           : null,
+      'contributionStreak': contributionStreak,
+      'badges': badges,
+      'savedGems': savedGems,
+      'acceptsMessages': acceptsMessages,
+      'isDndEnabled': isDndEnabled,
+      'dndStartHour': dndStartHour,
+      'dndEndHour': dndEndHour,
+      'blockedUsers': blockedUsers,
+      'isBanned': isBanned,
     };
   }
+
 }

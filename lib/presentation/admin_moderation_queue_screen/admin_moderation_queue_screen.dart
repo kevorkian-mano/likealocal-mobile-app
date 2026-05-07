@@ -3,7 +3,6 @@ import '../../core/providers/gems_provider.dart';
 import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/mock_data/mock_gems.dart';
 import '../../core/models/hidden_gem_model.dart';
 
 class AdminModerationQueueScreen extends StatelessWidget {

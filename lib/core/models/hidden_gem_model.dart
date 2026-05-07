@@ -1,3 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+enum GemStatus { pending, approved, rejected, draft }
+
 class HiddenGem {
   final String id;
   final String name;
@@ -12,10 +16,17 @@ class HiddenGem {
   final List<String> recommendedDishes;
   final bool isPremium;
   final bool isTrending;
+  final bool isVerified;
   final String contributorId;
-  final bool isApproved;
+  final GemStatus status;
+  final String uniqueCode;
   final int views;
   final int saves;
+  final int reportCount;
+  final DateTime? createdAt;
+  final bool isBoosted;       // FR12-5
+  final DateTime? boostedUntil; // FR12-5
+  final bool contributorIsSuperUser; // FR7-4, FR7-5
 
   HiddenGem({
     required this.id,
@@ -31,11 +42,19 @@ class HiddenGem {
     required this.recommendedDishes,
     this.isPremium = false,
     this.isTrending = false,
+    this.isVerified = false,
     this.contributorId = '',
-    this.isApproved = false,
+    this.status = GemStatus.pending,
+    this.uniqueCode = '',
     this.views = 0,
     this.saves = 0,
+    this.reportCount = 0,
+    this.createdAt,
+    this.isBoosted = false,
+    this.boostedUntil,
+    this.contributorIsSuperUser = false,
   });
+
 
   factory HiddenGem.fromMap(Map<String, dynamic> map, String documentId) {
     return HiddenGem(
@@ -52,16 +71,25 @@ class HiddenGem {
       recommendedDishes: List<String>.from(map['recommendedDishes'] ?? []),
       isPremium: map['isPremium'] ?? false,
       isTrending: map['isTrending'] ?? false,
+      isVerified: map['isVerified'] ?? false,
       contributorId: map['contributorId'] ?? '',
-      isApproved: map['isApproved'] ?? false,
+      status: GemStatus.values.firstWhere(
+        (e) => e.toString() == 'GemStatus.${map['status']}',
+        orElse: () => GemStatus.pending,
+      ),
+      uniqueCode: map['uniqueCode'] ?? '',
       views: map['views'] ?? 0,
       saves: map['saves'] ?? 0,
+      reportCount: map['reportCount'] ?? 0,
+      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
+      isBoosted: map['isBoosted'] ?? false,
+      boostedUntil: map['boostedUntil'] != null ? (map['boostedUntil'] as Timestamp).toDate() : null,
+      contributorIsSuperUser: map['contributorIsSuperUser'] ?? false,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'description': description,
       'category': category,
@@ -74,10 +102,21 @@ class HiddenGem {
       'recommendedDishes': recommendedDishes,
       'isPremium': isPremium,
       'isTrending': isTrending,
+      'isVerified': isVerified,
       'contributorId': contributorId,
-      'isApproved': isApproved,
+      'status': status.toString().split('.').last,
+      'uniqueCode': uniqueCode,
       'views': views,
       'saves': saves,
+      'reportCount': reportCount,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'isBoosted': isBoosted,
+      'boostedUntil': boostedUntil != null ? Timestamp.fromDate(boostedUntil!) : null,
+      'contributorIsSuperUser': contributorIsSuperUser,
     };
   }
+
+  bool get isApproved => status == GemStatus.approved;
 }
+
+

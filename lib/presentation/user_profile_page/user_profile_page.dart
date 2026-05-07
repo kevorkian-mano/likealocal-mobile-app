@@ -2,9 +2,12 @@ import 'package:provider/provider.dart';
 import '../../core/models/user_model.dart';
 import '../../core/providers/user_provider.dart';
 import '../../theme/text_style_helper.dart';
+import '../../core/providers/gems_provider.dart';
+import '../../core/models/hidden_gem_model.dart';
 import 'package:flutter/material.dart';
 
 import '../../routes/app_routes.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -48,6 +51,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF8),
+      bottomNavigationBar: const AppBottomNavBar(selectedIndex: 4),
       body: SafeArea(
         child: Consumer<UserProvider>(
           builder: (context, userProvider, child) {
@@ -85,15 +89,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     value: true,
                   ),
                   const SizedBox(height: 24),
-                  _buildSectionHeader('BADGES & ACHIEVEMENTS', 'Details'),
-                  _buildListRow(
-                    title: user.isSuperUser ? 'Local Legend' : 'Newcomer',
-                    subtitle: user.isSuperUser ? 'Unlocked at 500 Karma' : 'Reach 500 Karma to level up',
-                    leadingColor: const Color(0x7FDCEAE2),
-                    icon: Icons.verified_outlined,
-                  ),
+                  _buildSectionHeader('MY CONTRIBUTIONS', 'Manage'),
+                  _buildMyContributionsList(context),
                   const SizedBox(height: 32),
                   _buildLogoutSection(context, userProvider),
+
+
                 ],
               ),
             );
@@ -340,9 +341,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
 			child: Row(
 				mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 				children: [
-					_StatItem(label: 'TIPS SHARED', value: '${user.karmaPoints ~/ 10}'),
+					_StatItem(label: 'GEMS SHARED', value: '${user.karmaPoints ~/ 10}'),
 					_StatItem(
-            label: 'KARMA POINTS', 
+            label: 'STREAK', 
+            value: '${user.contributionStreak}D', 
+            valueColor: Colors.orange[800],
+            icon: Icons.local_fire_department,
+          ),
+					_StatItem(
+            label: 'KARMA', 
             value: user.karmaPoints > 1000 ? '${(user.karmaPoints / 1000).toStringAsFixed(1)}k' : '${user.karmaPoints}', 
             valueColor: const Color(0xFF4C6354),
             hasGlow: user.isSuperUser,
@@ -351,6 +358,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
 			),
 		);
 	}
+
+  Widget _buildBadgeGallery(UserModel user) {
+    if (user.badges.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text('Start contributing to earn badges!', style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.grey)),
+      );
+    }
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: user.badges.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          final badge = user.badges[index];
+          return _BadgeIcon(badgeId: badge);
+        },
+      ),
+    );
+  }
+
 
 	Widget _buildSectionHeader(String title, String action) {
 		return Padding(
@@ -520,6 +550,102 @@ class _UserProfilePageState extends State<UserProfilePage> {
 			),
 		);
 	}
+
+  Widget _buildMyContributionsList(BuildContext context) {
+    return Consumer<GemsProvider>(
+      builder: (context, gemsProvider, child) {
+        final userId = Provider.of<UserProvider>(context, listen: false).user?.id;
+        final myGems = gemsProvider.gems.where((g) => g.contributorId == userId).toList();
+
+        if (myGems.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              'No contributions yet. Share a hidden gem to earn karma!',
+              style: TextStyleHelper.instance.body14MediumInter,
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 120,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            scrollDirection: Axis.horizontal,
+            itemCount: myGems.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final gem = myGems[index];
+              return GestureDetector(
+                onTap: () => Navigator.pushNamed(context, AppRoutes.placeDetailsScreen, arguments: gem),
+                child: Column(
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            image: DecorationImage(image: NetworkImage(gem.imageUrl), fit: BoxFit.cover),
+                          ),
+                        ),
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: _buildStatusIcon(gem.status),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        gem.name,
+                        style: TextStyleHelper.instance.label10BoldInter,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildStatusIcon(GemStatus status) {
+    IconData icon;
+    Color color;
+    switch (status) {
+      case GemStatus.approved:
+        icon = Icons.check_circle;
+        color = Colors.green;
+        break;
+      case GemStatus.pending:
+        icon = Icons.access_time_filled;
+        color = Colors.orange;
+        break;
+      case GemStatus.rejected:
+        icon = Icons.cancel;
+        color = Colors.red;
+        break;
+      case GemStatus.draft:
+        icon = Icons.edit_document;
+        color = Colors.grey;
+        break;
+    }
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      child: Icon(icon, color: color, size: 16),
+    );
+  }
 }
 
 class _StatItem extends StatelessWidget {
@@ -528,25 +654,33 @@ class _StatItem extends StatelessWidget {
 		required this.value,
 		this.valueColor,
     this.hasGlow = false,
+    this.icon,
 	});
 
 	final String label;
 	final String value;
 	final Color? valueColor;
   final bool hasGlow;
+  final IconData? icon;
 
 	@override
 	Widget build(BuildContext context) {
 		return Column(
 			children: [
-        Text(
-          value,
-          style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-            color: valueColor ?? const Color(0xFF1B3022),
-            shadows: hasGlow ? [
-              Shadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 10),
-            ] : null,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[Icon(icon, color: valueColor, size: 20), const SizedBox(width: 4)],
+            Text(
+              value,
+              style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
+                color: valueColor ?? const Color(0xFF1B3022),
+                shadows: hasGlow ? [
+                  Shadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 10),
+                ] : null,
+              ),
+            ),
+          ],
         ),
 				const SizedBox(height: 4),
 				Text(
@@ -557,6 +691,50 @@ class _StatItem extends StatelessWidget {
 		);
 	}
 }
+
+class _BadgeIcon extends StatelessWidget {
+  final String badgeId;
+  const _BadgeIcon({required this.badgeId});
+
+  @override
+  Widget build(BuildContext context) {
+    String label = badgeId.replaceAll('_', ' ').toUpperCase();
+    IconData icon = Icons.emoji_events;
+    Color color = const Color(0xFF1B3022);
+
+    if (badgeId.contains('streak')) {
+      icon = Icons.bolt;
+      color = Colors.orange[700]!;
+    } else if (badgeId.contains('rising')) {
+      icon = Icons.trending_up;
+      color = Colors.blue[700]!;
+    } else if (badgeId.contains('legend')) {
+      icon = Icons.workspace_premium;
+      color = Colors.purple[700]!;
+    }
+
+    return Column(
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withOpacity(0.3), width: 2),
+          ),
+          child: Icon(icon, color: color, size: 32),
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: TextStyleHelper.instance.label10BoldInter.copyWith(fontSize: 8)),
+      ],
+    );
+  }
+}
+
+
+
+
 
 
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_export.dart';
+import '../../core/models/hidden_gem_model.dart';
 import '../../widgets/custom_bottom_bar.dart';
 import '../explore_page_with_notif_screen/explore_page_with_notif_screen.dart';
 import '../maps_page/maps_page.dart';
@@ -15,11 +16,13 @@ class ShareHiddenGemScreen extends StatefulWidget {
   ShareHiddenGemScreenState createState() => ShareHiddenGemScreenState();
 
   static Widget builder(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments as HiddenGem?;
     return ChangeNotifierProvider(
-      create: (context) => ShareHiddenGemProvider(),
-      child: ShareHiddenGemScreen(),
+      create: (context) => ShareHiddenGemProvider()..handleExistingGem(args),
+      child: const ShareHiddenGemScreen(),
     );
   }
+
 }
 
 class ShareHiddenGemScreenState extends State<ShareHiddenGemScreen> {

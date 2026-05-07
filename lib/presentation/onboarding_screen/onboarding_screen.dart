@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_export.dart';
+import '../../routes/app_routes.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_image_view.dart';
 import './provider/onboarding_provider.dart';
@@ -99,30 +100,60 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       SizedBox(height: 44.h),
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(seconds: 2),
+                        duration: const Duration(seconds: 2),
                         builder: (context, value, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: appTheme.sunlightGold.withOpacity(0.2 * (1 - value.abs())),
-                                  blurRadius: 15 * (1 - value.abs()),
-                                  spreadRadius: 5 * (1 - value.abs()),
-                                )
-                              ],
-                            ),
-                            child: CustomButton(
-                              text: provider.onboardingModel.getStartedText ?? 'Get Started',
-                              backgroundColor: appTheme.deepForest,
-                              textColor: Colors.white,
-                              borderRadius: 12,
-                              fontFamily: 'Outfit',
-                              fontSize: 18.fSize,
-                              fontWeight: FontWeight.w700,
-                              padding: EdgeInsets.symmetric(vertical: 18.h),
-                              width: double.infinity,
-                              onPressed: provider.onGetStartedPressed,
-                            ),
+                          return Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: appTheme.sunlightGold.withOpacity(0.2 * (1 - value.abs())),
+                                      blurRadius: 15 * (1 - value.abs()),
+                                      spreadRadius: 5 * (1 - value.abs()),
+                                    )
+                                  ],
+                                ),
+                                child: CustomButton(
+                                  text: 'Explore the City',
+                                  backgroundColor: appTheme.sunlightGold,
+                                  textColor: appTheme.midnightPine,
+                                  borderRadius: 12,
+                                  fontFamily: 'Outfit',
+                                  fontSize: 18.fSize,
+                                  fontWeight: FontWeight.w700,
+                                  padding: EdgeInsets.symmetric(vertical: 18.h),
+                                  margin: EdgeInsets.zero,
+                                  width: double.infinity,
+                                  onPressed: () {
+                                    Navigator.of(context).pushReplacementNamed(AppRoutes.explorePageWithNotifScreen);
+                                  },
+                                ),
+                              ),
+                              SizedBox(height: 16.h),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: provider.onGetStartedPressed,
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.white, width: 1.5),
+                                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Sign Up to Contribute',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Outfit',
+                                      fontSize: 16.fSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           );
                         },
                       ),

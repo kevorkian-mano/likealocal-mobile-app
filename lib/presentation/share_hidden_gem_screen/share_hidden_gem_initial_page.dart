@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_export.dart';
+import '../../core/models/hidden_gem_model.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_edit_text.dart';
@@ -12,8 +13,17 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
   const ShareHiddenGemInitialPage({Key? key}) : super(key: key);
 
   static Widget builder(BuildContext context) {
-    return ShareHiddenGemInitialPage();
+    final args = ModalRoute.of(context)?.settings.arguments as HiddenGem?;
+    return ChangeNotifierProvider(
+      create: (context) {
+        final provider = ShareHiddenGemProvider();
+        provider.handleExistingGem(args);
+        return provider;
+      },
+      child: const ShareHiddenGemInitialPage(),
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +32,14 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(64.h),
+        preferredSize: Size.fromHeight(80.h),
         child: Container(
           padding: EdgeInsets.fromLTRB(24.h, 17.h, 24.h, 8.h),
           decoration: BoxDecoration(
             color: appTheme.colorCCFBFD,
             boxShadow: [
               BoxShadow(
-                color: appTheme.color220F1B,
+                color: appTheme.color220F1B.withOpacity(0.1),
                 blurRadius: 32,
                 offset: Offset(0, 8),
               ),
@@ -39,14 +49,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: () {
-                    // Try to pop normally (for sheet), fallback if necessary
-                    if(Navigator.of(context).canPop()) {
-                       Navigator.of(context).pop();
-                    } else {
-                       NavigatorService.goBack();
-                    }
-                },
+                onTap: () => Navigator.pop(context),
                 child: CustomImageView(
                   imagePath: ImageConstant.imgButton,
                   height: 30.h,
@@ -54,7 +57,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                 ),
               ),
               Text(
-                'LikeALocal',
+                'Add Hidden Gem',
                 style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans
                     .copyWith(height: 1.3),
               ),
@@ -62,7 +65,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                 imagePath: ImageConstant.imgImage1,
                 height: 46.h,
                 width: 46.h,
-                radius: BorderRadius.circular(22.h),
+                radius: BorderRadius.circular(23.h),
               ),
             ],
           ),
@@ -70,40 +73,127 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
       ),
       body: Consumer<ShareHiddenGemProvider>(
         builder: (context, provider, child) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(24.h, 32.h, 24.h, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Share a Hidden\nGem',
-                    style: TextStyleHelper
-                        .instance
-                        .display36ExtraBoldPlusJakartaSans
-                        .copyWith(height: 1.25),
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(24.h, 32.h, 24.h, 0),
+                  child: Form(
+                    key: provider.formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeroSection(),
+                        SizedBox(height: 32.h),
+                        _buildMediaUploadSection(context, provider),
+                        if (provider.isAiAnalyzing) _buildAiAnalysisIndicator(),
+                        SizedBox(height: 32.h),
+                        _buildInformationSection(context, provider),
+                        SizedBox(height: 32.h),
+                        _buildExpandableSections(context, provider),
+                        SizedBox(height: 32.h),
+                        _buildPinLocationSection(context, provider),
+                        SizedBox(height: 52.h),
+                        _buildActionButtons(context, provider),
+                        SizedBox(height: 16.h),
+                        _buildGuidelinesText(context),
+                        SizedBox(height: 40.h),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 38.h),
-                  _buildMediaUploadSection(context, provider),
-                  SizedBox(height: 32.h),
-                  _buildInformationSection(context, provider),
-                  SizedBox(height: 32.h),
-                  _buildExpandableSections(context, provider),
-                  SizedBox(height: 20.h),
-                  _buildPinLocationSection(context, provider),
-                  SizedBox(height: 52.h),
-                  _buildPublishButton(context, provider),
-                  SizedBox(height: 16.h),
-                  _buildGuidelinesText(context),
-                  SizedBox(height: 24.h),
-                ],
+                ),
               ),
-            ),
+              if (provider.isLoading) _buildLoadingOverlay(),
+            ],
           );
         },
       ),
     );
   }
+
+  Widget _buildHeroSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Share a Hidden\nGem',
+          style: TextStyleHelper.instance.display36ExtraBoldPlusJakartaSans
+              .copyWith(height: 1.1, color: appTheme.gray_900_01),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          'Your contribution helps others explore the authentic side of the city.',
+          style: TextStyleHelper.instance.body14MediumInter.copyWith(color: appTheme.gray_800_01),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAiAnalysisIndicator() {
+    return Container(
+      margin: EdgeInsets.only(top: 16.h),
+      padding: EdgeInsets.all(12.h),
+      decoration: BoxDecoration(
+        color: appTheme.colorCCFBFD.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16.h),
+        border: Border.all(color: appTheme.colorCCFBFD),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16.h,
+            height: 16.h,
+            child: CircularProgressIndicator(strokeWidth: 2, color: appTheme.gray_900_01),
+          ),
+          SizedBox(width: 12.h),
+          Text(
+            'AI is analyzing your photo for tags...',
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(color: appTheme.gray_900_01),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ShareHiddenGemProvider provider) {
+    return Column(
+      children: [
+        CustomButton(
+          text: 'Publish to Community',
+          onPressed: () => provider.publishToommunity(context),
+          backgroundColor: appTheme.gray_900_01,
+          textColor: Colors.white,
+        ),
+        SizedBox(height: 12.h),
+        OutlinedButton(
+          onPressed: () => provider.saveDraft(),
+          style: OutlinedButton.styleFrom(
+            minimumSize: Size(double.infinity, 56.h),
+            side: BorderSide(color: appTheme.gray_400),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.h)),
+          ),
+          child: Text(
+            'Save as Draft',
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(fontSize: 16, color: appTheme.gray_800_01),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.3),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.all(32.h),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24.h)),
+          child: CircularProgressIndicator(color: appTheme.gray_900_01),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildMediaUploadSection(
     BuildContext context,
@@ -303,7 +393,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.h),
       decoration: BoxDecoration(
-        color: appTheme.colorEDF0ED,
+        color: appTheme.colorEDF0ED.withOpacity(0.5),
         borderRadius: BorderRadius.circular(24.h),
       ),
       child: Column(
@@ -313,10 +403,44 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
           SizedBox(height: 24.h),
           _buildLocalTipsSection(context, provider),
           SizedBox(height: 24.h),
+          _buildRecommendedDishesSection(context, provider),
+          SizedBox(height: 24.h),
         ],
       ),
     );
   }
+
+  Widget _buildRecommendedDishesSection(
+    BuildContext context,
+    ShareHiddenGemProvider provider,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.restaurant_menu, size: 20.h, color: appTheme.gray_800_01),
+            SizedBox(width: 8.h),
+            Text(
+              'RECOMMENDED DISHES',
+              style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                letterSpacing: 1,
+                height: 1.21,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        CustomEditText(
+          hintText: 'e.g. Signature Pasta, Local Brew...',
+          controller: provider.recommendedDishesController,
+          hasBorder: true,
+          backgroundColor: appTheme.white_A700,
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildDescriptionSection(
     BuildContext context,
@@ -409,7 +533,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                   .copyWith(height: 1.3),
             ),
             GestureDetector(
-              onTap: () => provider.adjustPin(),
+              onTap: () => provider.adjustPin(context),
               child: Text(
                 'Adjust Pin',
                 style: TextStyleHelper.instance.body14BoldInter.copyWith(
@@ -442,7 +566,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                 iconPath: ImageConstant.imgBackground,
                 backgroundColor: appTheme.gray_900_01,
                 size: 40.h,
-                onPressed: () => provider.adjustPin(),
+                onPressed: () => provider.adjustPin(context),
               ),
             ],
           ),

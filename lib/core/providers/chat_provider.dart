@@ -2,40 +2,128 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../models/chat_model.dart';
 
 class ChatProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
 
-  Future<void> startNewChat(UserModel user, String targetUserId) async {
+  Future<void> startNewChat(UserModel sender, String targetUserId, String gemName) async {
     // 1. Prevent messaging self
-    if (user.id == targetUserId) {
+    if (sender.id == targetUserId) {
       throw Exception('You cannot message yourself.');
     }
 
-    // 2. Pro Constraints (FR5-3)
-    if (!user.isPro && !user.isSuperUser) {
-      final now = DateTime.now();
-      bool needsReset = user.lastChatResetDate == null || 
-          user.lastChatResetDate!.day != now.day ||
-          user.lastChatResetDate!.month != now.month ||
-          user.lastChatResetDate!.year != now.year;
+    // 2. Block check (FR5-5)
+    if (sender.blockedUsers.contains(targetUserId)) {
+      throw Exception('You have blocked this user. Unblock them to send messages.');
+    }
 
-      int currentChats = needsReset ? 0 : user.chatsStartedToday;
+    // 3. Pro Constraints (FR5-3)
+    if (!sender.isPro && !sender.isSuperUser) {
+      final now = DateTime.now();
+      bool needsReset = sender.lastChatResetDate == null || 
+          sender.lastChatResetDate!.day != now.day ||
+          sender.lastChatResetDate!.month != now.month ||
+          sender.lastChatResetDate!.year != now.year;
+
+      int currentChats = needsReset ? 0 : sender.chatsStartedToday;
 
       if (currentChats >= 3) {
         throw Exception('Daily chat limit reached. Upgrade to Pro for unlimited chats!');
       }
 
-      // 3. Increment chat count
-      await _firestore.collection('users').doc(user.id).update({
+      // Increment chat count locally/remotely
+      await _firestore.collection('users').doc(sender.id).update({
         'chatsStartedToday': currentChats + 1,
         'lastChatResetDate': FieldValue.serverTimestamp(),
       });
     }
 
-    // 4. Create Chat Document (Placeholder for real messaging)
-    // In a real system, we would check if a chat already exists between these two.
-    print('Starting chat with $targetUserId');
+    // 3. Recipient Settings Check (FR5-2, FR5-3)
+    final recipientDoc = await _firestore.collection('users').doc(targetUserId).get();
+    if (recipientDoc.exists) {
+      final recipient = UserModel.fromMap(recipientDoc.data()!, recipientDoc.id);
+      
+      if (!recipient.acceptsMessages) {
+        throw Exception('${recipient.fullName} has opted out of receiving messages.');
+      }
+
+      if (recipient.isDndEnabled) {
+        final now = DateTime.now().hour;
+        // Simple circular check
+        bool inDnd = false;
+        if (recipient.dndStartHour > recipient.dndEndHour) {
+          inDnd = now >= recipient.dndStartHour || now < recipient.dndEndHour;
+        } else {
+          inDnd = now >= recipient.dndStartHour && now < recipient.dndEndHour;
+        }
+        
+        if (inDnd) {
+          throw Exception('${recipient.fullName} is currently in DND mode. Try again later.');
+        }
+      }
+    }
+
+    // 4. Create Chat Document if not exists
+    final chatId = _getChatId(sender.id, targetUserId);
+    final chatDoc = await _firestore.collection('chats').doc(chatId).get();
+    
+    if (!chatDoc.exists) {
+      await _firestore.collection('chats').doc(chatId).set({
+        'participants': [sender.id, targetUserId],
+        'participantNames': {
+          sender.id: sender.fullName,
+          targetUserId: recipientDoc.exists ? recipientDoc.data()!['fullName'] : 'Unknown',
+        },
+        'participantAvatars': {
+          sender.id: sender.avatarUrl,
+          targetUserId: recipientDoc.exists ? recipientDoc.data()!['avatarUrl'] : '',
+        },
+        'lastMessage': 'Chat started about $gemName',
+        'lastMessageTime': FieldValue.serverTimestamp(),
+        'relatedGemName': gemName,
+        'isPriority': sender.isPro || sender.isSuperUser, // FR5-3
+      });
+    }
+  }
+
+  String _getChatId(String id1, String id2) {
+    return id1.compareTo(id2) < 0 ? '${id1}_$id2' : '${id2}_$id1';
+  }
+
+  Future<void> sendMessage(String chatId, String senderId, String text) async {
+    final batch = _firestore.batch();
+    final messageRef = _firestore.collection('chats').doc(chatId).collection('messages').doc();
+    
+    batch.set(messageRef, {
+      'senderId': senderId,
+      'text': text,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    batch.update(_firestore.collection('chats').doc(chatId), {
+      'lastMessage': text,
+      'lastMessageTime': FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+  }
+
+  Stream<List<ChatMessage>> getMessages(String chatId, String currentUserId) {
+    return _firestore.collection('chats').doc(chatId).collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => 
+            ChatMessage.fromMap(doc.data(), doc.id, currentUserId)).toList());
+  }
+
+  Stream<List<ChatPreview>> getMyChats(String userId) {
+    return _firestore.collection('chats')
+        .where('participants', arrayContains: userId)
+        .orderBy('lastMessageTime', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => 
+            ChatPreview.fromMap(doc.data(), doc.id, userId)).toList());
   }
 }
 

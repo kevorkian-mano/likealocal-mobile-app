@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
+import '../../core/providers/user_provider.dart';
+import '../../core/providers/chat_provider.dart';
+import '../../core/services/ai_service.dart';
 
-class ChatDetailsScreen extends StatelessWidget {
+class ChatDetailsScreen extends StatefulWidget {
   const ChatDetailsScreen({Key? key}) : super(key: key);
 
   static Widget builder(BuildContext context) {
@@ -10,24 +14,79 @@ class ChatDetailsScreen extends StatelessWidget {
   }
 
   @override
+  State<ChatDetailsScreen> createState() => _ChatDetailsScreenState();
+}
+
+class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  List<String> _aiSuggestions = [];
+  bool _loadingAi = false;
+  late ChatPreview _chat;
+  late String _currentUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _chat = ModalRoute.of(context)!.settings.arguments as ChatPreview;
+    _currentUserId = Provider.of<UserProvider>(context, listen: false).user?.id ?? '';
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    _messageController.clear();
+    try {
+      await Provider.of<ChatProvider>(context, listen: false).sendMessage(_chat.id, _currentUserId, text.trim());
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0, // ListView is reversed, so 0 is the bottom
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message.')));
+    }
+  }
+
+  // FR5-6: Load AI suggestions for SuperUser
+  Future<void> _loadAiSuggestions(String gemName, String lastMsg) async {
+    if (lastMsg.isEmpty) return;
+    setState(() => _loadingAi = true);
+    final suggestions = await AIService.suggestChatReplies(lastMsg, gemName);
+    if (mounted) setState(() { _aiSuggestions = suggestions; _loadingAi = false; });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chat = ModalRoute.of(context)!.settings.arguments as ChatPreview;
+    final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+    final isSuperUser = currentUser?.isSuperUser == true;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _buildAppBar(context, chat),
+      appBar: _buildAppBar(context, chat, currentUser),
       body: Column(
         children: [
           _buildGemContext(chat),
-          Expanded(child: _buildMessageList()),
-          _buildQuickSuggestions(),
+          Expanded(child: _buildMessageList(chat.id, currentUser?.id ?? '', isSuperUser, chat.relatedGemName)),
+          if (isSuperUser) _buildQuickSuggestions(chat.relatedGemName),
           _buildInputArea(),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, ChatPreview chat) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, ChatPreview chat, currentUser) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -37,37 +96,56 @@ class ChatDetailsScreen extends StatelessWidget {
       ),
       title: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundImage: NetworkImage(chat.userAvatar),
-          ),
+          CircleAvatar(radius: 18, backgroundImage: NetworkImage(chat.userAvatar)),
           SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                chat.userName,
-                style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A)),
-              ),
-              Text(
-                'Active Now',
-                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF3E5641)),
-              ),
+              Text(chat.userName, style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A))),
+              Text('Active Now', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF3E5641))),
             ],
           ),
         ],
       ),
       actions: [
         PopupMenuButton(
-          icon: Icon(Icons.security, color: Color(0xFF1B3022)),
+          icon: Icon(Icons.more_vert, color: Color(0xFF1B3022)),
           itemBuilder: (context) => [
             PopupMenuItem(child: Text('Report User'), value: 'report'),
-            PopupMenuItem(child: Text('Block User'), value: 'block'),
+            // FR5-5: Block user
+            PopupMenuItem(
+              child: Text('Block User', style: TextStyle(color: Colors.red)),
+              value: 'block',
+            ),
           ],
-          onSelected: (value) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('User $value request sent for moderation (FR5-5)')),
-            );
+          onSelected: (value) async {
+            if (value == 'block') {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text('Block User?'),
+                  content: Text('You won\'t be able to message them and they won\'t be able to start new chats with you.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text('Block', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true && currentUser != null) {
+                await Provider.of<UserProvider>(context, listen: false).blockUser(chat.targetUserId);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User blocked.')));
+                }
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Report submitted for moderation (FR5-5)')),
+              );
+            }
           },
         ),
       ],
@@ -86,29 +164,41 @@ class ChatDetailsScreen extends StatelessWidget {
         children: [
           Icon(Icons.location_on, color: Color(0xFF3E5641), size: 16),
           SizedBox(width: 8),
-          Text(
-            'Discussing: ',
-            style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353)),
-          ),
-          Text(
-            chat.relatedGemName,
-            style: TextStyleHelper.instance.label10BoldInter.copyWith(color: Color(0xFF1B3022)),
-          ),
+          Text('Discussing: ', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353))),
+          Text(chat.relatedGemName, style: TextStyleHelper.instance.label10BoldInter.copyWith(color: Color(0xFF1B3022))),
         ],
       ),
     );
   }
 
-  Widget _buildMessageList() {
-    return ListView(
-      padding: EdgeInsets.all(20),
-      children: [
-        _buildBubble("Hey! I saw you submitted The Secret Jazz Garden.", true),
-        _buildBubble("Yes! It's one of my favorite spots in Zamalek.", false),
-        _buildBubble("I'm planning to go tonight. Is the entrance easy to find?", true),
-        _buildBubble("The entrance is right behind the blue door. Just tell the guard you're there for the 'Tuesday Session'.", false),
-        _buildTypingIndicator(),
-      ],
+  Widget _buildMessageList(String chatId, String userId, bool isSuperUser, String gemName) {
+    return StreamBuilder<List<ChatMessage>>(
+      stream: Provider.of<ChatProvider>(context, listen: false).getMessages(chatId, userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(color: Color(0xFF1B3022)));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('Say hi! 👋', style: TextStyle(color: Colors.grey)));
+        }
+
+        final messages = snapshot.data!;
+        
+        // Load AI suggestions if last message is from other user and we haven't loaded yet
+        if (isSuperUser && messages.isNotEmpty && !messages.first.isMe && _aiSuggestions.isEmpty && !_loadingAi) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _loadAiSuggestions(gemName, messages.first.text));
+        } else if (messages.isNotEmpty && messages.first.isMe && _aiSuggestions.isNotEmpty) {
+           WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => _aiSuggestions.clear()));
+        }
+
+        return ListView.builder(
+          controller: _scrollController,
+          padding: EdgeInsets.all(20),
+          reverse: true, // Messages are ordered descending from Firestore
+          itemCount: messages.length,
+          itemBuilder: (context, index) => _buildBubble(messages[index].text, messages[index].isMe),
+        );
+      },
     );
   }
 
@@ -117,78 +207,54 @@ class ChatDetailsScreen extends StatelessWidget {
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(bottom: 16),
-        child: CustomPaint(
-          painter: _BubblePainter(
-            color: isMe ? Color(0xFF1B3022) : Color(0xFFF0F4EC),
-            isMe: isMe,
-          ),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            constraints: BoxConstraints(maxWidth: 260),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  text,
-                  style: TextStyle(
-                    color: isMe ? Colors.white : Color(0xFF191C1A),
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-                if (isMe) ...[
-                  SizedBox(height: 4),
-                  Icon(Icons.done_all, color: Colors.white60, size: 12),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypingIndicator() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(maxWidth: 260),
         decoration: BoxDecoration(
-          color: Color(0xFFF0F4EC),
-          borderRadius: BorderRadius.circular(16),
+          color: isMe ? Color(0xFF1B3022) : Color(0xFFF0F4EC),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: isMe ? Radius.circular(20) : Radius.circular(4),
+            bottomRight: isMe ? Radius.circular(4) : Radius.circular(20),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _AnimatedDot(delay: 0),
-            SizedBox(width: 4),
-            _AnimatedDot(delay: 0.2),
-            SizedBox(width: 4),
-            _AnimatedDot(delay: 0.4),
+            Text(text, style: TextStyle(color: isMe ? Colors.white : Color(0xFF191C1A), fontSize: 14, height: 1.4)),
+            if (isMe) ...[SizedBox(height: 4), Icon(Icons.done_all, color: Colors.white60, size: 12)],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickSuggestions() {
-    final suggestions = ["Entrance fee?", "Best time?", "Safe for solo?", "Hidden menu?"];
+  // FR5-6: AI quick suggestions (SuperUser only)
+  Widget _buildQuickSuggestions(String gemName) {
+    final suggestions = _aiSuggestions.isNotEmpty
+        ? _aiSuggestions
+        : ["Entrance fee?", "Best time?", "Safe for solo?", "Hidden menu?"];
+
     return Container(
       height: 50,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        scrollDirection: Axis.horizontal,
-        itemCount: suggestions.length,
-        separatorBuilder: (context, index) => SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          return ActionChip(
-            label: Text(suggestions[index], style: TextStyle(fontSize: 12, color: Color(0xFF1B3022))),
-            backgroundColor: Colors.white,
-            side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.2)),
-            onPressed: () {},
-          );
-        },
-      ),
+      child: _loadingAi
+          ? Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B3022))))
+          : ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, __) => SizedBox(width: 10),
+              itemBuilder: (context, index) => ActionChip(
+                avatar: index < _aiSuggestions.length ? Icon(Icons.auto_awesome, size: 12, color: Color(0xFF1B3022)) : null,
+                label: Text(suggestions[index], style: TextStyle(fontSize: 12, color: Color(0xFF1B3022))),
+                backgroundColor: index < _aiSuggestions.length ? Color(0xFFE8F2E9) : Colors.white,
+                side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.2)),
+                onPressed: () {
+                  _messageController.text = suggestions[index];
+                  _sendMessage(suggestions[index]);
+                },
+              ),
+            ),
     );
   }
 
@@ -209,89 +275,28 @@ class ChatDetailsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(9999),
               ),
               child: TextField(
+                controller: _messageController,
                 decoration: InputDecoration(
                   hintText: 'Ask a local...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(fontSize: 14, color: Color(0xFF4D6353)),
                 ),
+                onSubmitted: _sendMessage,
+                textInputAction: TextInputAction.send,
               ),
             ),
           ),
           SizedBox(width: 12),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Color(0xFF1B3022),
-              shape: BoxShape.circle,
+          GestureDetector(
+            onTap: () => _sendMessage(_messageController.text),
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Color(0xFF1B3022), shape: BoxShape.circle),
+              child: Icon(Icons.send, color: Colors.white, size: 20),
             ),
-            child: Icon(Icons.send, color: Colors.white, size: 20),
           ),
         ],
       ),
     );
   }
 }
-
-class _AnimatedDot extends StatefulWidget {
-  final double delay;
-  const _AnimatedDot({required this.delay});
-  @override
-  __AnimatedDotState createState() => __AnimatedDotState();
-}
-
-class __AnimatedDotState extends State<_AnimatedDot> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: Duration(milliseconds: 600))..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _controller,
-      child: Container(
-        width: 4,
-        height: 4,
-        decoration: BoxDecoration(color: Color(0xFF1B3022), shape: BoxShape.circle),
-      ),
-    );
-  }
-}
-
-class _BubblePainter extends CustomPainter {
-  final Color color;
-  final bool isMe;
-  _BubblePainter({required this.color, required this.isMe});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path = Path();
-    if (isMe) {
-      path.addRRect(RRect.fromLTRBAndCorners(0, 0, size.width, size.height, 
-        topLeft: Radius.circular(20), bottomLeft: Radius.circular(20), topRight: Radius.circular(20)));
-      path.moveTo(size.width, size.height - 10);
-      path.lineTo(size.width + 8, size.height);
-      path.lineTo(size.width, size.height);
-    } else {
-      path.addRRect(RRect.fromLTRBAndCorners(0, 0, size.width, size.height, 
-        topRight: Radius.circular(20), bottomRight: Radius.circular(20), topLeft: Radius.circular(20)));
-      path.moveTo(0, size.height - 10);
-      path.lineTo(-8, size.height);
-      path.lineTo(0, size.height);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-

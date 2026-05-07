@@ -25,15 +25,30 @@ class AuthService {
         password: password,
       );
 
-      // Create a user document in Firestore
+      // Create a user document in Firestore with ALL required fields
       await _firestore.collection('users').doc(result.user!.uid).set({
         'fullName': fullName,
         'email': email,
+        'avatarUrl': '',
+        'bio': '',
         'createdAt': FieldValue.serverTimestamp(),
         'selectedVibes': [],
         'karmaPoints': 0,
         'isSuperUser': false,
         'isAdmin': false,
+        'isPro': false,
+        'contributionStreak': 0,
+        'badges': [],
+        'savedGems': [],
+        'chatsStartedToday': 0,
+        'lastChatResetDate': null,
+        'lastContributionTime': null,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
+        'blockedUsers': [],
+        'isBanned': false,
       });
 
       return result;
@@ -48,13 +63,21 @@ class AuthService {
     required String password,
   }) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim().toLowerCase(),
         password: password,
       );
+      // FR11-6: Check if user is banned
+      final userDoc = await _firestore.collection('users').doc(credential.user!.uid).get();
+      if (userDoc.exists && (userDoc.data()!['isBanned'] == true)) {
+        await _auth.signOut();
+        throw 'Your account has been suspended. Please contact support.';
+      }
+      return credential;
     } on FirebaseAuthException catch (e) {
       throw _mapError(e.code);
     } catch (e) {
+      if (e is String) rethrow;
       throw 'An unexpected error occurred. Please try again.';
     }
   }
@@ -129,6 +152,16 @@ class AuthService {
     await _firestore.collection('users').doc(uid).update({
       'selectedVibes': vibes,
     });
+  }
+
+  // FR11-6: Ban a user (admin action)
+  Future<void> banUser(String uid) async {
+    await _firestore.collection('users').doc(uid).update({'isBanned': true});
+  }
+
+  // FR11-6: Unban a user (admin action)
+  Future<void> unbanUser(String uid) async {
+    await _firestore.collection('users').doc(uid).update({'isBanned': false});
   }
 }
 

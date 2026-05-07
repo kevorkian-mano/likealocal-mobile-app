@@ -43,6 +43,7 @@ class ChatPreview {
   final DateTime lastMessageTime;
   final int unreadCount;
   final String relatedGemName;
+  final String targetUserId; // FR5-5: the other participant's user ID
 
   ChatPreview({
     required this.id,
@@ -52,6 +53,7 @@ class ChatPreview {
     required this.lastMessageTime,
     this.unreadCount = 0,
     required this.relatedGemName,
+    this.targetUserId = '',
   });
 
   factory ChatPreview.fromMap(Map<String, dynamic> map, String documentId, String currentUserId) {
@@ -73,6 +75,7 @@ class ChatPreview {
       lastMessageTime: map['lastMessageTime'] != null ? (map['lastMessageTime'] as Timestamp).toDate() : DateTime.now(),
       unreadCount: unreadMap[currentUserId] ?? 0,
       relatedGemName: map['relatedGemName'] ?? '',
+      targetUserId: otherUserId,
     );
   }
 
@@ -85,23 +88,4 @@ class ChatPreview {
     };
   }
 
-  static List<ChatPreview> get mockList => [
-    ChatPreview(
-      id: '1',
-      userName: 'Amira Khalil',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150',
-      lastMessage: 'The entrance is right behind the blue door.',
-      lastMessageTime: DateTime.now().subtract(Duration(minutes: 5)),
-      unreadCount: 2,
-      relatedGemName: 'The Secret Jazz Garden',
-    ),
-    ChatPreview(
-      id: '2',
-      userName: 'Omar Sherif',
-      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150',
-      lastMessage: 'Definitely try the stuffed vine leaves!',
-      lastMessageTime: DateTime.now().subtract(Duration(hours: 2)),
-      relatedGemName: 'Tante Amira\'s Kitchen',
-    ),
-  ];
 }

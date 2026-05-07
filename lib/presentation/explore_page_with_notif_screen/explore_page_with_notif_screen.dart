@@ -6,9 +6,9 @@ import '../../widgets/custom_button.dart';
 import '../place_details_screen/place_details_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/mock_data/mock_gems.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/app_bottom_nav_bar.dart';
 
 class ExplorePageWithNotifScreen extends StatefulWidget {
   const ExplorePageWithNotifScreen({Key? key}) : super(key: key);
@@ -23,6 +23,8 @@ class ExplorePageWithNotifScreen extends StatefulWidget {
 
 class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen> {
   String _searchQuery = '';
+  String? _dismissedNotifId; // FR11-7: track dismissed admin broadcast
+  bool _superUserOnly = false; // FR7-5: Local legends only filter
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +36,69 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             SingleChildScrollView(
               child: Column(
                 children: [
+                  // FR11-7: Admin broadcast notification banner
+                  _buildNotificationBanner(),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.only(top: 56, bottom: 17),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Consumer<UserProvider>(
+                          builder: (context, userProvider, _) {
+                            if (!userProvider.isAuthenticated) {
+                              return Container(
+                                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9F7F2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFD7E8DE)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.info_outline, color: Color(0xFF1B3022), size: 20),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Guest Mode',
+                                          style: TextStyleHelper.instance.body14BoldInter.copyWith(color: const Color(0xFF1B3022)),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'You are exploring in guest mode. Sign up to save places, chat with locals, and add your own hidden gems!',
+                                      style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF4D6353), height: 1.4),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.signUpPage),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF1B3022),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          ),
+                                          child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        TextButton(
+                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
+                                          child: const Text('View Premium Plans', style: TextStyle(color: Color(0xFF1B3022), fontSize: 12, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(
@@ -197,11 +256,18 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                               final userVibes = userProvider.user?.selectedVibes ?? [];
                               var displayGems = gemsProvider.approvedGems;
 
-                              // 1. Keyword Search Filtering (FR2-3)
+                              // FR7-5: Super User Filter
+                              if (_superUserOnly) {
+                                displayGems = displayGems.where((g) => g.contributorIsSuperUser).toList();
+                              }
+
+                              // 1. Keyword & Code Search Filtering (FR2-3, FR4-15)
                               if (_searchQuery.isNotEmpty) {
+                                final query = _searchQuery.trim().toLowerCase();
                                 displayGems = displayGems.where((gem) => 
-                                  gem.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                                  gem.vibe.toLowerCase().contains(_searchQuery.toLowerCase())
+                                  gem.name.toLowerCase().contains(query) ||
+                                  gem.vibe.toLowerCase().contains(query) ||
+                                  gem.uniqueCode.toLowerCase() == query
                                 ).toList();
                               }
 
@@ -327,7 +393,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
           );
         },
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: AppBottomNavBar(selectedIndex: 0),
     );
   }
 
@@ -366,44 +432,6 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       MaterialPageRoute(
         builder: (context) => PlaceDetailsScreen(gem: selectedGem),
       ),
-    );
-  }
-
-  Widget _buildBottomBar() {
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0x33C1C9C1))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.explore_outlined, 'Explore', isSelected: true),
-          _buildNavItem(Icons.map_outlined, 'Map'),
-          _buildNavItem(Icons.add_circle_outline, 'Add'),
-          _buildNavItem(Icons.chat_bubble_outline, 'Guide'),
-          _buildNavItem(Icons.person_outline, 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: isSelected ? Color(0xFF3E5641) : Colors.grey[400]),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Color(0xFF3E5641) : Colors.grey[400],
-            fontSize: 10,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-          ),
-        ),
-      ],
     );
   }
 
@@ -507,7 +535,28 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           color: Color(0xFF191C1A),
                         ),
                       ),
-                      Icon(Icons.bookmark_border, color: Color(0xFF1B3022), size: 20),
+                      Consumer2<UserProvider, GemsProvider>(
+                        builder: (context, userProvider, gemsProvider, _) {
+                          final isSaved = userProvider.user?.savedGems.contains(gem.id) ?? false;
+                          return GestureDetector(
+                            onTap: () async {
+                              final user = userProvider.user;
+                              if (user == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Sign up to save your favourite places!')),
+                                );
+                                return;
+                              }
+                              await gemsProvider.toggleSaveGem(user.id, gem.id, isSaved);
+                            },
+                            child: Icon(
+                              isSaved ? Icons.bookmark : Icons.bookmark_border,
+                              color: Color(0xFF1B3022),
+                              size: 20,
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                   SizedBox(height: 6),
@@ -581,42 +630,54 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
-              SizedBox(height: 24),
-              _buildFilterToggle('Super User Recommendations', 'Filter by Local Legends only (FR2-8)'),
-              SizedBox(height: 24),
-              Text('Price vs. Vibe Intensity', style: TextStyleHelper.instance.body14BoldInter),
-              SizedBox(height: 8),
-              Text('Balance your budget against the experience depth (FR2-9)', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              Slider(
-                value: 0.5,
-                onChanged: (_) {},
-                activeColor: Color(0xFF1B3022),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Budget', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  Text('Deep Experience', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
+                  SizedBox(height: 24),
+                  _buildFilterToggle(
+                    'Super User Recommendations', 
+                    'Filter by Local Legends only (FR7-5)',
+                    _superUserOnly,
+                    (val) {
+                      setModalState(() => _superUserOnly = val);
+                      setState(() => _superUserOnly = val); // update parent
+                    }
+                  ),
+                  SizedBox(height: 24),
+                  Text('Price vs. Vibe Intensity', style: TextStyleHelper.instance.body14BoldInter),
+                  SizedBox(height: 8),
+                  Text('Balance your budget against the experience depth (FR2-9)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Slider(
+                    value: 0.5,
+                    onChanged: (_) {},
+                    activeColor: Color(0xFF1B3022),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Budget', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('Deep Experience', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 32),
+                  CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
+                  SizedBox(height: 16),
                 ],
               ),
-              SizedBox(height: 32),
-              CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
-              SizedBox(height: 16),
-            ],
-          ),
+            );
+          }
         );
       },
     );
   }
 
-  Widget _buildFilterToggle(String title, String subtitle) {
+  Widget _buildFilterToggle(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
     return Row(
       children: [
         Expanded(
@@ -628,8 +689,77 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             ],
           ),
         ),
-        Switch(value: false, onChanged: (_) {}, activeColor: Color(0xFF1B3022)),
+        Switch(value: value, onChanged: onChanged, activeColor: Color(0xFF1B3022)),
       ],
+    );
+  }
+
+  // FR11-7: Admin broadcast notification banner
+  Widget _buildNotificationBanner() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: userProvider.getActiveNotifications(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+        final notif = snapshot.data!.first;
+        final notifId = notif['id'] as String? ?? '';
+        // Respect user dismiss
+        if (_dismissedNotifId == notifId) return const SizedBox.shrink();
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1B3022), Color(0xFF2C4C3B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1B3022).withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.campaign_outlined, color: Color(0xFFFFD700), size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notif['title'] as String? ?? 'Admin Notice',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      notif['message'] as String? ?? '',
+                      style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => setState(() => _dismissedNotifId = notifId),
+                child: const Icon(Icons.close, color: Colors.white54, size: 18),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

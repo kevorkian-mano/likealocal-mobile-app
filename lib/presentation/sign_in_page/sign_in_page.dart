@@ -1,4 +1,5 @@
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/providers/user_provider.dart';
 import '../../routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -41,14 +42,74 @@ class _SignInPageState extends State<SignInPage> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        // FR1-2: Check email verification status
+        final firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser != null && !firebaseUser.emailVerified) {
+          await userProvider.signOut();
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          _showVerificationBanner();
+          return;
+        }
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, AppRoutes.explorePageWithNotifScreen);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sign In Failed: ${e.toString()}')),
         );
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
+    }
+  }
+
+  // FR1-2: Show unverified email banner with resend option
+  void _showVerificationBanner() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Icon(Icons.mark_email_unread_outlined, color: Color(0xFF1B3022)),
+          SizedBox(width: 10),
+          Text('Verify Your Email', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ]),
+        content: Text('Your email is not verified. Please check your inbox or tap below to resend the verification link.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF1B3022)),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _handleResendVerification();
+            },
+            child: Text('Resend Email', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleResendVerification() async {
+    try {
+      // Sign in temporarily to get the user object for resend
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim().toLowerCase(),
+        password: _passwordController.text.trim(),
+      );
+      await credential.user?.sendEmailVerification();
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Verification email sent! Please check your inbox.'),
+          backgroundColor: Color(0xFF1B3022),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not resend email: ${e.toString()}')),
+      );
     }
   }
 
@@ -84,7 +145,7 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   void _navigateToSignUp() {
-    Navigator.pushNamed(context, '/sign_up_page');
+    Navigator.pushNamed(context, AppRoutes.signUpPage);
   }
 
   @override

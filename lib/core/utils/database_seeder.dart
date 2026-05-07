@@ -20,13 +20,18 @@ class DatabaseSeeder {
   static Future<void> seed() async {
     print('🌱 Starting database seed...');
     
+    // 0. Clear old data completely (Destructive Wipe)
+    await _clearDatabase();
+
     // 1. Create real Auth users
     await _seedAuthUsers();
     
     // 2. Seed Firestore with the actual generated UIDs
     await _seedUsers();
     await _seedGems();
+    await _seedReviews();
     await _seedChats();
+    await _seedNotifications();
     print('✅ Database seed complete!');
   }
 
@@ -111,6 +116,12 @@ class DatabaseSeeder {
         'chatsStartedToday': 0,
         'lastContributionTime': null,
         'lastChatResetDate': null,
+        'blockedUsers': [],
+        'isBanned': false,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
         'createdAt': FieldValue.serverTimestamp(),
       },
       {
@@ -127,6 +138,12 @@ class DatabaseSeeder {
         'chatsStartedToday': 1,
         'lastContributionTime': null,
         'lastChatResetDate': null,
+        'blockedUsers': [],
+        'isBanned': false,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
         'createdAt': FieldValue.serverTimestamp(),
       },
       {
@@ -143,6 +160,12 @@ class DatabaseSeeder {
         'chatsStartedToday': 0,
         'lastContributionTime': null,
         'lastChatResetDate': null,
+        'blockedUsers': [],
+        'isBanned': false,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
         'createdAt': FieldValue.serverTimestamp(),
       },
       {
@@ -159,6 +182,12 @@ class DatabaseSeeder {
         'chatsStartedToday': 2,
         'lastContributionTime': null,
         'lastChatResetDate': null,
+        'blockedUsers': [],
+        'isBanned': false,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
         'createdAt': FieldValue.serverTimestamp(),
       },
       {
@@ -175,6 +204,12 @@ class DatabaseSeeder {
         'chatsStartedToday': 0,
         'lastContributionTime': null,
         'lastChatResetDate': null,
+        'blockedUsers': [],
+        'isBanned': false,
+        'acceptsMessages': true,
+        'isDndEnabled': false,
+        'dndStartHour': 22,
+        'dndEndHour': 8,
         'createdAt': FieldValue.serverTimestamp(),
       },
     ];
@@ -207,6 +242,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Sangria Branca', 'Petiscos Board'],
         'isPremium': false, 'isTrending': true,
         'contributorId': _eyadId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 234, 'saves': 87,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -222,6 +258,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Grilled Sardines', 'Bifanas', 'Ginjinha'],
         'isPremium': false, 'isTrending': false,
         'contributorId': _eyadId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 189, 'saves': 54,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -237,6 +274,7 @@ class DatabaseSeeder {
         'recommendedDishes': [],
         'isPremium': true, 'isTrending': true,
         'contributorId': _manuelId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 312, 'saves': 143,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -252,6 +290,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Pastel de Nata', 'Medronho Spirit', 'Queijo da Serra'],
         'isPremium': false, 'isTrending': false,
         'contributorId': _manuelId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 156, 'saves': 72,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -267,6 +306,7 @@ class DatabaseSeeder {
         'recommendedDishes': [],
         'isPremium': false, 'isTrending': false,
         'contributorId': _chantalId, 'isApproved': true,
+        'contributorIsSuperUser': false,
         'views': 98, 'saves': 41,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -282,6 +322,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Bacalhau com Natas', 'Caldo Verde', 'Pasteis de Feijão'],
         'isPremium': true, 'isTrending': true,
         'contributorId': _chantalId, 'isApproved': true,
+        'contributorIsSuperUser': false,
         'views': 421, 'saves': 198,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -297,6 +338,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Artisan Coffee', 'Local Pastries'],
         'isPremium': false, 'isTrending': false,
         'contributorId': _ebramId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 134, 'saves': 59,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -312,6 +354,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Alentejo Wine Flight', 'Iberian Ham Board', 'Truffled Croquettes'],
         'isPremium': true, 'isTrending': true,
         'contributorId': _ebramId, 'isApproved': true,
+        'contributorIsSuperUser': true,
         'views': 287, 'saves': 112,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -328,6 +371,7 @@ class DatabaseSeeder {
         'recommendedDishes': [],
         'isPremium': false, 'isTrending': false,
         'contributorId': _youstinaId, 'isApproved': false,
+        'contributorIsSuperUser': false,
         'views': 0, 'saves': 0,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -343,6 +387,7 @@ class DatabaseSeeder {
         'recommendedDishes': ['Prato do Dia', 'Sopa do Dia'],
         'isPremium': false, 'isTrending': false,
         'contributorId': _youstinaId, 'isApproved': false,
+        'contributorIsSuperUser': false,
         'views': 0, 'saves': 0,
         'createdAt': FieldValue.serverTimestamp(),
       },
@@ -432,6 +477,83 @@ class DatabaseSeeder {
     await msgBatch2.commit();
 
     print('✅ 2 chats seeded with messages.');
+  }
+
+  // ── 4. REVIEWS ─────────────────────────────────────────────────────────────
+  static Future<void> _seedReviews() async {
+    final gemsSnap = await _db.collection('gems').where('isApproved', isEqualTo: true).get();
+    if (gemsSnap.docs.isEmpty) return;
+
+    final batch = _db.batch();
+    int reviewCount = 0;
+
+    for (final gemDoc in gemsSnap.docs) {
+      // Add a couple of reviews to each approved gem
+      final review1Ref = gemDoc.reference.collection('reviews').doc();
+      batch.set(review1Ref, {
+        'id': review1Ref.id,
+        'userId': _chantalId,
+        'rating': 4.0,
+        'reviewText': 'Great place, totally hidden and the vibes are unmatched!',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      
+      final review2Ref = gemDoc.reference.collection('reviews').doc();
+      batch.set(review2Ref, {
+        'id': review2Ref.id,
+        'userId': _ebramId,
+        'rating': 5.0,
+        'reviewText': 'One of the best spots I have found on this app.',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      reviewCount += 2;
+    }
+    await batch.commit();
+    print('✅ $reviewCount reviews seeded.');
+  }
+
+  // ── 5. NOTIFICATIONS ───────────────────────────────────────────────────────
+  static Future<void> _seedNotifications() async {
+    final col = _db.collection('notifications');
+    await col.add({
+      'title': 'Welcome to LikeALocal Phase 7!',
+      'message': 'All systems are now live. Explore super user recommendations and earn your Local Legend badge.',
+      'createdAt': FieldValue.serverTimestamp(),
+      'isActive': true,
+      'createdBy': _eyadId,
+    });
+    print('✅ 1 admin notification seeded.');
+  }
+
+  // ── 99. CLEAR DB ───────────────────────────────────────────────────────────
+  static Future<void> _clearDatabase() async {
+    print('🧹 Clearing existing database collections...');
+    
+    // 1. Users
+    final users = await _db.collection('users').get();
+    for (final doc in users.docs) await doc.reference.delete();
+    
+    // 2. Notifications
+    final notifs = await _db.collection('notifications').get();
+    for (final doc in notifs.docs) await doc.reference.delete();
+    
+    // 3. Gems & Reviews
+    final gems = await _db.collection('gems').get();
+    for (final doc in gems.docs) {
+      final reviews = await doc.reference.collection('reviews').get();
+      for (final r in reviews.docs) await r.reference.delete();
+      await doc.reference.delete();
+    }
+    
+    // 4. Chats & Messages
+    final chats = await _db.collection('chats').get();
+    for (final doc in chats.docs) {
+      final msgs = await doc.reference.collection('messages').get();
+      for (final m in msgs.docs) await m.reference.delete();
+      await doc.reference.delete();
+    }
+    
+    print('🧹 Database cleared.');
   }
 }
 

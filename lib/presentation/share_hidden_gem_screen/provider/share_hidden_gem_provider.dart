@@ -1,47 +1,101 @@
-import 'package:provider/provider.dart';
-import '../../../core/providers/gems_provider.dart';
-import '../../../core/providers/user_provider.dart';
-import '../../../core/models/hidden_gem_model.dart';
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/app_export.dart';
 import '../models/share_hidden_gem_model.dart';
+import '../../../core/models/hidden_gem_model.dart';
+import '../../../core/models/user_model.dart';
+import '../../../core/providers/gems_provider.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/services/ai_service.dart';
+import '../../../core/services/media_service.dart';
+import '../map_picker_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 
 class ShareHiddenGemProvider extends ChangeNotifier {
   ShareHiddenGemModel shareHiddenGemModel = ShareHiddenGemModel();
+  final MediaService _mediaService = MediaService();
+
+  double selectedLat = 30.0444;
+  double selectedLng = 31.2357;
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+// ... controllers ...
+  
+  void adjustPin(BuildContext context) async {
+    final LatLng? result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPickerPage(initialPosition: LatLng(selectedLat, selectedLng)),
+      ),
+    );
+
+    if (result != null) {
+      selectedLat = result.latitude;
+      selectedLng = result.longitude;
+      locationController.text = '${selectedLat.toStringAsFixed(4)}, ${selectedLng.toStringAsFixed(4)}';
+      notifyListeners();
+    }
+  }
+
   final TextEditingController placeTitleController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController localTipsController = TextEditingController();
+  final TextEditingController recommendedDishesController = TextEditingController();
+
+  String? validatePlaceTitle(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? validateCategory(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? validateLocation(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? validateDescription(String? value) => value == null || value.isEmpty ? 'Required' : null;
 
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
+  bool isAiAnalyzing = false;
+  File? selectedImageFile;
 
   ShareHiddenGemProvider() {
-    _initListeners();
-    loadDraft();
+    _loadDraft();
   }
 
-  void _initListeners() {
-    placeTitleController.addListener(() => saveDraft());
-    locationController.addListener(() => saveDraft());
-    descriptionController.addListener(() => saveDraft());
-    localTipsController.addListener(() => saveDraft());
+  void handleExistingGem(HiddenGem? gem) {
+    if (gem == null) return;
+    placeTitleController.text = gem.name;
+    locationController.text = '${gem.latitude}, ${gem.longitude}';
+    descriptionController.text = gem.description;
+    localTipsController.text = gem.localsTip;
+    recommendedDishesController.text = gem.recommendedDishes.join(', ');
+    shareHiddenGemModel.selectedCategory = gem.category;
+    // Note: Image editing would require more logic, for now we keep existing URL
+    notifyListeners();
   }
 
-  Future<void> loadDraft() async {
+  @override
+  void dispose() {
+
+    placeTitleController.dispose();
+    locationController.dispose();
+    descriptionController.dispose();
+    localTipsController.dispose();
+    recommendedDishesController.dispose();
+    super.dispose();
+  }
+
+  // --- Draft Management (FR4-13) ---
+  Future<void> _loadDraft() async {
     final prefs = await SharedPreferences.getInstance();
     placeTitleController.text = prefs.getString('draft_title') ?? '';
     locationController.text = prefs.getString('draft_location') ?? '';
     descriptionController.text = prefs.getString('draft_description') ?? '';
     localTipsController.text = prefs.getString('draft_tips') ?? '';
+    recommendedDishesController.text = prefs.getString('draft_dishes') ?? '';
     shareHiddenGemModel.selectedCategory = prefs.getString('draft_category');
-    shareHiddenGemModel.selectedMediaPath = prefs.getString('draft_media');
     notifyListeners();
   }
 
@@ -51,131 +105,57 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     await prefs.setString('draft_location', locationController.text);
     await prefs.setString('draft_description', descriptionController.text);
     await prefs.setString('draft_tips', localTipsController.text);
+    await prefs.setString('draft_dishes', recommendedDishesController.text);
     if (shareHiddenGemModel.selectedCategory != null) {
       await prefs.setString('draft_category', shareHiddenGemModel.selectedCategory!);
     }
-    if (shareHiddenGemModel.selectedMediaPath != null) {
-      await prefs.setString('draft_media', shareHiddenGemModel.selectedMediaPath!);
+  }
+
+  // --- Media & AI (FR4-2, FR4-3) ---
+  Future<void> pickImageFromCamera() => pickImage(ImageSource.camera);
+  Future<void> pickImageFromGallery() => pickImage(ImageSource.gallery);
+
+  Future<void> pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
+      if (image != null) {
+        selectedImageFile = File(image.path);
+        shareHiddenGemModel.selectedMediaPath = image.path;
+        notifyListeners();
+        _runAiAnalysis();
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
     }
   }
 
-  void updateCategory(String? value) {
-    shareHiddenGemModel.selectedCategory = value;
-    saveDraft();
+  Future<void> _runAiAnalysis() async {
+    if (selectedImageFile == null) return;
+    isAiAnalyzing = true;
+    notifyListeners();
+
+    final suggestions = await AIService.suggestTagsAndCategory(selectedImageFile!);
+    
+    if (suggestions['category'] != null) {
+      shareHiddenGemModel.selectedCategory = suggestions['category'];
+    }
+    // Could also append tags to description or a tags field
+    
+    isAiAnalyzing = false;
     notifyListeners();
   }
 
-  Future<void> pickImageFromCamera() async {
-    try {
-      // Request camera permission
-      PermissionStatus cameraStatus = await Permission.camera.request();
-
-      if (cameraStatus.isGranted) {
-        final XFile? image = await _picker.pickImage(
-          source: ImageSource.camera,
-          imageQuality: 80,
-          maxWidth: 1920,
-          maxHeight: 1080,
-        );
-
-        if (image != null) {
-          shareHiddenGemModel.selectedMediaPath = image.path;
-          notifyListeners();
-        }
-      } else {
-        _showPermissionDeniedMessage(
-          'Camera permission is required to take photos.',
-        );
-      }
-    } catch (e) {
-      _showErrorMessage('Failed to take photo. Please try again.');
-    }
-  }
-
-  Future<void> pickImageFromGallery() async {
-    try {
-      // Request storage permission
-      PermissionStatus storageStatus = await Permission.storage.request();
-
-      if (storageStatus.isGranted || storageStatus.isLimited) {
-        final XFile? image = await _picker.pickImage(
-          source: ImageSource.gallery,
-          imageQuality: 80,
-          maxWidth: 1920,
-          maxHeight: 1080,
-        );
-
-        if (image != null) {
-          shareHiddenGemModel.selectedMediaPath = image.path;
-          notifyListeners();
-        }
-      } else {
-        _showPermissionDeniedMessage(
-          'Storage permission is required to select photos.',
-        );
-      }
-    } catch (e) {
-      _showErrorMessage('Failed to select photo. Please try again.');
-    }
-  }
-
-  void adjustPin() {
-    // Implement map pin adjustment logic
-    shareHiddenGemModel.isPinAdjusted =
-        !(shareHiddenGemModel.isPinAdjusted ?? false);
-    notifyListeners();
-  }
-
-  String? validatePlaceTitle(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter a place title';
-    }
-    if (value.trim().length < 3) {
-      return 'Place title must be at least 3 characters';
-    }
-    return null;
-  }
-
-  String? validateCategory(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please select a category';
-    }
-    return null;
-  }
-
-  String? validateLocation(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter a location';
-    }
-    return null;
-  }
-
-  String? validateDescription(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please provide a description';
-    }
-    if (value.trim().length < 10) {
-      return 'Description must be at least 10 characters';
-    }
-    return null;
-  }
-
-  @override
-  void dispose() {
-    placeTitleController.dispose();
-    locationController.dispose();
-    descriptionController.dispose();
-    localTipsController.dispose();
-    super.dispose();
+  // --- Submission Logic (FR4-1 to FR4-7, FR4-11) ---
+  String _generateGemCode() {
+    final rnd = Random();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return 'LAL-${List.generate(6, (i) => chars[rnd.nextInt(chars.length)]).join()}';
   }
 
   Future<void> publishToommunity(BuildContext context) async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (shareHiddenGemModel.selectedCategory == null) {
-      _showErrorMessage('Please select a category');
+    if (!formKey.currentState!.validate()) return;
+    if (selectedImageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add a photo of the place')));
       return;
     }
 
@@ -185,55 +165,61 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     try {
       final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
-      if (userProvider.user == null) throw Exception('User not logged in');
+      final user = userProvider.user;
+      if (user == null) throw Exception('Auth Error: Please sign in again.');
 
+      // 1. Upload Media (Real Storage)
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+      final imageUrl = await _mediaService.uploadGemImage(selectedImageFile!, tempId);
+
+      // 2. Build Advanced Model
       final newGem = HiddenGem(
-        id: '',
-        name: placeTitleController.text,
-        description: descriptionController.text,
-        category: shareHiddenGemModel.selectedCategory!,
-        vibe: 'Local Favorite', // Default vibe for contributions
-        rating: 0.0,
-        imageUrl: shareHiddenGemModel.selectedMediaPath ?? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-        latitude: 38.7223, // Placeholder Lisbon Lat
-        longitude: -9.1393, // Placeholder Lisbon Lng
-        localsTip: localTipsController.text,
-        recommendedDishes: [],
-        contributorId: userProvider.user!.id,
+        id: '', // Firestore will set this
+        name: placeTitleController.text.trim(),
+        description: descriptionController.text.trim(),
+        category: shareHiddenGemModel.selectedCategory ?? 'Other',
+        vibe: 'Verified Local',
+        rating: 5.0,
+        imageUrl: imageUrl,
+        latitude: selectedLat,
+        longitude: selectedLng,
+        localsTip: localTipsController.text.trim(),
+        recommendedDishes: recommendedDishesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        contributorId: user.id,
+        isVerified: user.isSuperUser,
+        status: user.isSuperUser ? GemStatus.approved : GemStatus.pending,
+        uniqueCode: _generateGemCode(),
+        createdAt: DateTime.now(),
+
       );
 
-      await gemsProvider.addGem(newGem, userProvider.user!);
+      // 3. Save & Award Gamification (FR4-1, FR4-14, FR4-15)
+      await gemsProvider.addGem(newGem, user);
 
-      // Clear draft after successful submission
-      await _clearForm();
-
-      // Show success message
+      await _clearFormAndDraft();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hidden gem submitted for moderation!'),
+          content: Text('WOW! ${newGem.name} shared! Code: ${newGem.uniqueCode}'),
           backgroundColor: const Color(0xFF1B3022),
-          duration: const Duration(seconds: 3),
         ),
       );
-
       Navigator.pop(context);
     } catch (e) {
-      _showErrorMessage(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red[800]),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> _clearForm() async {
+  Future<void> _clearFormAndDraft() async {
     placeTitleController.clear();
     locationController.clear();
     descriptionController.clear();
     localTipsController.clear();
+    recommendedDishesController.clear();
+    selectedImageFile = null;
     shareHiddenGemModel = ShareHiddenGemModel();
     
     final prefs = await SharedPreferences.getInstance();
@@ -241,18 +227,15 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     await prefs.remove('draft_location');
     await prefs.remove('draft_description');
     await prefs.remove('draft_tips');
+    await prefs.remove('draft_dishes');
     await prefs.remove('draft_category');
-    await prefs.remove('draft_media');
-    
+    await prefs.remove('gem_draft');
     notifyListeners();
   }
 
-  void _showPermissionDeniedMessage(String message) {
-    debugPrint(message);
-  }
-
-  void _showErrorMessage(String message) {
-    debugPrint(message);
+  void updateCategory(String? value) {
+    shareHiddenGemModel.selectedCategory = value;
+    saveDraft();
+    notifyListeners();
   }
 }
-

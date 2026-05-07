@@ -210,24 +210,118 @@ class SuperUserDashboardScreen extends StatelessWidget {
   Widget _buildSuperActions(int pendingCount) {
     return Column(
       children: [
-        _buildActionTile(
-          icon: Icons.fact_check_outlined,
-          title: 'Moderation Queue',
-          subtitle: '$pendingCount gems waiting for review',
-          color: const Color(0xFF3E5641),
-          badge: pendingCount > 0 ? '$pendingCount' : null,
-          onTap: () {
-            // Navigator to moderation list
-          },
+        Builder(
+          builder: (context) => _buildActionTile(
+            icon: Icons.fact_check_outlined,
+            title: 'Moderation Queue',
+            subtitle: '$pendingCount gems waiting for review',
+            color: const Color(0xFF3E5641),
+            badge: pendingCount > 0 ? '$pendingCount' : null,
+            onTap: () => Navigator.pushNamed(context, AppRoutes.adminModerationQueue),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // FR12-5: Boost a contribution
+        Builder(
+          builder: (context) => _buildActionTile(
+            icon: Icons.rocket_launch_outlined,
+            title: 'Boost a Gem',
+            subtitle: 'Elevate your gem to top of discovery for 24h',
+            color: const Color(0xFFBDB76B),
+            onTap: () => _showBoostDialog(context),
+          ),
         ),
         const SizedBox(height: 12),
         _buildActionTile(
           icon: Icons.insights_outlined,
           title: 'Growth Strategy',
           subtitle: 'Tips to increase your local reach',
-          color: const Color(0xFFBDB76B),
+          color: const Color(0xFF4D6353),
         ),
       ],
+    );
+  }
+
+  // FR12-5: Boost gem dialog
+  void _showBoostDialog(BuildContext context) {
+    final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+    final userId = Provider.of<UserProvider>(context, listen: false).user?.id;
+    final myGems = gemsProvider.gems
+        .where((g) => g.contributorId == userId && g.isApproved)
+        .toList();
+
+    if (myGems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No approved gems to boost yet. Share more hidden gems first!')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(Icons.rocket_launch_outlined, color: Color(0xFFBDB76B)),
+                  SizedBox(width: 8),
+                  Text('Select Gem to Boost', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
+                ]),
+                SizedBox(height: 4),
+                Text('Boosted gems appear at the top of discovery for 24 hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          Divider(),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: myGems.length,
+              itemBuilder: (ctx, i) {
+                final gem = myGems[i];
+                return ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(gem.imageUrl, width: 48, height: 48, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(width: 48, height: 48, color: Color(0xFFD7E8DE), child: Icon(Icons.place))),
+                  ),
+                  title: Text(gem.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(gem.isBoosted ? '🚀 Already boosted' : gem.category, style: TextStyle(fontSize: 12)),
+                  trailing: gem.isBoosted
+                      ? Icon(Icons.check_circle, color: Colors.green)
+                      : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFBDB76B),
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await gemsProvider.boostGem(gem.id);
+                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('"${gem.name}" is now boosted for 24 hours! 🚀'),
+                                backgroundColor: Color(0xFF1B3022),
+                              ),
+                            );
+                          },
+                          child: Text('Boost', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 16),
+        ],
+      ),
     );
   }
 

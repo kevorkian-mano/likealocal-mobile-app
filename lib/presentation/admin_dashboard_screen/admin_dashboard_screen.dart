@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/app_export.dart';
+import '../../core/providers/gems_provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../core/models/admin_insight_model.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -12,31 +15,52 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final insights = AdminInsight.mock;
+    return Consumer<GemsProvider>(
+      builder: (context, gemsProvider, child) {
+        final realPendingCount = gemsProvider.pendingGems.length;
+        final approvedCount = gemsProvider.approvedGems.length;
+        final distribution = gemsProvider.categoryDistribution;
+        final velocity = gemsProvider.discoveryVelocity;
+        
+        final insights = AdminInsight(
+          vibeSoulGastronomy: distribution['Gastronomy'] ?? 0.0,
+          vibeSoulArt: distribution['Art & Culture'] ?? 0.0,
+          vibeSoulHistory: distribution['History'] ?? 0.0,
+          vibeSoulNightlife: distribution['Nightlife'] ?? 0.0,
+          vibeSoulNature: distribution['Nature'] ?? 0.0,
+          discoveryVelocity: velocity,
+          authenticityScore: 0.92, // Fixed high score for now, no complex formula
+          pendingModerationCount: realPendingCount,
+          conversionRate: 45, // Example generic conversion rate
+        );
 
-    return Scaffold(
-      backgroundColor: Color(0xFFF9F7F2), // Pale Sand
-      appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildWelcomeHeader(),
-            SizedBox(height: 32),
-            _buildMainMetrics(insights),
-            SizedBox(height: 32),
-            _buildVibeSoulRadar(insights),
-            SizedBox(height: 32),
-            _buildDiscoveryVelocity(insights),
-            SizedBox(height: 32),
-            _buildNeighborhoodInsights(),
-            SizedBox(height: 40),
-          ],
-        ),
-      ),
+        return Scaffold(
+          backgroundColor: Color(0xFFF9F7F2),
+          appBar: _buildAppBar(context),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeHeader(),
+                SizedBox(height: 32),
+                _buildMainMetrics(insights, realPendingCount, approvedCount),
+                SizedBox(height: 32),
+                _buildVibeSoulRadar(insights, distribution),
+                SizedBox(height: 32),
+                _buildDiscoveryVelocity(insights, velocity),
+                SizedBox(height: 32),
+                _buildNeighborhoodInsights(),
+                SizedBox(height: 40),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
+
+
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -47,12 +71,118 @@ class AdminDashboardScreen extends StatelessWidget {
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
+        // FR11-7: Broadcast notification
         IconButton(
-          icon: Icon(Icons.notifications_none_outlined, color: Color(0xFF1B3022)),
-          onPressed: () {},
+          icon: Icon(Icons.campaign_outlined, color: Color(0xFF1B3022)),
+          tooltip: 'Broadcast Notification',
+          onPressed: () => _showBroadcastDialog(context),
         ),
         SizedBox(width: 8),
       ],
+    );
+  }
+
+  // FR11-7: Broadcast dialog
+  void _showBroadcastDialog(BuildContext context) {
+    final titleCtrl = TextEditingController();
+    final msgCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Icon(Icons.campaign_outlined, color: Color(0xFF1B3022)),
+          SizedBox(width: 10),
+          Text('Broadcast to All Users', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: InputDecoration(
+                labelText: 'Notification Title',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            SizedBox(height: 12),
+            TextField(
+              controller: msgCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Message',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF1B3022)),
+            onPressed: () async {
+              if (titleCtrl.text.trim().isEmpty || msgCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              await Provider.of<UserProvider>(context, listen: false)
+                  .broadcastNotification(titleCtrl.text.trim(), msgCtrl.text.trim());
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Notification broadcast sent!'), backgroundColor: Color(0xFF1B3022)),
+              );
+            },
+            child: Text('Send', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // FR11-6: Ban user dialog
+  void _showBanUserDialog(BuildContext context) {
+    final emailCtrl = TextEditingController();
+    final uidCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Icon(Icons.block, color: Colors.red),
+          SizedBox(width: 10),
+          Text('Ban User Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Enter the User ID (UID) of the account to suspend:', style: TextStyle(fontSize: 13)),
+            SizedBox(height: 12),
+            TextField(
+              controller: uidCtrl,
+              decoration: InputDecoration(
+                labelText: 'User ID (UID)',
+                hintText: 'Firebase Auth UID',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text('This will prevent the user from logging in.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              if (uidCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              await Provider.of<UserProvider>(context, listen: false).banUser(uidCtrl.text.trim());
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('User ${uidCtrl.text.trim()} banned.'), backgroundColor: Colors.red),
+              );
+            },
+            child: Text('Ban User', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -77,59 +207,68 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainMetrics(AdminInsight insights) {
+  Widget _buildMainMetrics(AdminInsight insights, int pendingCount, int approvedCount) {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: _buildMetricCard(
-                'Authenticity',
-                '${(insights.authenticityScore * 100).toInt()}%',
-                Icons.verified_user_outlined,
+                'Map Vitality',
+                '$approvedCount Gems',
+                Icons.map_outlined,
                 Color(0xFF3E5641),
               ),
             ),
             SizedBox(width: 16),
             Expanded(
               child: _buildMetricCard(
-                'Conversion',
-                '${insights.conversionRate}%',
-                Icons.moving_outlined,
+                'Trust Score',
+                '${(insights.authenticityScore * 100).toInt()}%',
+                Icons.verified_user_outlined,
                 Color(0xFFBDB76B),
               ),
             ),
           ],
         ),
         SizedBox(height: 16),
-        _buildModerationEntryCard(insights.pendingModerationCount),
+        _buildModerationEntryCard(pendingCount),
         SizedBox(height: 16),
         _buildActionRow(),
       ],
     );
   }
 
+
   Widget _buildActionRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSmallActionCard(
-            'Reports',
-            '4 Active',
-            Icons.report_problem_outlined,
-            Color(0xFF8B0000),
+    return Builder(
+      builder: (context) => Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showBanUserDialog(context),
+              child: _buildSmallActionCard(
+                'Ban User',
+                'Suspend account',
+                Icons.person_off_outlined,
+                Color(0xFF8B0000),
+              ),
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          child: _buildSmallActionCard(
-            'Broadcast',
-            'Send Alert',
-            Icons.campaign_outlined,
-            Color(0xFF3E5641),
+          SizedBox(width: 16),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showBroadcastDialog(context),
+              child: _buildSmallActionCard(
+                'Broadcast',
+                'Send to all users',
+                Icons.campaign_outlined,
+                Color(0xFF3E5641),
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -239,7 +378,7 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVibeSoulRadar(AdminInsight insights) {
+  Widget _buildVibeSoulRadar(AdminInsight insights, Map<String, double> distribution) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1200),
@@ -289,14 +428,15 @@ class AdminDashboardScreen extends StatelessWidget {
                             borderColor: Color(0xFFFFD700).withOpacity(value),
                             entryRadius: 3 * value,
                             dataEntries: [
-                              RadarEntry(value: insights.vibeSoulGastronomy * value),
-                              RadarEntry(value: insights.vibeSoulArt * value),
-                              RadarEntry(value: insights.vibeSoulHistory * value),
-                              RadarEntry(value: insights.vibeSoulNightlife * value),
-                              RadarEntry(value: insights.vibeSoulNature * value),
+                              RadarEntry(value: (distribution['Food'] ?? insights.vibeSoulGastronomy) * value),
+                              RadarEntry(value: (distribution['Art'] ?? insights.vibeSoulArt) * value),
+                              RadarEntry(value: (distribution['History'] ?? insights.vibeSoulHistory) * value),
+                              RadarEntry(value: (distribution['Nightlife'] ?? insights.vibeSoulNightlife) * value),
+                              RadarEntry(value: (distribution['Nature'] ?? insights.vibeSoulNature) * value),
                             ],
                           ),
                         ],
+
                         radarShape: RadarShape.circle,
                         radarBorderData: BorderSide(color: Colors.white24),
                         tickBorderData: BorderSide(color: Colors.white10),
@@ -347,12 +487,13 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiscoveryVelocity(AdminInsight insights) {
+  Widget _buildDiscoveryVelocity(AdminInsight insights, List<double> velocity) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1500),
       curve: Curves.easeInOutQuad,
       builder: (context, value, child) {
+        final data = velocity.every((v) => v == 0) ? insights.discoveryVelocity : velocity;
         return Container(
           width: double.infinity,
           padding: EdgeInsets.all(24),
@@ -385,7 +526,7 @@ class AdminDashboardScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '+24%',
+                      '+${velocity.last.toInt()}',
                       style: TextStyle(color: Color(0xFF3E5641), fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -406,7 +547,7 @@ class AdminDashboardScreen extends StatelessWidget {
                     borderData: FlBorderData(show: false),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: insights.discoveryVelocity.asMap().entries.map((e) {
+                        spots: data.asMap().entries.map((e) {
                           return FlSpot(e.key.toDouble(), e.value * value);
                         }).toList(),
                         isCurved: true,
@@ -429,6 +570,7 @@ class AdminDashboardScreen extends StatelessWidget {
       },
     );
   }
+
 
   Widget _buildNeighborhoodInsights() {
     return Column(

@@ -22,15 +22,4 @@ class AdminInsight {
     required this.conversionRate,
   });
 
-  static AdminInsight get mock => AdminInsight(
-    vibeSoulGastronomy: 0.8,
-    vibeSoulArt: 0.6,
-    vibeSoulHistory: 0.4,
-    vibeSoulNightlife: 0.9,
-    vibeSoulNature: 0.3,
-    discoveryVelocity: [12, 18, 15, 22, 30, 25, 40],
-    authenticityScore: 0.88,
-    pendingModerationCount: 14,
-    conversionRate: 65,
-  );
 }

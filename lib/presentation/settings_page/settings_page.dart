@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/providers/user_provider.dart';
 import '../../routes/app_routes.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -38,6 +40,32 @@ class SettingsPage extends StatelessWidget {
 							],
 						),
 						const SizedBox(height: 24),
+						_buildSectionTitle('PRIVACY & MESSAGING'),
+						Consumer<UserProvider>(
+							builder: (context, userProvider, child) {
+								final user = userProvider.user;
+								return _buildCard(
+									children: [
+										_buildToggleItem(
+											icon: Icons.chat_bubble_outline,
+											title: 'Accept Messages',
+											subtitle: 'Allow others to message you about gems',
+											value: user?.acceptsMessages ?? true,
+											onChanged: (val) => userProvider.updateProfile(acceptsMessages: val),
+										),
+										_buildDivider(),
+										_buildToggleItem(
+											icon: Icons.do_not_disturb_on_outlined,
+											title: 'Do Not Disturb',
+											subtitle: 'Mute messages during scheduled hours',
+											value: user?.isDndEnabled ?? false,
+											onChanged: (val) => userProvider.updateProfile(isDndEnabled: val),
+										),
+									],
+								);
+							},
+						),
+						const SizedBox(height: 24),
 						_buildSectionTitle('NOTIFICATIONS'),
 						_buildCard(
 							children: [
@@ -46,6 +74,7 @@ class SettingsPage extends StatelessWidget {
 									title: 'Push Notifications',
 									subtitle: 'Messages, booking updates',
 									value: true,
+									onChanged: (val) {},
 								),
 								_buildDivider(),
 								_buildToggleItem(
@@ -53,6 +82,7 @@ class SettingsPage extends StatelessWidget {
 									title: 'Email Newsletters',
 									subtitle: 'Weekly local curation & tips',
 									value: false,
+									onChanged: (val) {},
 								),
 							],
 						),
@@ -216,6 +246,7 @@ class SettingsPage extends StatelessWidget {
 		required String title,
 		required String subtitle,
 		required bool value,
+		required ValueChanged<bool> onChanged,
 	}) {
 		return Padding(
 			padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -253,7 +284,7 @@ class SettingsPage extends StatelessWidget {
 					),
 					Switch(
 						value: value,
-						onChanged: (_) {},
+						onChanged: onChanged,
 						activeColor: const Color(0xFF1B3022),
 					),
 				],

@@ -13,6 +13,8 @@ import 'core/providers/connectivity_provider.dart';
 import 'core/providers/chat_provider.dart';
 import 'presentation/onboarding_screen/provider/onboarding_provider.dart';
 import 'core/utils/database_seeder.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/background_task_service.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 void main() async {
@@ -29,6 +31,14 @@ void main() async {
 
   // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
   assert(() { DatabaseSeeder.seed(); return true; }());
+  
+  // 🔔 Initialize Notifications
+  await NotificationService().initialize();
+  
+  // ⚙️ Initialize Background Tasks
+  await BackgroundTaskService().initialize();
+  await BackgroundTaskService().scheduleProximityChecks();
+  await BackgroundTaskService().scheduleWeeklySummary();
   
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([

@@ -50,8 +50,12 @@ class AdminDashboardScreen extends StatelessWidget {
                 SizedBox(height: 32),
                 _buildDiscoveryVelocity(insights, velocity),
                 SizedBox(height: 32),
-                _buildNeighborhoodInsights(),
-                SizedBox(height: 40),
+                _buildMaintenanceSuggestions(insights),
+                const SizedBox(height: 32),
+                _buildPendingPayments(context),
+                const SizedBox(height: 32),
+                _buildMaintenanceSuggestions(context, insights),
+                const SizedBox(height: 100), // Spacing for fab
               ],
             ),
           ),
@@ -60,7 +64,125 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildPendingPayments(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Pending Payments', style: TextStyleHelper.instance.title18SemiBoldInter),
+              Icon(Icons.payment, color: Color(0xFF1B3022), size: 20),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('payments').where('status', isEqualTo: 'pending').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Color(0x191B3022)),
+                ),
+                child: Center(
+                  child: Text('No pending payments', style: TextStyle(color: Colors.grey)),
+                ),
+              );
+            }
 
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.docs.length,
+              separatorBuilder: (context, index) => SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final doc = snapshot.data!.docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                return _buildPaymentCard(context, doc.id, data);
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentCard(BuildContext context, String docId, Map<String, dynamic> data) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Color(0xFFE8F2E9),
+                child: Icon(Icons.person, color: Color(0xFF1B3022)),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(data['userEmail'] ?? 'Unknown User', style: TextStyleHelper.instance.body14BoldInter),
+                    Text('Ref: ${data['referenceId']}', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              Text(data['method'] ?? 'Manual', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3E5641))),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _rejectPayment(docId),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: BorderSide(color: Colors.red.withOpacity(0.3)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Reject'),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _approvePayment(docId, data['userId']),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1B3022),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Verify & Upgrade'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _approvePayment(String docId, String userId) async {
+    await FirebaseFirestore.instance.collection('payments').doc(docId).update({'status': 'approved'});
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isPro': true});
+  }
+
+  Future<void> _rejectPayment(String docId) async {
+    await FirebaseFirestore.instance.collection('payments').doc(docId).update({'status': 'rejected'});
+  }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -235,6 +357,43 @@ class AdminDashboardScreen extends StatelessWidget {
         _buildModerationEntryCard(pendingCount),
         SizedBox(height: 16),
         _buildActionRow(),
+        SizedBox(height: 16),
+        _buildPlatformHealthSection(insights),
+      ],
+    );
+  }
+
+  Widget _buildPlatformHealthSection(AdminInsight insights) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Color(0x33C1C9C1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Platform Health', style: TextStyleHelper.instance.body14BoldInter),
+          SizedBox(height: 16),
+          _buildHealthRow('Active User Ratio', '${(insights.activeUserRatio * 100).toInt()}%', Icons.show_chart, Colors.green),
+          Divider(height: 24),
+          _buildHealthRow('Suspended Accounts', '${insights.bannedUserCount}', Icons.block_flipped, Colors.red),
+          Divider(height: 24),
+          _buildHealthRow('Premium Conversion', '${insights.conversionRate}%', Icons.payments_outlined, Colors.amber),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthRow(String label, String value, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 18),
+        SizedBox(width: 12),
+        Text(label, style: TextStyle(fontSize: 13, color: Color(0xFF4D6353))),
+        Spacer(),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
       ],
     );
   }
@@ -246,11 +405,11 @@ class AdminDashboardScreen extends StatelessWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () => _showBanUserDialog(context),
+              onTap: () => Navigator.pushNamed(context, AppRoutes.adminUserManagement),
               child: _buildSmallActionCard(
-                'Ban User',
-                'Suspend account',
-                Icons.person_off_outlined,
+                'Users',
+                'Manage accounts',
+                Icons.people_outline,
                 Color(0xFF8B0000),
               ),
             ),
@@ -620,6 +779,46 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMaintenanceSuggestions(AdminInsight insights) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.cleaning_services_outlined, color: Color(0xFF1B3022), size: 20),
+            SizedBox(width: 8),
+            Text('AI Maintenance Suggestions', style: TextStyleHelper.instance.title18SemiBoldInter),
+          ],
+        ),
+        SizedBox(height: 16),
+        ...insights.staleGemSuggestions.map((suggestion) => Container(
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Color(0xFFF0F4EC),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Cleanup required for: $suggestion',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF1B3022)),
+                ),
+              ),
+              TextButton(
+                onPressed: () {},
+                child: Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF3E5641))),
+              ),
+            ],
+          ),
+        )).toList(),
+      ],
     );
   }
 }

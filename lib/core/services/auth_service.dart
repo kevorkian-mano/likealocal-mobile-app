@@ -25,6 +25,9 @@ class AuthService {
         password: password,
       );
 
+      // FR1-11: Mandatory email verification
+      await result.user?.sendEmailVerification();
+
       // Create a user document in Firestore with ALL required fields
       await _firestore.collection('users').doc(result.user!.uid).set({
         'fullName': fullName,

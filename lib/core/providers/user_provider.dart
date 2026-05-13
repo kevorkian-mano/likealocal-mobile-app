@@ -108,6 +108,33 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  // FR6-1: Track user interactions for personalization
+  Future<void> trackInteraction(String category, String vibe) async {
+    if (_user == null) return;
+    
+    final interaction = {
+      'category': category,
+      'vibe': vibe,
+      'timestamp': Timestamp.now(),
+    };
+
+    try {
+      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+          .collection('users')
+          .doc(_user!.id)
+          .update({
+        'interactionHistory': FieldValue.arrayUnion([interaction]),
+      });
+
+      _user = _user!.copyWith(
+        interactionHistory: [..._user!.interactionHistory, interaction],
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error tracking interaction: $e');
+    }
+  }
+
 
   Future<void> addKarmaPoints(int points) async {
     if (_user == null) return;
@@ -220,6 +247,40 @@ class UserProvider extends ChangeNotifier {
         .limit(1)
         .snapshots()
         .map((s) => s.docs.map((d) => {...d.data(), 'id': d.id}).toList());
+  }
+  // FR3-7/FR10-1: Toggle Location Reminder with limits
+  Future<void> toggleReminder(String gemId) async {
+    if (_user == null) return;
+    
+    final isRemoving = _user!.reminders.contains(gemId);
+    
+    if (!isRemoving) {
+      // Enforce limit: 1 reminder for Free users
+      if (!_user!.isPro && !_user!.isSuperUser && _user!.reminders.isNotEmpty) {
+        throw Exception('LIMIT_REACHED');
+      }
+    }
+
+    try {
+      final docRef = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+          .collection('users')
+          .doc(_user!.id);
+
+      if (isRemoving) {
+        await docRef.update({
+          'reminders': FieldValue.arrayRemove([gemId])
+        });
+        _user = _user!.copyWith(reminders: _user!.reminders.where((id) => id != gemId).toList());
+      } else {
+        await docRef.update({
+          'reminders': FieldValue.arrayUnion([gemId])
+        });
+        _user = _user!.copyWith(reminders: [..._user!.reminders, gemId]);
+      }
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 

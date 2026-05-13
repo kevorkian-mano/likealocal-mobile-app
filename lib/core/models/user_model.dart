@@ -17,12 +17,14 @@ class UserModel {
   final int contributionStreak;
   final List<String> badges;
   final List<String> savedGems; // FR3-3
+  final List<String> reminders; // FR3-7
   final bool acceptsMessages; // FR5-2
   final bool isDndEnabled;    // FR5-3
   final int dndStartHour;     // FR5-3 (0-23)
   final int dndEndHour;       // FR5-3 (0-23)
   final List<String> blockedUsers; // FR5-5
   final bool isBanned;             // FR11-6
+  final List<Map<String, dynamic>> interactionHistory; // FR6-1
 
 
   UserModel({
@@ -42,12 +44,14 @@ class UserModel {
     this.contributionStreak = 0,
     this.badges = const [],
     this.savedGems = const [],
+    this.reminders = const [],
     this.acceptsMessages = true,
     this.isDndEnabled = false,
     this.dndStartHour = 22,
     this.dndEndHour = 8,
     this.blockedUsers = const [],
     this.isBanned = false,
+    this.interactionHistory = const [],
   });
 
 
@@ -73,12 +77,14 @@ class UserModel {
       contributionStreak: map['contributionStreak'] ?? 0,
       badges: List<String>.from(map['badges'] ?? []),
       savedGems: List<String>.from(map['savedGems'] ?? []),
+      reminders: List<String>.from(map['reminders'] ?? []),
       acceptsMessages: map['acceptsMessages'] ?? true,
       isDndEnabled: map['isDndEnabled'] ?? false,
       dndStartHour: map['dndStartHour'] ?? 22,
       dndEndHour: map['dndEndHour'] ?? 8,
       blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
       isBanned: map['isBanned'] ?? false,
+      interactionHistory: List<Map<String, dynamic>>.from(map['interactionHistory'] ?? []),
     );
   }
 
@@ -97,12 +103,14 @@ class UserModel {
     int? contributionStreak,
     List<String>? badges,
     List<String>? savedGems,
+    List<String>? reminders,
     bool? acceptsMessages,
     bool? isDndEnabled,
     int? dndStartHour,
     int? dndEndHour,
     List<String>? blockedUsers,
     bool? isBanned,
+    List<Map<String, dynamic>>? interactionHistory,
   }) {
     return UserModel(
       id: id,
@@ -121,12 +129,14 @@ class UserModel {
       contributionStreak: contributionStreak ?? this.contributionStreak,
       badges: badges ?? this.badges,
       savedGems: savedGems ?? this.savedGems,
+      reminders: reminders ?? this.reminders,
       acceptsMessages: acceptsMessages ?? this.acceptsMessages,
       isDndEnabled: isDndEnabled ?? this.isDndEnabled,
       dndStartHour: dndStartHour ?? this.dndStartHour,
       dndEndHour: dndEndHour ?? this.dndEndHour,
       blockedUsers: blockedUsers ?? this.blockedUsers,
       isBanned: isBanned ?? this.isBanned,
+      interactionHistory: interactionHistory ?? this.interactionHistory,
     );
   }
 
@@ -152,12 +162,14 @@ class UserModel {
       'contributionStreak': contributionStreak,
       'badges': badges,
       'savedGems': savedGems,
+      'reminders': reminders,
       'acceptsMessages': acceptsMessages,
       'isDndEnabled': isDndEnabled,
       'dndStartHour': dndStartHour,
       'dndEndHour': dndEndHour,
       'blockedUsers': blockedUsers,
       'isBanned': isBanned,
+      'interactionHistory': interactionHistory,
     };
   }
 

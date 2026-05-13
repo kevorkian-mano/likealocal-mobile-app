@@ -12,6 +12,8 @@ class GemsProvider extends ChangeNotifier {
   List<HiddenGem> _gems = [];
   bool _isLoading = true;
   Position? _userLocation;
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
 
   List<HiddenGem> get gems => _gems;
   bool get isLoading => _isLoading;
@@ -152,7 +154,14 @@ class GemsProvider extends ChangeNotifier {
       'karmaPoints': FieldValue.increment(10),
     });
 
-    await batch.commit();
+    _isSyncing = true;
+    notifyListeners();
+    try {
+      await batch.commit();
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
   }
 
   // FR4-8: Edit Place
@@ -178,6 +187,8 @@ class GemsProvider extends ChangeNotifier {
 
   // FR3-3: Bookmark favorite places
   Future<void> toggleSaveGem(String userId, String gemId, bool isCurrentlySaved) async {
+    _isSyncing = true;
+    notifyListeners();
     try {
       final userDoc = _firestore.collection('users').doc(userId);
       final gemDoc = _firestore.collection('gems').doc(gemId);
@@ -190,6 +201,14 @@ class GemsProvider extends ChangeNotifier {
           'saves': FieldValue.increment(-1)
         });
       } else {
+        // FR10-1: Enforcement (3 pins for Free users)
+        final userSnap = await userDoc.get();
+        final user = UserModel.fromMap(userSnap.data()!, userSnap.id);
+        
+        if (!user.isPro && !user.isSuperUser && user.savedGems.length >= 3) {
+          throw Exception('LIMIT_REACHED');
+        }
+
         await userDoc.update({
           'savedGems': FieldValue.arrayUnion([gemId])
         });
@@ -200,6 +219,9 @@ class GemsProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error toggling save gem: $e');
       rethrow;
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
     }
   }
 

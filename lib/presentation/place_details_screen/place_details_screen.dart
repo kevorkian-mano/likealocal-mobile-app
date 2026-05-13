@@ -10,6 +10,7 @@ import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../routes/app_routes.dart';
 import '../../core/providers/user_provider.dart';
+import '../../widgets/premium_upgrade_sheet.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final HiddenGem? gem;
@@ -17,8 +18,13 @@ class PlaceDetailsScreen extends StatefulWidget {
   const PlaceDetailsScreen({Key? key, this.gem}) : super(key: key);
 
   static Widget builder(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as HiddenGem?;
-    return PlaceDetailsScreen(gem: args);
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      // Handle deep link by fetching from GemsProvider
+      final gem = Provider.of<GemsProvider>(context, listen: false).gems.firstWhere((g) => g.id == args, orElse: () => throw Exception('Gem not found'));
+      return PlaceDetailsScreen(gem: gem);
+    }
+    return PlaceDetailsScreen(gem: args as HiddenGem?);
   }
 
   @override
@@ -30,9 +36,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   void initState() {
     super.initState();
     if (widget.gem != null) {
-      Future.microtask(() => 
-        Provider.of<GemsProvider>(context, listen: false).incrementViews(widget.gem!.id)
-      );
+      Future.microtask(() {
+        Provider.of<GemsProvider>(context, listen: false).incrementViews(widget.gem!.id);
+        Provider.of<UserProvider>(context, listen: false).trackInteraction(
+          widget.gem!.category,
+          widget.gem!.vibe,
+        );
+      });
     }
   }
 
@@ -110,7 +120,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 Positioned(
                   bottom: 48,
                   left: 20,
-                  child: _buildVibeMatchIndicator('98% Match'),
+                  child: _buildAnimatedVibeMatch('98% Match'),
                 ),
               ],
             ),
@@ -142,6 +152,42 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       GestureDetector(
                         onTap: () async {
                           if (currentUser == null) {
+                            _showGuestSignUpPrompt(context, 'You need an account to set location reminders.');
+                            return;
+                          }
+                          try {
+                            await Provider.of<UserProvider>(context, listen: false).toggleReminder(displayGem.id);
+                            final isReminding = userProvider.user?.reminders.contains(displayGem.id) ?? false;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(isReminding ? 'Reminder removed' : 'Reminder set for when you are nearby!'),
+                                backgroundColor: const Color(0xFF1B3022),
+                              )
+                            );
+                          } catch (e) {
+                            if (e.toString().contains('LIMIT_REACHED')) {
+                              PremiumUpgradeSheet.show(context);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to set reminder'))
+                              );
+                            }
+                          }
+                        },
+                        child: Icon(
+                          userProvider.user?.reminders.contains(displayGem.id) == true 
+                              ? Icons.notifications_active 
+                              : Icons.notifications_none,
+                          color: userProvider.user?.reminders.contains(displayGem.id) == true 
+                              ? const Color(0xFF1B3022) 
+                              : const Color(0xFF191C1A),
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: () async {
+                          if (currentUser == null) {
                             _showGuestSignUpPrompt(context, 'You need an account to save favorite places.');
                             return;
                           }
@@ -153,9 +199,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                               SnackBar(content: Text(isSaved ? 'Removed from favorites' : 'Saved to favorites'))
                             );
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Failed to update favorites'))
-                            );
+                            if (e.toString().contains('LIMIT_REACHED')) {
+                              PremiumUpgradeSheet.show(context);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to update favorites'))
+                              );
+                            }
                           }
                         },
                         child: Icon(
@@ -430,27 +480,41 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     );
   }
 
-  Widget _buildVibeMatchIndicator(String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Color(0xFFFFD700),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.auto_awesome, color: Color(0xFF1B3022), size: 16),
-          SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold, fontSize: 12),
+  Widget _buildAnimatedVibeMatch(String text) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(seconds: 1),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.3 * value),
+                  blurRadius: 15 * value,
+                  spreadRadius: 2 * value,
+                )
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.auto_awesome, color: Color(0xFF1B3022), size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  text,
+                  style: const TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

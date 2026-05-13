@@ -43,6 +43,11 @@ class RoleGuard extends StatelessWidget {
         }
 
         if (isAuthenticated && user != null) {
+          // FR11-6: Real-time Ban Check
+          if (user.isBanned) {
+            return _buildAccessDenied(context, 'Your account has been suspended. Please contact support.', isBan: true);
+          }
+
           // Check Admin
           if (requireAdmin && !user.isAdmin) {
             return _buildAccessDenied(context, 'Admin access required.');
@@ -64,27 +69,59 @@ class RoleGuard extends StatelessWidget {
     );
   }
 
-  Widget _buildAccessDenied(BuildContext context, String message) {
+  Widget _buildAccessDenied(BuildContext context, String message, {bool isBan = false}) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Access Denied')),
+      backgroundColor: const Color(0xFFF9F7F2),
+      appBar: AppBar(
+        title: Text(isBan ? 'Account Suspended' : 'Access Denied'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1B3022)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.block, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Access Denied',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(message),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go Back'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(isBan ? Icons.gavel_rounded : Icons.block, size: 80, color: const Color(0xFF8B0000)),
+              const SizedBox(height: 24),
+              Text(
+                isBan ? 'Access Revoked' : 'Access Denied',
+                style: TextStyleHelper.instance.title20BoldOutfit.copyWith(color: const Color(0xFF1B3022)),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyleHelper.instance.body14MediumInter.copyWith(color: const Color(0xFF4D6353)),
+              ),
+              const SizedBox(height: 32),
+              if (isBan)
+                ElevatedButton(
+                  onPressed: () => Provider.of<UserProvider>(context, listen: false).signOut(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B3022),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                  ),
+                  child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+                )
+              else
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B3022),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                  ),
+                  child: const Text('Go Back', style: TextStyle(color: Colors.white)),
+                ),
+            ],
+          ),
         ),
       ),
     );

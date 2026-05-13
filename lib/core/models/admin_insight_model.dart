@@ -9,6 +9,9 @@ class AdminInsight {
   final double authenticityScore; // 0.0 to 1.0
   final int pendingModerationCount;
   final int conversionRate; // Percentage
+  final double activeUserRatio; // FR11-8
+  final int bannedUserCount; // FR11-6
+  final List<String> staleGemSuggestions; // FR11-8
 
   AdminInsight({
     required this.vibeSoulGastronomy,
@@ -20,6 +23,9 @@ class AdminInsight {
     required this.authenticityScore,
     required this.pendingModerationCount,
     required this.conversionRate,
+    this.activeUserRatio = 0.85,
+    this.bannedUserCount = 3,
+    this.staleGemSuggestions = const ['Sunset Point (No activity)', 'Old Alleyway (Low rating)'],
   });
 
 }

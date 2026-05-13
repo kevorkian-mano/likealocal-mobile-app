@@ -84,6 +84,13 @@ class SettingsPage extends StatelessWidget {
 									value: false,
 									onChanged: (val) {},
 								),
+								_buildDivider(),
+								_buildRowItem(
+									icon: Icons.settings_suggest_outlined,
+									title: 'Notification Categories',
+									subtitle: 'Customize what alerts you receive',
+									onTap: () => Navigator.pushNamed(context, AppRoutes.notificationSettingsScreen),
+								),
 							],
 						),
 						const SizedBox(height: 24),

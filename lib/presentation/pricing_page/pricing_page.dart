@@ -64,23 +64,14 @@ class PricingPage extends StatelessWidget {
                     'Unlimited Saved Pins',
                     'Unlimited Location Reminders',
                     'AI-Powered Personal Itineraries',
-                    'Offline Map Access',
+                    'Offline Neighborhood Map Downloads',
                     'Exclusive Super User Tips',
                   ],
                   isPopular: true,
                   isCurrent: isPro && !isSuper,
                   buttonText: 'Upgrade Now',
-                  onTap: () async {
-                    try {
-                      await userProvider.purchasePro();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Welcome to Premium, Nomad!')),
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Purchase Failed: $e')),
-                      );
-                    }
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.manualPaymentScreen);
                   },
                 ),
                 SizedBox(height: 20),

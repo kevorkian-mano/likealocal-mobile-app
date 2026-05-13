@@ -82,7 +82,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     subtitle: '${user.karmaPoints ~/ 50} curated collections',
                     leadingColor: const Color(0x7FD3E8DB),
                     icon: Icons.layers_outlined,
+                    onTap: () {},
                   ),
+                  _buildListRow(
+                    title: 'Nomad Premium',
+                    subtitle: user.isPro ? 'Manage your features' : 'Unlock AI & Offline maps',
+                    leadingColor: const Color(0xFFE8F2E9),
+                    icon: Icons.star_border_rounded,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.premiumDashboard),
+                  ),
+                  _buildListRow(
+                    title: 'Local Legends',
+                    subtitle: 'View the community leaderboard',
+                    leadingColor: const Color(0xFFF9F7F2),
+                    icon: Icons.emoji_events_outlined,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.leaderboardScreen),
+                  ),
+                  if (user.isSuperUser)
+                    _buildListRow(
+                      title: 'Impact Dashboard',
+                      subtitle: 'Analyze your local influence',
+                      leadingColor: const Color(0xFFF0F4EC),
+                      icon: Icons.analytics_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.superUserDashboardScreen),
+                    ),
                   _buildToggleRow(
                     title: 'Direct Messaging',
                     subtitle: 'Allow travelers to chat with you',
@@ -396,41 +419,45 @@ class _UserProfilePageState extends State<UserProfilePage> {
 		required String subtitle,
 		required Color leadingColor,
     required IconData icon,
+    VoidCallback? onTap,
 	}) {
-		return Container(
-			padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-			child: Row(
-				children: [
-					Container(
-						width: 48,
-						height: 48,
-						decoration: BoxDecoration(
-							color: leadingColor,
-							borderRadius: BorderRadius.circular(16),
-						),
-            child: Icon(icon, color: const Color(0xFF1B3022), size: 24),
-					),
-					const SizedBox(width: 16),
-					Expanded(
-						child: Column(
-							crossAxisAlignment: CrossAxisAlignment.start,
-							children: [
-								Text(
-									title,
-									style: TextStyleHelper.instance.body14BoldInter,
-								),
-								const SizedBox(height: 4),
-								Text(
-									subtitle,
-									style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF424942)),
-								),
-							],
-						),
-					),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-				],
-			),
-		);
+		return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: leadingColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: const Color(0xFF1B3022), size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyleHelper.instance.body14BoldInter,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF424942)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
+      ),
+    );
 	}
 
 	Widget _buildToggleRow({

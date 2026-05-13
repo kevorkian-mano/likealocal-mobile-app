@@ -9,6 +9,8 @@ import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
+import '../../widgets/offline_banner.dart';
+import '../../widgets/premium_upgrade_sheet.dart';
 
 class ExplorePageWithNotifScreen extends StatefulWidget {
   const ExplorePageWithNotifScreen({Key? key}) : super(key: key);
@@ -27,6 +29,18 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
   bool _superUserOnly = false; // FR7-5: Local legends only filter
 
   @override
+  void initState() {
+    super.initState();
+    // FR8-3: Start listening for new chat messages for push notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      if (user != null) {
+        Provider.of<ChatProvider>(context, listen: false).startListeningForNewMessages(user.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -36,6 +50,8 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             SingleChildScrollView(
               child: Column(
                 children: [
+                  // FR9-3: Offline mode indicator
+                  const OfflineBanner(),
                   // FR11-7: Admin broadcast notification banner
                   _buildNotificationBanner(),
                   Container(
@@ -134,6 +150,18 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 ),
                               ),
                               SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, AppRoutes.aiChatbotScreen),
+                                child: Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: appTheme.midnightPine,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                                ),
+                              ),
+                              SizedBox(width: 8),
                               TweenAnimationBuilder<double>(
                                 tween: Tween(begin: 0.0, end: 1.0),
                                 duration: Duration(seconds: 2),
@@ -237,6 +265,90 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 ),
                               ],
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // FR10-4, FR6-6: AI Itinerary Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Consumer2<GemsProvider, UserProvider>(
+                            builder: (context, gemsProvider, userProvider, _) {
+                              final isPremium = userProvider.user?.isPro ?? false || userProvider.user?.isSuperUser ?? false;
+                              return GestureDetector(
+                                onTap: () {
+                                  if (!isPremium) {
+                                    PremiumUpgradeSheet.show(context);
+                                  } else {
+                                    _generateAiItinerary(context);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF2C4C3B), Color(0xFF1B3022)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3), width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD700).withOpacity(0.1),
+                                        blurRadius: 20,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFD700).withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.auto_awesome_motion_rounded, color: Color(0xFFFFD700), size: 28),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'AI ITINERARY',
+                                                  style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                                                    color: const Color(0xFFFFD700),
+                                                    letterSpacing: 1.2,
+                                                  ),
+                                                ),
+                                                if (!isPremium) ...[
+                                                  const SizedBox(width: 8),
+                                                  const Icon(Icons.lock, color: Color(0xFFFFD700), size: 10),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Plan your perfect day',
+                                              style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Colors.white),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              'Based on your vibes and nearby gems',
+                                              style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.white70),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 16),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -397,6 +509,86 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     );
   }
 
+  void _generateAiItinerary(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 16),
+            Text('Localie is crafting your day...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+      
+      final vibes = userProvider.user?.selectedVibes ?? ['General'];
+      final nearbyGemNames = gemsProvider.approvedGems.take(5).map((g) => g.name).toList();
+
+      final itinerary = await AIService.generateItinerary(vibes, nearbyGemNames);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, color: Color(0xFF1B3022)),
+                    const SizedBox(width: 12),
+                    Text('Your Personalized Day', style: TextStyleHelper.instance.title20BoldOutfit),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Text(
+                    itinerary,
+                    style: TextStyleHelper.instance.body16MediumInter.copyWith(height: 1.6, color: const Color(0xFF4D6353)),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: CustomButton(text: 'Save Itinerary', onPressed: () => Navigator.pop(context)),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('AI Error: $e')));
+    }
+  }
+
   void _onSurpriseMe(BuildContext context) {
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -547,7 +739,17 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 );
                                 return;
                               }
-                              await gemsProvider.toggleSaveGem(user.id, gem.id, isSaved);
+                              try {
+                                await gemsProvider.toggleSaveGem(user.id, gem.id, isSaved);
+                              } catch (e) {
+                                if (e.toString().contains('LIMIT_REACHED')) {
+                                  PremiumUpgradeSheet.show(context);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e')),
+                                  );
+                                }
+                              }
                             },
                             child: Icon(
                               isSaved ? Icons.bookmark : Icons.bookmark_border,

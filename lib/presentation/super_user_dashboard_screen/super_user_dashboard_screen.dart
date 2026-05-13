@@ -238,6 +238,16 @@ class SuperUserDashboardScreen extends StatelessWidget {
           subtitle: 'Tips to increase your local reach',
           color: const Color(0xFF4D6353),
         ),
+        const SizedBox(height: 12),
+        // FR12-4: View pending chat requests
+        _buildActionTile(
+          icon: Icons.forum_outlined,
+          title: 'Community Inquiries',
+          subtitle: 'Help travelers with their questions',
+          color: const Color(0xFF1B3022),
+          badge: '2 New',
+          onTap: () => Navigator.pushNamed(context, AppRoutes.chatListScreen),
+        ),
       ],
     );
   }

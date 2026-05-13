@@ -18,6 +18,12 @@ import '../presentation/super_user_dashboard_screen/super_user_dashboard_screen.
 import '../presentation/chat_list_screen/chat_list_screen.dart';
 import '../presentation/chat_details_screen/chat_details_screen.dart';
 import '../presentation/preference_summary_screen/preference_summary_screen.dart';
+import '../presentation/notification_settings_screen/notification_settings_screen.dart';
+import '../presentation/manual_payment_screen/manual_payment_screen.dart';
+import '../presentation/premium_dashboard_screen/premium_dashboard_screen.dart';
+import '../presentation/ai_chatbot_screen/ai_chatbot_screen.dart';
+import '../presentation/leaderboard_screen/leaderboard_screen.dart';
+import '../presentation/admin_user_management_screen/admin_user_management_screen.dart';
 import '../presentation/app_navigation_screen/app_navigation_screen.dart';
 import '../core/auth_wrapper.dart';
 import '../core/role_guard.dart';
@@ -44,6 +50,12 @@ class AppRoutes {
   static const String superUserDashboard = '/super_user_dashboard';
   static const String chatListScreen = '/chat_list_screen';
   static const String chatDetailsScreen = '/chat_details_screen';
+  static const String notificationSettingsScreen = '/notification_settings_screen';
+  static const String manualPaymentScreen = '/manual_payment_screen';
+  static const String premiumDashboard = '/premium_dashboard';
+  static const String aiChatbotScreen = '/ai_chatbot_screen';
+  static const String leaderboardScreen = '/leaderboard_screen';
+  static const String adminUserManagement = '/admin_user_management';
 
   static const String appNavigationScreen = '/app_navigation_screen';
   static const String initialRoute = '/';
@@ -68,6 +80,12 @@ class AppRoutes {
     superUserDashboard: (context) => RoleGuard(requireAuth: true, requireSuperUser: true, child: SuperUserDashboardScreen.builder(context)),
     chatListScreen: (context) => RoleGuard(requireAuth: true, child: ChatListScreen.builder(context)),
     chatDetailsScreen: (context) => RoleGuard(requireAuth: true, child: ChatDetailsScreen.builder(context)),
+    notificationSettingsScreen: (context) => const RoleGuard(requireAuth: true, child: NotificationSettingsScreen()),
+    manualPaymentScreen: (context) => const RoleGuard(requireAuth: true, child: ManualPaymentScreen()),
+    premiumDashboard: (context) => const RoleGuard(requireAuth: true, child: PremiumDashboardScreen()),
+    aiChatbotScreen: (context) => const RoleGuard(requireAuth: true, child: AIChatbotScreen()),
+    leaderboardScreen: (context) => const RoleGuard(requireAuth: true, child: LeaderboardScreen()),
+    adminUserManagement: (context) => const RoleGuard(requireAuth: true, requireAdmin: true, child: AdminUserManagementScreen()),
     appNavigationScreen: AppNavigationScreen.builder,
     initialRoute: (context) => const AuthWrapper(),
   };

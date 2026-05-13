@@ -2,6 +2,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../core/models/gem_review_model.dart';
+import '../../core/models/reminder_model.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
 import 'package:flutter/material.dart';
@@ -335,6 +336,20 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // FR3-7: Set reminder for this place
+                  if (currentUser != null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.notifications_outlined,
+                            label: 'Set Reminder',
+                            onPressed: () => _showSetReminderDialog(context, displayGem),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -959,6 +974,109 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Review updated!')));
                   },
                   child: Text('Update Review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // FR3-7: Show dialog to set location-based reminder
+  void _showSetReminderDialog(BuildContext context, HiddenGem gem) {
+    double radiusMeters = 500.0;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Set Location Reminder', style: TextStyleHelper.instance.title20BoldOutfit),
+              SizedBox(height: 8),
+              Text('Get notified when you\'re near this place', style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.grey)),
+              SizedBox(height: 24),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF9F7F2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Notification Radius', style: TextStyleHelper.instance.body14BoldInter),
+                    SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: Color(0xFF1B3022), size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Slider(
+                            value: radiusMeters,
+                            min: 100,
+                            max: 2000,
+                            divisions: 19,
+                            label: '${(radiusMeters / 1000).toStringAsFixed(1)}km',
+                            onChanged: (val) => setState(() => radiusMeters = val),
+                            activeColor: Color(0xFF1B3022),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'You\'ll be notified when within ${(radiusMeters / 1000).toStringAsFixed(1)}km of "${gem.name}"',
+                      style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1B3022),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+                      if (currentUser == null) return;
+                      
+                      final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+                      await gemsProvider.createReminder(
+                        userId: currentUser.id,
+                        gem: gem,
+                        radiusMeters: radiusMeters,
+                      );
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Reminder set! You\'ll be notified when nearby.'),
+                            backgroundColor: Color(0xFF1B3022),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error setting reminder: ${e.toString()}')),
+                        );
+                      }
+                    }
+                  },
+                  child: Text('Set Reminder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

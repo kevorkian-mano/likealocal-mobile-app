@@ -28,7 +28,7 @@ void main() async {
   );
 
   // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
-  assert(() { DatabaseSeeder.seed(); return true; }());
+  await DatabaseSeeder.seed();
   
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([

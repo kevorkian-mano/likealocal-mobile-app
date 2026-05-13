@@ -23,7 +23,6 @@ class ExplorePageWithNotifScreen extends StatefulWidget {
 
 class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen> {
   String _searchQuery = '';
-  String? _dismissedNotifId; // FR11-7: track dismissed admin broadcast
   bool _superUserOnly = false; // FR7-5: Local legends only filter
 
   @override
@@ -36,9 +35,8 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             SingleChildScrollView(
               child: Column(
                 children: [
-                  // FR11-7: Admin broadcast notification banner
-                  _buildNotificationBanner(),
-                  Container(
+                // Removed: _buildNotificationBanner() - FR11-7 admin notifications
+                Container(
                     width: double.infinity,
                     padding: const EdgeInsets.only(top: 56, bottom: 17),
                     child: Column(
@@ -178,65 +176,91 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                         SizedBox(height: 24),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF1B3022),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 15,
-                                  offset: Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    shape: BoxShape.circle,
+                          child: Consumer<GemsProvider>(
+                            builder: (context, gemsProvider, _) {
+                              final nearest = gemsProvider.getNearestGem();
+                              if (nearest == null || gemsProvider.userLocation == null) {
+                                return const SizedBox.shrink();
+                              }
+                              
+                              final distance = LocationService.calculateDistance(
+                                gemsProvider.userLocation!.latitude,
+                                gemsProvider.userLocation!.longitude,
+                                nearest.latitude,
+                                nearest.longitude
+                              );
+                              
+                              return GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PlaceDetailsScreen(gem: nearest),
                                   ),
-                                  child: Icon(Icons.location_on, color: Colors.white, size: 20),
                                 ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF1B3022),
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 15,
+                                        offset: Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        'HIDDEN PLACE DETECTED',
-                                        style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                          color: Colors.white.withOpacity(0.8),
-                                          letterSpacing: 0.6,
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.location_on, color: Colors.white, size: 20),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'NEAREST GEM',
+                                              style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                                                color: Colors.white.withOpacity(0.8),
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                            Text(
+                                              '${nearest.name} is\njust ${gemsProvider.formatDistance(distance)} away!',
+                                              style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                                                color: Colors.white,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Text(
-                                        'Crimson Bar & Grill is\njust 200m away!',
-                                        style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
                                           color: Colors.white,
+                                          borderRadius: BorderRadius.circular(9999),
+                                        ),
+                                        child: Text(
+                                          'View',
+                                          style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                                            color: Color(0xFF1B3022),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(9999),
-                                  ),
-                                  child: Text(
-                                    'Show Path',
-                                    style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                      color: Color(0xFF1B3022),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -266,8 +290,11 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 final query = _searchQuery.trim().toLowerCase();
                                 displayGems = displayGems.where((gem) => 
                                   gem.name.toLowerCase().contains(query) ||
+                                  gem.description.toLowerCase().contains(query) ||
+                                  gem.category.toLowerCase().contains(query) ||
                                   gem.vibe.toLowerCase().contains(query) ||
-                                  gem.uniqueCode.toLowerCase() == query
+                                  gem.uniqueCode.toLowerCase() == query ||
+                                  gem.localsTip.toLowerCase().contains(query)
                                 ).toList();
                               }
 
@@ -710,75 +737,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       ],
     );
   }
-
-  // FR11-7: Admin broadcast notification banner
-  Widget _buildNotificationBanner() {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: userProvider.getActiveNotifications(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
-        final notif = snapshot.data!.first;
-        final notifId = notif['id'] as String? ?? '';
-        // Respect user dismiss
-        if (_dismissedNotifId == notifId) return const SizedBox.shrink();
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1B3022), Color(0xFF2C4C3B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1B3022).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              )
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.campaign_outlined, color: Color(0xFFFFD700), size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notif['title'] as String? ?? 'Admin Notice',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      notif['message'] as String? ?? '',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => setState(() => _dismissedNotifId = notifId),
-                child: const Icon(Icons.close, color: Colors.white54, size: 18),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
+
 
 

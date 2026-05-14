@@ -1,4 +1,3 @@
-import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/providers/chat_provider.dart';
@@ -9,13 +8,12 @@ import '../place_details_screen/place_details_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
-import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
 
 class ExplorePageWithNotifScreen extends StatefulWidget {
-  const ExplorePageWithNotifScreen({Key? key}) : super(key: key);
+  const ExplorePageWithNotifScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const ExplorePageWithNotifScreen();
@@ -178,7 +176,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Color(0xFFFFD700).withOpacity(0.3 * (1 - value.abs())),
+                                            color: Color(0xFFFFD700).withValues(alpha: 0.3 * (1 - value.abs())),
                                             blurRadius: 10 * (1 - value.abs()),
                                             spreadRadius: 5 * (1 - value.abs()),
                                           )
@@ -238,7 +236,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                     borderRadius: BorderRadius.circular(24),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 15,
                                         offset: Offset(0, 10),
                                       ),
@@ -249,7 +247,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                       Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.1),
+                                          color: Colors.white.withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(Icons.location_on, color: Colors.white, size: 20),
@@ -262,7 +260,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                             Text(
                                               'NEAREST GEM',
                                               style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                                color: Colors.white.withOpacity(0.8),
+                                                color: Colors.white.withValues(alpha: 0.8),
                                                 letterSpacing: 0.6,
                                               ),
                                             ),
@@ -321,10 +319,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3), width: 1.5),
+                                    border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3), width: 1.5),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.1),
+                                        color: const Color(0xFFFFD700).withValues(alpha: 0.1),
                                         blurRadius: 20,
                                         spreadRadius: 2,
                                       ),
@@ -335,7 +333,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFFD700).withOpacity(0.1),
+                                          color: const Color(0xFFFFD700).withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(Icons.auto_awesome_motion_rounded, color: Color(0xFFFFD700), size: 28),
@@ -466,7 +464,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                   ...displayGems.map((gem) => Padding(
                                     padding: const EdgeInsets.only(bottom: 24),
                                     child: _buildCard(context, gem),
-                                  )).toList(),
+                                  )),
                                 ],
                               );
                             },
@@ -486,7 +484,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
+                  color: Colors.white.withValues(alpha: 0.95),
                   border: Border(bottom: BorderSide(color: Color(0x33C1C9C1))),
                 ),
                 child: Row(
@@ -566,8 +564,8 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       final nearbyGemNames = gemsProvider.approvedGems.take(5).map((g) => g.name).toList();
 
       final itinerary = await AIService.generateItinerary(vibes, nearbyGemNames);
-      
-      if (!mounted) return;
+
+      if (!context.mounted) return;
       Navigator.pop(context); // close loading
 
       showModalBottomSheet(
@@ -616,7 +614,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('AI Error: $e')));
     }
@@ -704,7 +702,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -730,7 +728,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -791,7 +789,9 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                               }
                               try {
                                 await gemsProvider.toggleSaveGem(user.id, gem.id, isSaved);
+                                if (!context.mounted) return;
                               } catch (e) {
+                                if (!context.mounted) return;
                                 if (e.toString().contains('LIMIT_REACHED')) {
                                   PremiumUpgradeSheet.show(context);
                                 } else {
@@ -830,21 +830,6 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     );
   }
 
-  Widget _buildGlassTag(String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-      ),
-    );
-  }
-
   Widget _buildTrendingBadge() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -858,20 +843,6 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
           SizedBox(width: 4),
           Text('TRENDING', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildVibeMatchBadge(String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Color(0xFFFFD700),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(color: Color(0xFF1B3022), fontSize: 10, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -941,7 +912,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             ],
           ),
         ),
-        Switch(value: value, onChanged: onChanged, activeColor: Color(0xFF1B3022)),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFF1B3022)),
       ],
     );
   }
@@ -971,7 +942,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1B3022).withOpacity(0.3),
+                color: const Color(0xFF1B3022).withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               )

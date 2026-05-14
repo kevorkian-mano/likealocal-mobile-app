@@ -30,7 +30,7 @@ void main() async {
   );
 
   // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
-  assert(() { DatabaseSeeder.seed(); return true; }());
+  await DatabaseSeeder.seed();
   
   // 🔔 Initialize Notifications
   await NotificationService().initialize();

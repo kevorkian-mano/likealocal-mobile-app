@@ -1,7 +1,9 @@
 import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/providers/chat_provider.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/ai_service.dart';
 import '../../widgets/custom_button.dart';
 import '../place_details_screen/place_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -194,77 +196,105 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
-                            spacing: 8,
                             children: [
                               _buildChip('Food', appTheme.midnightPine, Colors.white),
-                              _buildChip('Adventure', Color(0xFFD7E8DE), Color(0xFF4D6353)),
-                              _buildChip('Culture', Color(0xFFD7E8DE), Color(0xFF4D6353)),
-                              _buildChip('Chill', Color(0xFFD7E8DE), Color(0xFF4D6353)),
+                              const SizedBox(width: 8),
+                              _buildChip('Adventure', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
+                              const SizedBox(width: 8),
+                              _buildChip('Culture', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
+                              const SizedBox(width: 8),
+                              _buildChip('Chill', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
                             ],
                           ),
                         ),
                         SizedBox(height: 24),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF1B3022),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 15,
-                                  offset: Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    shape: BoxShape.circle,
+                          child: Consumer<GemsProvider>(
+                            builder: (context, gemsProvider, _) {
+                              final nearest = gemsProvider.getNearestGem();
+                              if (nearest == null || gemsProvider.userLocation == null) {
+                                return const SizedBox.shrink();
+                              }
+                              
+                              final distance = LocationService.calculateDistance(
+                                gemsProvider.userLocation!.latitude,
+                                gemsProvider.userLocation!.longitude,
+                                nearest.latitude,
+                                nearest.longitude
+                              );
+                              
+                              return GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PlaceDetailsScreen(gem: nearest),
                                   ),
-                                  child: Icon(Icons.location_on, color: Colors.white, size: 20),
                                 ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF1B3022),
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 15,
+                                        offset: Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        'HIDDEN PLACE DETECTED',
-                                        style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                          color: Colors.white.withOpacity(0.8),
-                                          letterSpacing: 0.6,
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.location_on, color: Colors.white, size: 20),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'NEAREST GEM',
+                                              style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                                                color: Colors.white.withOpacity(0.8),
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                            Text(
+                                              '${nearest.name} is\njust ${gemsProvider.formatDistance(distance * 1000)} away!',
+                                              style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                                                color: Colors.white,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Text(
-                                        'Crimson Bar & Grill is\njust 200m away!',
-                                        style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
                                           color: Colors.white,
+                                          borderRadius: BorderRadius.circular(9999),
+                                        ),
+                                        child: Text(
+                                          'View',
+                                          style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                                            color: Color(0xFF1B3022),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(9999),
-                                  ),
-                                  child: Text(
-                                    'Show Path',
-                                    style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                      color: Color(0xFF1B3022),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -273,7 +303,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Consumer2<GemsProvider, UserProvider>(
                             builder: (context, gemsProvider, userProvider, _) {
-                              final isPremium = userProvider.user?.isPro ?? false || userProvider.user?.isSuperUser ?? false;
+                              final isPremium = (userProvider.user?.isPro ?? false) || (userProvider.user?.isSuperUser ?? false);
                               return GestureDetector(
                                 onTap: () {
                                   if (!isPremium) {
@@ -378,8 +408,11 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 final query = _searchQuery.trim().toLowerCase();
                                 displayGems = displayGems.where((gem) => 
                                   gem.name.toLowerCase().contains(query) ||
+                                  gem.description.toLowerCase().contains(query) ||
+                                  gem.category.toLowerCase().contains(query) ||
                                   gem.vibe.toLowerCase().contains(query) ||
-                                  gem.uniqueCode.toLowerCase() == query
+                                  gem.uniqueCode.toLowerCase() == query ||
+                                  gem.localsTip.toLowerCase().contains(query)
                                 ).toList();
                               }
 
@@ -646,6 +679,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
   Widget _buildCard(BuildContext context, HiddenGem gem) {
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userLoc = gemsProvider.userLocation;
+    final isLocalLegend = gem.contributorIsSuperUser;
     
     String distanceText = '--- km away';
     if (userLoc != null) {
@@ -710,6 +744,22 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                     top: 12,
                     left: 12,
                     child: _buildTrendingBadge(),
+                  ),
+                if (isLocalLegend)
+                  Positioned(
+                    top: gem.isTrending ? 52 : 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'LOCAL LEGEND',
+                        style: TextStyle(color: Color(0xFF1B3022), fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -965,5 +1015,6 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     );
   }
 }
+
 
 

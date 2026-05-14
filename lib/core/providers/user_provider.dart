@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../models/user_model.dart';
 
 
@@ -23,6 +24,18 @@ class UserProvider extends ChangeNotifier {
     _authService.authStateChanges.listen((User? firebaseUser) async {
       if (firebaseUser != null) {
         _user = await _authService.getUserData(firebaseUser.uid);
+        
+        // FR11-7: Update FCM Token for notifications
+        try {
+          final token = await NotificationService().getDeviceToken();
+          if (token != null) {
+            await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).update({
+              'fcmToken': token,
+            });
+          }
+        } catch (e) {
+          debugPrint('Error updating FCM token: $e');
+        }
       } else {
         _user = null;
       }

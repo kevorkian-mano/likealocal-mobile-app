@@ -116,6 +116,60 @@ class HiddenGem {
     };
   }
 
+  HiddenGem copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? category,
+    String? vibe,
+    double? rating,
+    String? imageUrl,
+    double? latitude,
+    double? longitude,
+    String? localsTip,
+    List<String>? recommendedDishes,
+    bool? isPremium,
+    bool? isTrending,
+    bool? isVerified,
+    String? contributorId,
+    GemStatus? status,
+    String? uniqueCode,
+    int? views,
+    int? saves,
+    int? reportCount,
+    DateTime? createdAt,
+    bool? isBoosted,
+    DateTime? boostedUntil,
+    bool? contributorIsSuperUser,
+  }) {
+    return HiddenGem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      vibe: vibe ?? this.vibe,
+      rating: rating ?? this.rating,
+      imageUrl: imageUrl ?? this.imageUrl,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      localsTip: localsTip ?? this.localsTip,
+      recommendedDishes: recommendedDishes ?? this.recommendedDishes,
+      isPremium: isPremium ?? this.isPremium,
+      isTrending: isTrending ?? this.isTrending,
+      isVerified: isVerified ?? this.isVerified,
+      contributorId: contributorId ?? this.contributorId,
+      status: status ?? this.status,
+      uniqueCode: uniqueCode ?? this.uniqueCode,
+      views: views ?? this.views,
+      saves: saves ?? this.saves,
+      reportCount: reportCount ?? this.reportCount,
+      createdAt: createdAt ?? this.createdAt,
+      isBoosted: isBoosted ?? this.isBoosted,
+      boostedUntil: boostedUntil ?? this.boostedUntil,
+      contributorIsSuperUser: contributorIsSuperUser ?? this.contributorIsSuperUser,
+    );
+  }
+
   bool get isApproved => status == GemStatus.approved;
 }
 

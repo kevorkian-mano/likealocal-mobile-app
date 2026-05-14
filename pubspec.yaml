@@ -55,3 +55,10 @@ flutter:
           weight: 600
         - asset: assets/fonts/InterBold.ttf
           weight: 700
+
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSansBold.ttf
+          weight: 700
+        - asset: assets/fonts/PlusJakartaSansExtraBold.ttf
+          weight: 800

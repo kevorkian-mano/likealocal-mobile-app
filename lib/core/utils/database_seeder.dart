@@ -241,7 +241,7 @@ class DatabaseSeeder {
         'localsTip': 'Go after 7pm on weekdays. Ask the record shop owner for the "terrace key".',
         'recommendedDishes': ['Sangria Branca', 'Petiscos Board'],
         'isPremium': false, 'isTrending': true,
-        'contributorId': _eyadId, 'isApproved': true,
+        'contributorId': _eyadId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 234, 'saves': 87,
         'createdAt': FieldValue.serverTimestamp(),
@@ -257,7 +257,7 @@ class DatabaseSeeder {
         'localsTip': 'Arrive before 11am for the freshest catch. Cash only at most stalls.',
         'recommendedDishes': ['Grilled Sardines', 'Bifanas', 'Ginjinha'],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _eyadId, 'isApproved': true,
+        'contributorId': _eyadId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 189, 'saves': 54,
         'createdAt': FieldValue.serverTimestamp(),
@@ -273,7 +273,7 @@ class DatabaseSeeder {
         'localsTip': 'Ring the bell — the door looks closed but it\'s always open.',
         'recommendedDishes': [],
         'isPremium': true, 'isTrending': true,
-        'contributorId': _manuelId, 'isApproved': true,
+        'contributorId': _manuelId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 312, 'saves': 143,
         'createdAt': FieldValue.serverTimestamp(),
@@ -289,7 +289,7 @@ class DatabaseSeeder {
         'localsTip': 'Friday nights only. No reservation needed but arrive by 9pm.',
         'recommendedDishes': ['Pastel de Nata', 'Medronho Spirit', 'Queijo da Serra'],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _manuelId, 'isApproved': true,
+        'contributorId': _manuelId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 156, 'saves': 72,
         'createdAt': FieldValue.serverTimestamp(),
@@ -305,7 +305,7 @@ class DatabaseSeeder {
         'localsTip': 'Best at 6am in summer. Locals gather there for sunrise yoga.',
         'recommendedDishes': [],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _chantalId, 'isApproved': true,
+        'contributorId': _chantalId, 'status': 'approved',
         'contributorIsSuperUser': false,
         'views': 98, 'saves': 41,
         'createdAt': FieldValue.serverTimestamp(),
@@ -321,7 +321,7 @@ class DatabaseSeeder {
         'localsTip': 'Reservation essential — call 2 weeks in advance.',
         'recommendedDishes': ['Bacalhau com Natas', 'Caldo Verde', 'Pasteis de Feijão'],
         'isPremium': true, 'isTrending': true,
-        'contributorId': _chantalId, 'isApproved': true,
+        'contributorId': _chantalId, 'status': 'approved',
         'contributorIsSuperUser': false,
         'views': 421, 'saves': 198,
         'createdAt': FieldValue.serverTimestamp(),
@@ -337,7 +337,7 @@ class DatabaseSeeder {
         'localsTip': 'Sundays 10am–3pm only. Enter through the far-left gate.',
         'recommendedDishes': ['Artisan Coffee', 'Local Pastries'],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _ebramId, 'isApproved': true,
+        'contributorId': _ebramId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 134, 'saves': 59,
         'createdAt': FieldValue.serverTimestamp(),
@@ -353,7 +353,7 @@ class DatabaseSeeder {
         'localsTip': 'Ask the maître d\' for "the vault experience". Available for walk-ins after 8pm.',
         'recommendedDishes': ['Alentejo Wine Flight', 'Iberian Ham Board', 'Truffled Croquettes'],
         'isPremium': true, 'isTrending': true,
-        'contributorId': _ebramId, 'isApproved': true,
+        'contributorId': _ebramId, 'status': 'approved',
         'contributorIsSuperUser': true,
         'views': 287, 'saves': 112,
         'createdAt': FieldValue.serverTimestamp(),
@@ -370,7 +370,7 @@ class DatabaseSeeder {
         'localsTip': 'Follow @cinemadetelhado on Instagram for the schedule.',
         'recommendedDishes': [],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _youstinaId, 'isApproved': false,
+        'contributorId': _youstinaId, 'status': 'pending',
         'contributorIsSuperUser': false,
         'views': 0, 'saves': 0,
         'createdAt': FieldValue.serverTimestamp(),
@@ -386,7 +386,7 @@ class DatabaseSeeder {
         'localsTip': 'Say "o menu do dia, por favor" and smile. Works every time.',
         'recommendedDishes': ['Prato do Dia', 'Sopa do Dia'],
         'isPremium': false, 'isTrending': false,
-        'contributorId': _youstinaId, 'isApproved': false,
+        'contributorId': _youstinaId, 'status': 'pending',
         'contributorIsSuperUser': false,
         'views': 0, 'saves': 0,
         'createdAt': FieldValue.serverTimestamp(),
@@ -400,7 +400,7 @@ class DatabaseSeeder {
       batch.set(docRef, gem);
     }
     await batch.commit();
-    print('✅ ${gems.length} gems seeded (${gems.where((g) => g['isApproved'] == true).length} approved, ${gems.where((g) => g['isApproved'] == false).length} pending).');
+    print('✅ ${gems.length} gems seeded (${gems.where((g) => g['status'] == 'approved').length} approved, ${gems.where((g) => g['status'] == 'pending').length} pending).');
   }
 
   // ── 3. CHATS ───────────────────────────────────────────────────────────────
@@ -481,7 +481,7 @@ class DatabaseSeeder {
 
   // ── 4. REVIEWS ─────────────────────────────────────────────────────────────
   static Future<void> _seedReviews() async {
-    final gemsSnap = await _db.collection('gems').where('isApproved', isEqualTo: true).get();
+    final gemsSnap = await _db.collection('gems').where('status', isEqualTo: 'approved').get();
     if (gemsSnap.docs.isEmpty) return;
 
     final batch = _db.batch();

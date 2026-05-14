@@ -109,6 +109,7 @@ class NotificationService {
 
   void _handleDeepLink(Map<String, dynamic> data) {
     final gemId = data['gemId'];
+    if (gemId != null && gemId.toString().isNotEmpty) {
       NavigatorService.pushNamed(AppRoutes.placeDetailsScreen, arguments: gemId);
     }
   }

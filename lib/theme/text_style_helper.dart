@@ -39,6 +39,13 @@ class TextStyleHelper {
     color: theme.colorScheme.onSurface,
   );
 
+  TextStyle get title24ExtraBoldOutfit => TextStyle(
+    fontSize: 24.fSize,
+    fontWeight: FontWeight.w800,
+    fontFamily: 'Outfit',
+    color: theme.colorScheme.onSurface,
+  );
+
   // Title Styles
   // Medium text styles for titles and subtitles
 
@@ -128,6 +135,27 @@ class TextStyleHelper {
     color: theme.colorScheme.onSurface.withOpacity(0.8),
   );
 
+  TextStyle get body12RegularInter => TextStyle(
+    fontSize: 12.fSize,
+    fontWeight: FontWeight.w400,
+    fontFamily: 'Inter',
+    color: theme.colorScheme.onSurface,
+  );
+
+  TextStyle get textStyle17 => TextStyle(
+    fontSize: 17.fSize,
+    fontWeight: FontWeight.w600,
+    fontFamily: 'Inter',
+    color: theme.colorScheme.onSurface,
+  );
+
+  TextStyle get body16MediumInter => TextStyle(
+    fontSize: 16.fSize,
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Inter',
+    color: theme.colorScheme.onSurface.withOpacity(0.8),
+  );
+
   // Label Styles
   // Small text styles for labels, captions, and hints
 
@@ -146,7 +174,6 @@ class TextStyleHelper {
   );
 
   // Legacy Support for generated screens
-  TextStyle get textStyle17 => title18SemiBoldInter;
   TextStyle get title20ExtraBoldPlusJakartaSans => title20ExtraBoldOutfit;
   TextStyle get display36ExtraBoldPlusJakartaSans => display36ExtraBoldOutfit;
   TextStyle get title20BoldPlusJakartaSans => title20BoldOutfit;

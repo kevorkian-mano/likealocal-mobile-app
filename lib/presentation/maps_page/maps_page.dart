@@ -1,4 +1,5 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong2.dart' as ll;
 import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
@@ -20,20 +21,9 @@ class MapsPage extends StatefulWidget {
 }
 
 class _MapsPageState extends State<MapsPage> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   String _selectedCategory = 'All';
-  bool _superUserOnly = false; // FR7-5: Local legends only filter
-
-  final String _mapStyle = '''
-  [
-    { "elementType": "geometry", "stylers": [ { "color": "#f5f5f5" } ] },
-    { "elementType": "labels.icon", "stylers": [ { "visibility": "off" } ] },
-    { "elementType": "labels.text.fill", "stylers": [ { "color": "#616161" } ] },
-    { "featureType": "poi", "elementType": "geometry", "stylers": [ { "color": "#eeeeee" } ] },
-    { "featureType": "road", "elementType": "geometry", "stylers": [ { "color": "#ffffff" } ] },
-    { "featureType": "water", "elementType": "geometry", "stylers": [ { "color": "#c9c9c9" } ] }
-  ]
-  ''';
+  bool _superUserOnly = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,46 +35,19 @@ class _MapsPageState extends State<MapsPage> {
             final userLoc = gemsProvider.userLocation;
             var approvedGems = gemsProvider.approvedGems;
 
-            // Apply Map Filter (FR3-12)
             if (_selectedCategory != 'All') {
               approvedGems = approvedGems.where((gem) => 
                 gem.vibe.toLowerCase().contains(_selectedCategory.toLowerCase())
               ).toList();
             }
 
-            // FR7-5: Super User Filter
             if (_superUserOnly) {
               approvedGems = approvedGems.where((g) => g.contributorIsSuperUser).toList();
             }
 
-            // Create Visual Heatmap (FR3-9)
-            final Set<Circle> heatmapCircles = approvedGems.map((gem) => Circle(
-              circleId: CircleId('heat_${gem.id}'),
-              center: LatLng(gem.latitude, gem.longitude),
-              radius: 300 * (gem.rating / 5),
-              fillColor: const Color(0xFFFFD700).withOpacity(0.15),
-              strokeWidth: 0,
-            )).toSet();
-
-            if (userLoc != null) {
-              heatmapCircles.add(Circle(
-                circleId: const CircleId('user_influence'),
-                center: LatLng(userLoc.latitude, userLoc.longitude),
-                radius: 800,
-                fillColor: const Color(0xFF1B3022).withOpacity(0.05),
-                strokeColor: const Color(0xFF1B3022),
-                strokeWidth: 1,
-              ));
-            }
-
-            final markers = approvedGems.map((gem) => Marker(
-              markerId: MarkerId(gem.id),
-              position: LatLng(gem.latitude, gem.longitude),
-              infoWindow: InfoWindow(title: gem.name, snippet: '${gem.rating} ★ - ${gem.vibe}'),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                gem.rating > 4.5 ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueGreen
-              ),
-            )).toSet();
+            final center = userLoc != null 
+                ? ll.LatLng(userLoc.latitude, userLoc.longitude) 
+                : const ll.LatLng(30.0444, 31.2357);
 
             return Stack(
               children: [
@@ -92,21 +55,52 @@ class _MapsPageState extends State<MapsPage> {
                   children: [
                     Expanded(
                       flex: 6,
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: userLoc != null 
-                              ? LatLng(userLoc.latitude, userLoc.longitude) 
-                              : const LatLng(30.0444, 31.2357),
-                          zoom: 14,
+                      child: FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: center,
+                          initialZoom: 14,
                         ),
-                        markers: markers,
-                        circles: heatmapCircles,
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: false,
-                        onMapCreated: (controller) {
-                          _mapController = controller;
-                          _mapController?.setMapStyle(_mapStyle);
-                        },
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.likelocal.app',
+                          ),
+                          CircleLayer(
+                            circles: [
+                              ...approvedGems.map((gem) => CircleMarker(
+                                point: ll.LatLng(gem.latitude, gem.longitude),
+                                radius: 50 * (gem.rating / 5),
+                                color: const Color(0xFFFFD700).withOpacity(0.15),
+                                useRadiusInMeter: true,
+                              )),
+                              if (userLoc != null)
+                                CircleMarker(
+                                  point: ll.LatLng(userLoc.latitude, userLoc.longitude),
+                                  radius: 800,
+                                  color: const Color(0xFF1B3022).withOpacity(0.05),
+                                  borderColor: const Color(0xFF1B3022),
+                                  borderStrokeWidth: 1,
+                                  useRadiusInMeter: true,
+                                ),
+                            ],
+                          ),
+                          MarkerLayer(
+                            markers: approvedGems.map((gem) => Marker(
+                              point: ll.LatLng(gem.latitude, gem.longitude),
+                              width: 40,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () => _showGemQuickView(context, gem),
+                                child: Icon(
+                                  Icons.location_on,
+                                  color: gem.rating > 4.5 ? Colors.orange : Colors.green,
+                                  size: 40,
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
@@ -135,13 +129,24 @@ class _MapsPageState extends State<MapsPage> {
                     ),
                   ],
                 ),
-                  _buildTopOverlay(context),
+                _buildTopOverlay(context),
               ],
             );
           },
         ),
       ),
       bottomNavigationBar: AppBottomNavBar(selectedIndex: 1),
+    );
+  }
+
+  void _showGemQuickView(BuildContext context, HiddenGem gem) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: const EdgeInsets.all(16),
+        child: _buildMapCard(context, gem),
+      ),
     );
   }
 
@@ -160,8 +165,8 @@ class _MapsPageState extends State<MapsPage> {
               onSelected: (val) => setState(() => _superUserOnly = val),
               selectedColor: const Color(0xFFFFD700).withOpacity(0.3),
               checkmarkColor: const Color(0xFF1B3022),
-              labelStyle: TextStyle(
-                color: const Color(0xFF1B3022),
+              labelStyle: const TextStyle(
+                color: Color(0xFF1B3022),
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -374,7 +379,7 @@ class _MapsPageState extends State<MapsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Color(0xFFBEAFA7).withOpacity(0.2)),
+          border: Border.all(color: const Color(0xFFBEAFA7).withOpacity(0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -393,18 +398,18 @@ class _MapsPageState extends State<MapsPage> {
                   Text(
                     gem.name,
                     style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
-                      color: Color(0xFF191C1A),
+                      color: const Color(0xFF191C1A),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Color(0xFF3E5641), size: 14),
-                      SizedBox(width: 4),
+                      const Icon(Icons.location_on, color: Color(0xFF3E5641), size: 14),
+                      const SizedBox(width: 4),
                       Text(
                         'Zamalek, Cairo',
                         style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                          color: Color(0xFF4D6353),
+                          color: const Color(0xFF4D6353),
                         ),
                       ),
                     ],
@@ -413,26 +418,6 @@ class _MapsPageState extends State<MapsPage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDensityPulse(double top, double left, double size) {
-    return Positioned(
-      top: top,
-      left: left,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              Color(0xFFFFD700).withOpacity(0.4),
-              Color(0xFFFFD700).withOpacity(0.0),
-            ],
-          ),
         ),
       ),
     );

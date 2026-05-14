@@ -1,4 +1,5 @@
 /// This class is used in the [share_hidden_gem_screen] screen.
+library;
 
 // ignore_for_file: must_be_immutable
 class ShareHiddenGemModel {

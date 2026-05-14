@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/providers/user_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/models/user_model.dart';
 
 class AdminUserManagementScreen extends StatelessWidget {
-  const AdminUserManagementScreen({Key? key}) : super(key: key);
+  const AdminUserManagementScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: AppBar(
-        title: Text('User Management', style: TextStyleHelper.instance.title18SemiBoldInter),
+        title: Text(
+          'User Management',
+          style: TextStyleHelper.instance.title18SemiBoldInter,
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
@@ -21,14 +23,19 @@ class AdminUserManagementScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: appTheme.midnightPine));
+            return Center(
+              child: CircularProgressIndicator(color: appTheme.midnightPine),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(child: Text('No users found.'));
           }
 
           final users = snapshot.data!.docs
-              .map((d) => UserModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+              .map(
+                (d) =>
+                    UserModel.fromMap(d.data() as Map<String, dynamic>, d.id),
+              )
               .toList();
 
           return ListView.separated(
@@ -47,19 +54,23 @@ class AdminUserManagementScreen extends StatelessWidget {
 
   Widget _buildUserTile(BuildContext context, UserModel user) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
     return Container(
       padding: EdgeInsets.all(16.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.h),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 24.h,
-            backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
+            backgroundImage: user.avatarUrl.isNotEmpty
+                ? NetworkImage(user.avatarUrl)
+                : null,
             child: user.avatarUrl.isEmpty ? Icon(Icons.person) : null,
           ),
           SizedBox(width: 16.h),
@@ -67,12 +78,23 @@ class AdminUserManagementScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user.fullName, style: TextStyleHelper.instance.body14BoldInter),
-                Text(user.email, style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.grey)),
+                Text(
+                  user.fullName,
+                  style: TextStyleHelper.instance.body14BoldInter,
+                ),
+                Text(
+                  user.email,
+                  style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                    color: Colors.grey,
+                  ),
+                ),
                 SizedBox(height: 4.h),
                 Row(
                   children: [
-                    _buildBadge(user.isPro ? 'PRO' : 'FREE', user.isPro ? Colors.amber : Colors.grey),
+                    _buildBadge(
+                      user.isPro ? 'PRO' : 'FREE',
+                      user.isPro ? Colors.amber : Colors.grey,
+                    ),
                     SizedBox(width: 4.h),
                     if (user.isSuperUser) _buildBadge('SUPER', Colors.blue),
                     if (user.isAdmin) _buildBadge('ADMIN', Colors.purple),
@@ -92,7 +114,10 @@ class AdminUserManagementScreen extends StatelessWidget {
             },
             itemBuilder: (context) => [
               if (!user.isBanned)
-                const PopupMenuItem(value: 'ban', child: Text('Ban User', style: TextStyle(color: Colors.red))),
+                const PopupMenuItem(
+                  value: 'ban',
+                  child: Text('Ban User', style: TextStyle(color: Colors.red)),
+                ),
               if (user.isBanned)
                 const PopupMenuItem(value: 'unban', child: Text('Unban User')),
             ],
@@ -110,7 +135,14 @@ class AdminUserManagementScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(4.h),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

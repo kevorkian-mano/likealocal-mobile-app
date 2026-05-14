@@ -6,7 +6,7 @@ import '../core/app_export.dart';
 /// with customizable items, icons, labels and styling options
 class CustomBottomBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomBottomBar({
-    Key? key,
+    super.key,
     required this.bottomBarItemList,
     required this.onChanged,
     this.selectedIndex = 0,
@@ -16,7 +16,7 @@ class CustomBottomBar extends StatelessWidget implements PreferredSizeWidget {
     this.selectedLabelStyle,
     this.unselectedLabelStyle,
     this.elevation,
-  }) : super(key: key);
+  });
 
   /// List of bottom bar items with their properties
   final List<CustomBottomBarItem> bottomBarItemList;

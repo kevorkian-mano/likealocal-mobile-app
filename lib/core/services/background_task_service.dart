@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'notification_service.dart';
 import '../models/hidden_gem_model.dart';
-import 'dart:math' as math;
 
 const String taskProximityCheck = "proximityCheckTask";
 const String taskWeeklySummary = "weeklySummaryTask";
@@ -13,7 +12,7 @@ const String taskWeeklySummary = "weeklySummaryTask";
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     print("Executing background task: $task");
-    
+
     // Ensure Firebase is initialized for background execution
     try {
       await Firebase.initializeApp();
@@ -35,7 +34,7 @@ Future<bool> _handleProximityCheck() async {
   try {
     // 1. Get current location
     Position position = await Geolocator.getCurrentPosition();
-    
+
     // 2. Fetch some approved gems (in a real app, use geofencing or specific user saved gems)
     // For demo, we'll fetch all approved gems and check distance
     final gemsSnapshot = await FirebaseFirestore.instance
@@ -45,7 +44,7 @@ Future<bool> _handleProximityCheck() async {
 
     for (var doc in gemsSnapshot.docs) {
       final gem = HiddenGem.fromMap(doc.data(), doc.id);
-      
+
       double distance = Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -62,7 +61,7 @@ Future<bool> _handleProximityCheck() async {
           payload: gem.id,
         );
         // Only notify for one gem to avoid spamming in background task
-        break; 
+        break;
       }
     }
     return true;
@@ -89,7 +88,8 @@ Future<bool> _handleWeeklySummary() async {
 }
 
 class BackgroundTaskService {
-  static final BackgroundTaskService _instance = BackgroundTaskService._internal();
+  static final BackgroundTaskService _instance =
+      BackgroundTaskService._internal();
   factory BackgroundTaskService() => _instance;
   BackgroundTaskService._internal();
 
@@ -105,9 +105,7 @@ class BackgroundTaskService {
       "1",
       taskProximityCheck,
       frequency: const Duration(minutes: 15),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
+      constraints: Constraints(networkType: NetworkType.connected),
     );
   }
 

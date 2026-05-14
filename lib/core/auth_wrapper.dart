@@ -19,7 +19,11 @@ class AuthWrapper extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.wifi_off_rounded, size: 80, color: Color(0xFF1B3022)),
+                  const Icon(
+                    Icons.wifi_off_rounded,
+                    size: 80,
+                    color: Color(0xFF1B3022),
+                  ),
                   const SizedBox(height: 24),
                   const Text(
                     'Connection Lost',
@@ -50,10 +54,21 @@ class AuthWrapper extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1B3022),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
-                    child: const Text('Try Again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Try Again',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -78,4 +93,3 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
-

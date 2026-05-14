@@ -2,21 +2,18 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/app_export.dart';
 import '../models/share_hidden_gem_model.dart';
 import '../../../core/models/hidden_gem_model.dart';
-import '../../../core/models/user_model.dart';
 import '../../../core/providers/gems_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/services/media_service.dart';
 import '../map_picker_page.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 
 class ShareHiddenGemProvider extends ChangeNotifier {
   ShareHiddenGemModel shareHiddenGemModel = ShareHiddenGemModel();
@@ -26,20 +23,22 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   double selectedLng = 31.2357;
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-// ... controllers ...
-  
+  // ... controllers ...
+
   void adjustPin(BuildContext context) async {
     final LatLng? result = await Navigator.push<LatLng>(
       context,
       MaterialPageRoute(
-        builder: (context) => MapPickerPage(initialPosition: LatLng(selectedLat, selectedLng)),
+        builder: (context) =>
+            MapPickerPage(initialPosition: LatLng(selectedLat, selectedLng)),
       ),
     );
 
     if (result != null) {
       selectedLat = result.latitude;
       selectedLng = result.longitude;
-      locationController.text = '${selectedLat.toStringAsFixed(4)}, ${selectedLng.toStringAsFixed(4)}';
+      locationController.text =
+          '${selectedLat.toStringAsFixed(4)}, ${selectedLng.toStringAsFixed(4)}';
       notifyListeners();
     }
   }
@@ -48,12 +47,17 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   final TextEditingController locationController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController localTipsController = TextEditingController();
-  final TextEditingController recommendedDishesController = TextEditingController();
+  final TextEditingController recommendedDishesController =
+      TextEditingController();
 
-  String? validatePlaceTitle(String? value) => value == null || value.isEmpty ? 'Required' : null;
-  String? validateCategory(String? value) => value == null || value.isEmpty ? 'Required' : null;
-  String? validateLocation(String? value) => value == null || value.isEmpty ? 'Required' : null;
-  String? validateDescription(String? value) => value == null || value.isEmpty ? 'Required' : null;
+  String? validatePlaceTitle(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
+  String? validateCategory(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
+  String? validateLocation(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
+  String? validateDescription(String? value) =>
+      value == null || value.isEmpty ? 'Required' : null;
 
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
@@ -78,7 +82,6 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-
     placeTitleController.dispose();
     locationController.dispose();
     descriptionController.dispose();
@@ -107,7 +110,10 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     await prefs.setString('draft_tips', localTipsController.text);
     await prefs.setString('draft_dishes', recommendedDishesController.text);
     if (shareHiddenGemModel.selectedCategory != null) {
-      await prefs.setString('draft_category', shareHiddenGemModel.selectedCategory!);
+      await prefs.setString(
+        'draft_category',
+        shareHiddenGemModel.selectedCategory!,
+      );
     }
   }
 
@@ -117,7 +123,10 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
       if (image != null) {
         selectedImageFile = File(image.path);
         shareHiddenGemModel.selectedMediaPath = image.path;
@@ -134,13 +143,15 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     isAiAnalyzing = true;
     notifyListeners();
 
-    final suggestions = await AIService.suggestTagsAndCategory(selectedImageFile!);
-    
+    final suggestions = await AIService.suggestTagsAndCategory(
+      selectedImageFile!,
+    );
+
     if (suggestions['category'] != null) {
       shareHiddenGemModel.selectedCategory = suggestions['category'];
     }
     // Could also append tags to description or a tags field
-    
+
     isAiAnalyzing = false;
     notifyListeners();
   }
@@ -155,7 +166,9 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   Future<void> publishToommunity(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
     if (selectedImageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add a photo of the place')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add a photo of the place')),
+      );
       return;
     }
 
@@ -170,7 +183,10 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
       // 1. Upload Media (Real Storage)
       final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-      final imageUrl = await _mediaService.uploadGemImage(selectedImageFile!, tempId);
+      final imageUrl = await _mediaService.uploadGemImage(
+        selectedImageFile!,
+        tempId,
+      );
 
       // 2. Build Advanced Model
       final newGem = HiddenGem(
@@ -184,29 +200,36 @@ class ShareHiddenGemProvider extends ChangeNotifier {
         latitude: selectedLat,
         longitude: selectedLng,
         localsTip: localTipsController.text.trim(),
-        recommendedDishes: recommendedDishesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        recommendedDishes: recommendedDishesController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
         contributorId: user.id,
         isVerified: user.isSuperUser,
         status: user.isSuperUser ? GemStatus.approved : GemStatus.pending,
         uniqueCode: _generateGemCode(),
         createdAt: DateTime.now(),
-
       );
 
       // 3. Save & Award Gamification (FR4-1, FR4-14, FR4-15)
       await gemsProvider.addGem(newGem, user);
 
       await _clearFormAndDraft();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('WOW! ${newGem.name} shared! Code: ${newGem.uniqueCode}'),
+          content: Text(
+            'WOW! ${newGem.name} shared! Code: ${newGem.uniqueCode}',
+          ),
           backgroundColor: const Color(0xFF1B3022),
         ),
       );
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     } finally {
       isLoading = false;
       notifyListeners();
@@ -221,7 +244,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     recommendedDishesController.clear();
     selectedImageFile = null;
     shareHiddenGemModel = ShareHiddenGemModel();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('draft_title');
     await prefs.remove('draft_location');

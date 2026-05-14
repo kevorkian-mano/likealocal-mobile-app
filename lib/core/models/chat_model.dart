@@ -15,12 +15,18 @@ class ChatMessage {
     required this.isMe,
   });
 
-  factory ChatMessage.fromMap(Map<String, dynamic> map, String documentId, String currentUserId) {
+  factory ChatMessage.fromMap(
+    Map<String, dynamic> map,
+    String documentId,
+    String currentUserId,
+  ) {
     return ChatMessage(
       id: documentId,
       senderId: map['senderId'] ?? '',
       text: map['text'] ?? '',
-      timestamp: map['timestamp'] != null ? (map['timestamp'] as Timestamp).toDate() : DateTime.now(),
+      timestamp: map['timestamp'] != null
+          ? (map['timestamp'] as Timestamp).toDate()
+          : DateTime.now(),
       isMe: map['senderId'] == currentUserId,
     );
   }
@@ -56,15 +62,24 @@ class ChatPreview {
     this.targetUserId = '',
   });
 
-  factory ChatPreview.fromMap(Map<String, dynamic> map, String documentId, String currentUserId) {
+  factory ChatPreview.fromMap(
+    Map<String, dynamic> map,
+    String documentId,
+    String currentUserId,
+  ) {
     // Determine the other participant's name and avatar
-    final participantNames = map['participantNames'] as Map<String, dynamic>? ?? {};
-    final participantAvatars = map['participantAvatars'] as Map<String, dynamic>? ?? {};
-    
+    final participantNames =
+        map['participantNames'] as Map<String, dynamic>? ?? {};
+    final participantAvatars =
+        map['participantAvatars'] as Map<String, dynamic>? ?? {};
+
     // Find the other user's ID
     final participants = List<String>.from(map['participants'] ?? []);
-    final otherUserId = participants.firstWhere((id) => id != currentUserId, orElse: () => '');
-    
+    final otherUserId = participants.firstWhere(
+      (id) => id != currentUserId,
+      orElse: () => '',
+    );
+
     final unreadMap = map['unreadCount'] as Map<String, dynamic>? ?? {};
 
     return ChatPreview(
@@ -72,7 +87,9 @@ class ChatPreview {
       userName: participantNames[otherUserId] ?? 'Unknown User',
       userAvatar: participantAvatars[otherUserId] ?? '',
       lastMessage: map['lastMessage'] ?? '',
-      lastMessageTime: map['lastMessageTime'] != null ? (map['lastMessageTime'] as Timestamp).toDate() : DateTime.now(),
+      lastMessageTime: map['lastMessageTime'] != null
+          ? (map['lastMessageTime'] as Timestamp).toDate()
+          : DateTime.now(),
       unreadCount: unreadMap[currentUserId] ?? 0,
       relatedGemName: map['relatedGemName'] ?? '',
       targetUserId: otherUserId,
@@ -87,5 +104,4 @@ class ChatPreview {
       'relatedGemName': relatedGemName,
     };
   }
-
 }

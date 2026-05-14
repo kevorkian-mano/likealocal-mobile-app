@@ -7,12 +7,13 @@ class MediaService {
 
   Future<String> uploadGemImage(File imageFile, String gemId) async {
     try {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${path.basename(imageFile.path)}';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${path.basename(imageFile.path)}';
       final storageRef = _storage.ref().child('gems/$gemId/$fileName');
-      
+
       final uploadTask = await storageRef.putFile(imageFile);
       final downloadUrl = await uploadTask.ref.getDownloadURL();
-      
+
       return downloadUrl;
     } catch (e) {
       throw Exception('Failed to upload image: $e');

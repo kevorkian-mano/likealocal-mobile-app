@@ -3,30 +3,28 @@ import 'package:flutter/material.dart';
 import '../core/app_export.dart';
 import './custom_image_view.dart';
 
-/**
- * A customizable dropdown widget that provides a styled dropdown button form field
- * with configurable appearance, validation, and behavior options.
- * 
- * @param items - List of dropdown items to display
- * @param placeholder - Placeholder text shown when no item is selected
- * @param value - Currently selected value
- * @param onChanged - Callback function when selection changes
- * @param validator - Optional validation function for form validation
- * @param backgroundColor - Background color of the dropdown
- * @param textColor - Color of the text and placeholder
- * @param borderRadius - Border radius for rounded corners
- * @param rightIcon - Path to the dropdown arrow icon
- * @param iconSize - Size of the dropdown icon
- * @param padding - Internal padding of the dropdown
- * @param margin - External margin around the dropdown
- * @param fontSize - Font size of the text
- * @param fontWeight - Font weight of the text
- * @param fontFamily - Font family for the text
- * @param isEnabled - Whether the dropdown is enabled or disabled
- */
+/// A customizable dropdown widget that provides a styled dropdown button form field
+/// with configurable appearance, validation, and behavior options.
+///
+/// @param items - List of dropdown items to display
+/// @param placeholder - Placeholder text shown when no item is selected
+/// @param value - Currently selected value
+/// @param onChanged - Callback function when selection changes
+/// @param validator - Optional validation function for form validation
+/// @param backgroundColor - Background color of the dropdown
+/// @param textColor - Color of the text and placeholder
+/// @param borderRadius - Border radius for rounded corners
+/// @param rightIcon - Path to the dropdown arrow icon
+/// @param iconSize - Size of the dropdown icon
+/// @param padding - Internal padding of the dropdown
+/// @param margin - External margin around the dropdown
+/// @param fontSize - Font size of the text
+/// @param fontWeight - Font weight of the text
+/// @param fontFamily - Font family for the text
+/// @param isEnabled - Whether the dropdown is enabled or disabled
 class CustomDropdown extends StatelessWidget {
-  CustomDropdown({
-    Key? key,
+  const CustomDropdown({
+    super.key,
     this.items,
     this.placeholder,
     this.value,
@@ -43,7 +41,7 @@ class CustomDropdown extends StatelessWidget {
     this.fontWeight,
     this.fontFamily,
     this.isEnabled,
-  }) : super(key: key);
+  });
 
   final List<DropdownMenuItem<String>>? items;
   final String? placeholder;

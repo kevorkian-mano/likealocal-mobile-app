@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../core/providers/connectivity_provider.dart';
 import '../core/providers/gems_provider.dart';
 import '../core/app_export.dart';
 
 class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({Key? key}) : super(key: key);
+  const OfflineBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +37,9 @@ class OfflineBanner extends StatelessWidget {
                   children: [
                     Text(
                       'Operating Offline',
-                      style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.white),
+                      style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                     Consumer<GemsProvider>(
                       builder: (context, gems, _) {
@@ -56,14 +57,18 @@ class OfflineBanner extends StatelessWidget {
                               SizedBox(width: 6.h),
                               Text(
                                 'Syncing data...',
-                                style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.white),
+                                style: TextStyleHelper
+                                    .instance
+                                    .body12RegularInter
+                                    .copyWith(color: Colors.white),
                               ),
                             ],
                           );
                         }
                         return Text(
                           'Some features like AI and maps are limited.',
-                          style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.white.withOpacity(0.9)),
+                          style: TextStyleHelper.instance.body12RegularInter
+                              .copyWith(color: Colors.white.withOpacity(0.9)),
                         );
                       },
                     ),
@@ -90,7 +95,10 @@ class OfflineBanner extends StatelessWidget {
                 },
                 child: Text(
                   'INFO',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

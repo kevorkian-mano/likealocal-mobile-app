@@ -24,7 +24,7 @@ class HiddenGem {
   final int saves;
   final int reportCount;
   final DateTime? createdAt;
-  final bool isBoosted;       // FR12-5
+  final bool isBoosted; // FR12-5
   final DateTime? boostedUntil; // FR12-5
   final bool contributorIsSuperUser; // FR7-4, FR7-5
 
@@ -55,7 +55,6 @@ class HiddenGem {
     this.contributorIsSuperUser = false,
   });
 
-
   factory HiddenGem.fromMap(Map<String, dynamic> map, String documentId) {
     return HiddenGem(
       id: documentId,
@@ -81,9 +80,13 @@ class HiddenGem {
       views: map['views'] ?? 0,
       saves: map['saves'] ?? 0,
       reportCount: map['reportCount'] ?? 0,
-      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
+      createdAt: map['createdAt'] != null
+          ? (map['createdAt'] as Timestamp).toDate()
+          : null,
       isBoosted: map['isBoosted'] ?? false,
-      boostedUntil: map['boostedUntil'] != null ? (map['boostedUntil'] as Timestamp).toDate() : null,
+      boostedUntil: map['boostedUntil'] != null
+          ? (map['boostedUntil'] as Timestamp).toDate()
+          : null,
       contributorIsSuperUser: map['contributorIsSuperUser'] ?? false,
     );
   }
@@ -109,9 +112,13 @@ class HiddenGem {
       'views': views,
       'saves': saves,
       'reportCount': reportCount,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
       'isBoosted': isBoosted,
-      'boostedUntil': boostedUntil != null ? Timestamp.fromDate(boostedUntil!) : null,
+      'boostedUntil': boostedUntil != null
+          ? Timestamp.fromDate(boostedUntil!)
+          : null,
       'contributorIsSuperUser': contributorIsSuperUser,
     };
   }
@@ -166,11 +173,10 @@ class HiddenGem {
       createdAt: createdAt ?? this.createdAt,
       isBoosted: isBoosted ?? this.isBoosted,
       boostedUntil: boostedUntil ?? this.boostedUntil,
-      contributorIsSuperUser: contributorIsSuperUser ?? this.contributorIsSuperUser,
+      contributorIsSuperUser:
+          contributorIsSuperUser ?? this.contributorIsSuperUser,
     );
   }
 
   bool get isApproved => status == GemStatus.approved;
 }
-
-

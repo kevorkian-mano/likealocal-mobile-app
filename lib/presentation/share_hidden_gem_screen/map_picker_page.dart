@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../../core/app_export.dart';
 
 class MapPickerPage extends StatefulWidget {
   final LatLng initialPosition;
-  
-  const MapPickerPage({Key? key, this.initialPosition = const LatLng(30.0444, 31.2357)}) : super(key: key);
+
+  const MapPickerPage({
+    super.key,
+    this.initialPosition = const LatLng(30.0444, 31.2357),
+  });
 
   @override
   State<MapPickerPage> createState() => _MapPickerPageState();
@@ -13,7 +15,7 @@ class MapPickerPage extends StatefulWidget {
 
 class _MapPickerPageState extends State<MapPickerPage> {
   late LatLng _selectedLocation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -31,17 +33,29 @@ class _MapPickerPageState extends State<MapPickerPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, _selectedLocation),
-            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
+            child: const Text(
+              'Confirm',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1B3022),
+              ),
+            ),
           ),
         ],
       ),
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: CameraPosition(target: _selectedLocation, zoom: 15),
+            initialCameraPosition: CameraPosition(
+              target: _selectedLocation,
+              zoom: 15,
+            ),
             onTap: (location) => setState(() => _selectedLocation = location),
             markers: {
-              Marker(markerId: const MarkerId('selected'), position: _selectedLocation),
+              Marker(
+                markerId: const MarkerId('selected'),
+                position: _selectedLocation,
+              ),
             },
             myLocationEnabled: true,
             myLocationButtonEnabled: true,

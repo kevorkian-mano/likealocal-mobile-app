@@ -4,7 +4,7 @@ class GamificationHelper {
   static Map<String, dynamic> updateStreakAndBadges(UserModel user) {
     int currentStreak = user.contributionStreak;
     List<String> currentBadges = List.from(user.badges);
-    
+
     final now = DateTime.now();
     final lastContrib = user.lastContributionTime;
 
@@ -27,7 +27,7 @@ class GamificationHelper {
     if (currentStreak >= 7 && !currentBadges.contains('7_day_streak')) {
       currentBadges.add('7_day_streak');
     }
-    
+
     // Milestone badges
     // Assuming we track total contributions elsewhere, but for now we can use karma
     if (user.karmaPoints >= 100 && !currentBadges.contains('rising_star')) {
@@ -37,9 +37,6 @@ class GamificationHelper {
       currentBadges.add('local_legend');
     }
 
-    return {
-      'streak': currentStreak,
-      'badges': currentBadges,
-    };
+    return {'streak': currentStreak, 'badges': currentBadges};
   }
 }

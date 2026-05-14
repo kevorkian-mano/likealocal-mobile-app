@@ -5,7 +5,7 @@ import '../../core/app_export.dart';
 import './provider/app_navigation_provider.dart';
 
 class AppNavigationScreen extends StatefulWidget {
-  const AppNavigationScreen({Key? key}) : super(key: key);
+  const AppNavigationScreen({super.key});
 
   @override
   AppNavigationScreenState createState() => AppNavigationScreenState();
@@ -55,10 +55,8 @@ class AppNavigationScreenState extends State<AppNavigationScreen> {
                       _buildScreenTitle(
                         context,
                         screenTitle: "Admin Intelligence Dashboard",
-                        onTapScreenTitle: () => onTapScreenTitle(
-                          context,
-                          AppRoutes.adminDashboard,
-                        ),
+                        onTapScreenTitle: () =>
+                            onTapScreenTitle(context, AppRoutes.adminDashboard),
                       ),
                       _buildScreenTitle(
                         context,
@@ -71,25 +69,35 @@ class AppNavigationScreenState extends State<AppNavigationScreen> {
                       _buildScreenTitle(
                         context,
                         screenTitle: "Social Chat Hub",
-                        onTapScreenTitle: () => onTapScreenTitle(
-                          context,
-                          AppRoutes.chatListScreen,
-                        ),
+                        onTapScreenTitle: () =>
+                            onTapScreenTitle(context, AppRoutes.chatListScreen),
                       ),
                       const SizedBox(height: 20),
                       _buildScreenTitle(
                         context,
                         screenTitle: "⚠️ WIPE AND SEED DATABASE ⚠️",
                         onTapScreenTitle: () async {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Seeding database... Please wait.')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Seeding database... Please wait.'),
+                            ),
+                          );
                           try {
                             await DatabaseSeeder.seed();
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Database seeded successfully!')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Database seeded successfully!',
+                                  ),
+                                ),
+                              );
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
                             }
                           }
                         },

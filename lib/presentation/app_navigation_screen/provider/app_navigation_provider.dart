@@ -7,8 +7,7 @@ import '../models/app_navigation_model.dart';
 /// This provider manages the state of the AppNavigationScreen, including the
 /// current appNavigationModelObj
 class AppNavigationProvider extends ChangeNotifier {
-  AppNavigationModel _appNavigationModel = AppNavigationModel();
+  final AppNavigationModel _appNavigationModel = AppNavigationModel();
 
   AppNavigationModel get appNavigationModel => _appNavigationModel;
-
 }

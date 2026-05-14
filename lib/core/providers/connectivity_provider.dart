@@ -6,7 +6,9 @@ class ConnectivityProvider extends ChangeNotifier {
   bool get isOnline => _isOnline;
 
   ConnectivityProvider() {
-    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       // Check if any of the results indicate a connection
       _isOnline = results.any((result) => result != ConnectivityResult.none);
       notifyListeners();

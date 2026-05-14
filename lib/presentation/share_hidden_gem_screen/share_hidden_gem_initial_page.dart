@@ -10,7 +10,7 @@ import '../../widgets/custom_image_view.dart';
 import './provider/share_hidden_gem_provider.dart';
 
 class ShareHiddenGemInitialPage extends StatelessWidget {
-  const ShareHiddenGemInitialPage({Key? key}) : super(key: key);
+  const ShareHiddenGemInitialPage({super.key});
 
   static Widget builder(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments as HiddenGem?;
@@ -24,11 +24,8 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    
-
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: PreferredSize(
@@ -123,7 +120,9 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
         SizedBox(height: 8.h),
         Text(
           'Your contribution helps others explore the authentic side of the city.',
-          style: TextStyleHelper.instance.body14MediumInter.copyWith(color: appTheme.gray_800_01),
+          style: TextStyleHelper.instance.body14MediumInter.copyWith(
+            color: appTheme.gray_800_01,
+          ),
         ),
       ],
     );
@@ -143,19 +142,27 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
           SizedBox(
             width: 16.h,
             height: 16.h,
-            child: CircularProgressIndicator(strokeWidth: 2, color: appTheme.gray_900_01),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: appTheme.gray_900_01,
+            ),
           ),
           SizedBox(width: 12.h),
           Text(
             'AI is analyzing your photo for tags...',
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(color: appTheme.gray_900_01),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              color: appTheme.gray_900_01,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, ShareHiddenGemProvider provider) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    ShareHiddenGemProvider provider,
+  ) {
     return Column(
       children: [
         CustomButton(
@@ -170,11 +177,16 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: Size(double.infinity, 56.h),
             side: BorderSide(color: appTheme.gray_400),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.h)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28.h),
+            ),
           ),
           child: Text(
             'Save as Draft',
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(fontSize: 16, color: appTheme.gray_800_01),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              fontSize: 16,
+              color: appTheme.gray_800_01,
+            ),
           ),
         ),
       ],
@@ -187,13 +199,15 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
       child: Center(
         child: Container(
           padding: EdgeInsets.all(32.h),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24.h)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24.h),
+          ),
           child: CircularProgressIndicator(color: appTheme.gray_900_01),
         ),
       ),
     );
   }
-
 
   Widget _buildMediaUploadSection(
     BuildContext context,
@@ -419,7 +433,11 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.restaurant_menu, size: 20.h, color: appTheme.gray_800_01),
+            Icon(
+              Icons.restaurant_menu,
+              size: 20.h,
+              color: appTheme.gray_800_01,
+            ),
             SizedBox(width: 8.h),
             Text(
               'RECOMMENDED DISHES',
@@ -440,7 +458,6 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
       ],
     );
   }
-
 
   Widget _buildDescriptionSection(
     BuildContext context,

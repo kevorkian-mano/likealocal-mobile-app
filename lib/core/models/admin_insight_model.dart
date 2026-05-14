@@ -25,7 +25,9 @@ class AdminInsight {
     required this.conversionRate,
     this.activeUserRatio = 0.85,
     this.bannedUserCount = 3,
-    this.staleGemSuggestions = const ['Sunset Point (No activity)', 'Old Alleyway (Low rating)'],
+    this.staleGemSuggestions = const [
+      'Sunset Point (No activity)',
+      'Old Alleyway (Low rating)',
+    ],
   });
-
 }

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_export.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/models/admin_insight_model.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const AdminDashboardScreen();
@@ -21,7 +22,7 @@ class AdminDashboardScreen extends StatelessWidget {
         final approvedCount = gemsProvider.approvedGems.length;
         final distribution = gemsProvider.categoryDistribution;
         final velocity = gemsProvider.discoveryVelocity;
-        
+
         final insights = AdminInsight(
           vibeSoulGastronomy: distribution['Gastronomy'] ?? 0.0,
           vibeSoulArt: distribution['Art & Culture'] ?? 0.0,
@@ -29,7 +30,8 @@ class AdminDashboardScreen extends StatelessWidget {
           vibeSoulNightlife: distribution['Nightlife'] ?? 0.0,
           vibeSoulNature: distribution['Nature'] ?? 0.0,
           discoveryVelocity: velocity,
-          authenticityScore: 0.92, // Fixed high score for now, no complex formula
+          authenticityScore:
+              0.92, // Fixed high score for now, no complex formula
           pendingModerationCount: realPendingCount,
           conversionRate: 45, // Example generic conversion rate
         );
@@ -53,8 +55,6 @@ class AdminDashboardScreen extends StatelessWidget {
                 _buildMaintenanceSuggestions(insights),
                 const SizedBox(height: 32),
                 _buildPendingPayments(context),
-                const SizedBox(height: 32),
-                _buildMaintenanceSuggestions(context, insights),
                 const SizedBox(height: 100), // Spacing for fab
               ],
             ),
@@ -73,14 +73,20 @@ class AdminDashboardScreen extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Pending Payments', style: TextStyleHelper.instance.title18SemiBoldInter),
+              Text(
+                'Pending Payments',
+                style: TextStyleHelper.instance.title18SemiBoldInter,
+              ),
               Icon(Icons.payment, color: Color(0xFF1B3022), size: 20),
             ],
           ),
         ),
         const SizedBox(height: 16),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('payments').where('status', isEqualTo: 'pending').snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('payments')
+              .where('status', isEqualTo: 'pending')
+              .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return Container(
@@ -92,7 +98,10 @@ class AdminDashboardScreen extends StatelessWidget {
                   border: Border.all(color: Color(0x191B3022)),
                 ),
                 child: Center(
-                  child: Text('No pending payments', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'No pending payments',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               );
             }
@@ -114,13 +123,19 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentCard(BuildContext context, String docId, Map<String, dynamic> data) {
+  Widget _buildPaymentCard(
+    BuildContext context,
+    String docId,
+    Map<String, dynamic> data,
+  ) {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+        ],
       ),
       child: Column(
         children: [
@@ -135,12 +150,24 @@ class AdminDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data['userEmail'] ?? 'Unknown User', style: TextStyleHelper.instance.body14BoldInter),
-                    Text('Ref: ${data['referenceId']}', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(
+                      data['userEmail'] ?? 'Unknown User',
+                      style: TextStyleHelper.instance.body14BoldInter,
+                    ),
+                    Text(
+                      'Ref: ${data['referenceId']}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
-              Text(data['method'] ?? 'Manual', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3E5641))),
+              Text(
+                data['method'] ?? 'Manual',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF3E5641),
+                ),
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -152,7 +179,9 @@ class AdminDashboardScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: BorderSide(color: Colors.red.withOpacity(0.3)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: Text('Reject'),
                 ),
@@ -163,7 +192,9 @@ class AdminDashboardScreen extends StatelessWidget {
                   onPressed: () => _approvePayment(docId, data['userId']),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF1B3022),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: Text('Verify & Upgrade'),
                 ),
@@ -176,12 +207,18 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   Future<void> _approvePayment(String docId, String userId) async {
-    await FirebaseFirestore.instance.collection('payments').doc(docId).update({'status': 'approved'});
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'isPro': true});
+    await FirebaseFirestore.instance.collection('payments').doc(docId).update({
+      'status': 'approved',
+    });
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isPro': true,
+    });
   }
 
   Future<void> _rejectPayment(String docId) async {
-    await FirebaseFirestore.instance.collection('payments').doc(docId).update({'status': 'rejected'});
+    await FirebaseFirestore.instance.collection('payments').doc(docId).update({
+      'status': 'rejected',
+    });
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
@@ -212,11 +249,16 @@ class AdminDashboardScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(children: [
-          Icon(Icons.campaign_outlined, color: Color(0xFF1B3022)),
-          SizedBox(width: 10),
-          Text('Broadcast to All Users', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ]),
+        title: Row(
+          children: [
+            Icon(Icons.campaign_outlined, color: Color(0xFF1B3022)),
+            SizedBox(width: 10),
+            Text(
+              'Broadcast to All Users',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -224,7 +266,9 @@ class AdminDashboardScreen extends StatelessWidget {
               controller: titleCtrl,
               decoration: InputDecoration(
                 labelText: 'Notification Title',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             SizedBox(height: 12),
@@ -233,23 +277,39 @@ class AdminDashboardScreen extends StatelessWidget {
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'Message',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF1B3022)),
             onPressed: () async {
-              if (titleCtrl.text.trim().isEmpty || msgCtrl.text.trim().isEmpty) return;
+              if (titleCtrl.text.trim().isEmpty || msgCtrl.text.trim().isEmpty)
+                return;
               Navigator.pop(ctx);
-              await Provider.of<UserProvider>(context, listen: false)
-                  .broadcastNotification(titleCtrl.text.trim(), msgCtrl.text.trim());
-              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Notification broadcast sent!'), backgroundColor: Color(0xFF1B3022)),
+              await Provider.of<UserProvider>(
+                context,
+                listen: false,
+              ).broadcastNotification(
+                titleCtrl.text.trim(),
+                msgCtrl.text.trim(),
               );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Notification broadcast sent!'),
+                    backgroundColor: Color(0xFF1B3022),
+                  ),
+                );
+              }
             },
             child: Text('Send', style: TextStyle(color: Colors.white)),
           ),
@@ -266,40 +326,64 @@ class AdminDashboardScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(children: [
-          Icon(Icons.block, color: Colors.red),
-          SizedBox(width: 10),
-          Text('Ban User Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ]),
+        title: Row(
+          children: [
+            Icon(Icons.block, color: Colors.red),
+            SizedBox(width: 10),
+            Text(
+              'Ban User Account',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Enter the User ID (UID) of the account to suspend:', style: TextStyle(fontSize: 13)),
+            Text(
+              'Enter the User ID (UID) of the account to suspend:',
+              style: TextStyle(fontSize: 13),
+            ),
             SizedBox(height: 12),
             TextField(
               controller: uidCtrl,
               decoration: InputDecoration(
                 labelText: 'User ID (UID)',
                 hintText: 'Firebase Auth UID',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             SizedBox(height: 8),
-            Text('This will prevent the user from logging in.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              'This will prevent the user from logging in.',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               if (uidCtrl.text.trim().isEmpty) return;
               Navigator.pop(ctx);
-              await Provider.of<UserProvider>(context, listen: false).banUser(uidCtrl.text.trim());
-              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('User ${uidCtrl.text.trim()} banned.'), backgroundColor: Colors.red),
-              );
+              await Provider.of<UserProvider>(
+                context,
+                listen: false,
+              ).banUser(uidCtrl.text.trim());
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('User ${uidCtrl.text.trim()} banned.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: Text('Ban User', style: TextStyle(color: Colors.white)),
           ),
@@ -329,7 +413,11 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainMetrics(AdminInsight insights, int pendingCount, int approvedCount) {
+  Widget _buildMainMetrics(
+    AdminInsight insights,
+    int pendingCount,
+    int approvedCount,
+  ) {
     return Column(
       children: [
         Row(
@@ -374,30 +462,59 @@ class AdminDashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Platform Health', style: TextStyleHelper.instance.body14BoldInter),
+          Text(
+            'Platform Health',
+            style: TextStyleHelper.instance.body14BoldInter,
+          ),
           SizedBox(height: 16),
-          _buildHealthRow('Active User Ratio', '${(insights.activeUserRatio * 100).toInt()}%', Icons.show_chart, Colors.green),
+          _buildHealthRow(
+            'Active User Ratio',
+            '${(insights.activeUserRatio * 100).toInt()}%',
+            Icons.show_chart,
+            Colors.green,
+          ),
           Divider(height: 24),
-          _buildHealthRow('Suspended Accounts', '${insights.bannedUserCount}', Icons.block_flipped, Colors.red),
+          _buildHealthRow(
+            'Suspended Accounts',
+            '${insights.bannedUserCount}',
+            Icons.block_flipped,
+            Colors.red,
+          ),
           Divider(height: 24),
-          _buildHealthRow('Premium Conversion', '${insights.conversionRate}%', Icons.payments_outlined, Colors.amber),
+          _buildHealthRow(
+            'Premium Conversion',
+            '${insights.conversionRate}%',
+            Icons.payments_outlined,
+            Colors.amber,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHealthRow(String label, String value, IconData icon, Color color) {
+  Widget _buildHealthRow(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Row(
       children: [
         Icon(icon, color: color, size: 18),
         SizedBox(width: 12),
         Text(label, style: TextStyle(fontSize: 13, color: Color(0xFF4D6353))),
         Spacer(),
-        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1B3022),
+          ),
+        ),
       ],
     );
   }
-
 
   Widget _buildActionRow() {
     return Builder(
@@ -405,7 +522,8 @@ class AdminDashboardScreen extends StatelessWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, AppRoutes.adminUserManagement),
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.adminUserManagement),
               child: _buildSmallActionCard(
                 'Users',
                 'Manage accounts',
@@ -431,7 +549,12 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallActionCard(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildSmallActionCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -446,8 +569,14 @@ class AdminDashboardScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(
+                title,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
             ],
           ),
         ],
@@ -458,7 +587,8 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildModerationEntryCard(int count) {
     return Builder(
       builder: (context) => GestureDetector(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.adminModerationQueue),
+        onTap: () =>
+            Navigator.pushNamed(context, AppRoutes.adminModerationQueue),
         child: Container(
           width: double.infinity,
           padding: EdgeInsets.all(20),
@@ -474,7 +604,11 @@ class AdminDashboardScreen extends StatelessWidget {
                   color: Colors.white.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.gavel_outlined, color: Colors.white, size: 24),
+                child: Icon(
+                  Icons.gavel_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -483,11 +617,14 @@ class AdminDashboardScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Moderation Queue',
-                      style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.white),
+                      style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                     Text(
                       '$count items pending review',
-                      style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+                      style: TextStyleHelper.instance.label10MediumInter
+                          .copyWith(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -500,7 +637,12 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -511,7 +653,7 @@ class AdminDashboardScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -537,7 +679,10 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVibeSoulRadar(AdminInsight insights, Map<String, double> distribution) {
+  Widget _buildVibeSoulRadar(
+    AdminInsight insights,
+    Map<String, double> distribution,
+  ) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1200),
@@ -554,7 +699,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 color: Color(0xFF1B3022).withOpacity(0.3),
                 blurRadius: 20,
                 offset: Offset(0, 10),
-              )
+              ),
             ],
           ),
           child: Stack(
@@ -565,9 +710,8 @@ class AdminDashboardScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Vibe Soul Correlation',
-                    style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: TextStyleHelper.instance.title18SemiBoldInter
+                        .copyWith(color: Colors.white),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -583,15 +727,42 @@ class AdminDashboardScreen extends StatelessWidget {
                       RadarChartData(
                         dataSets: [
                           RadarDataSet(
-                            fillColor: Color(0xFFFFD700).withOpacity(0.4 * value),
+                            fillColor: Color(
+                              0xFFFFD700,
+                            ).withOpacity(0.4 * value),
                             borderColor: Color(0xFFFFD700).withOpacity(value),
                             entryRadius: 3 * value,
                             dataEntries: [
-                              RadarEntry(value: (distribution['Food'] ?? insights.vibeSoulGastronomy) * value),
-                              RadarEntry(value: (distribution['Art'] ?? insights.vibeSoulArt) * value),
-                              RadarEntry(value: (distribution['History'] ?? insights.vibeSoulHistory) * value),
-                              RadarEntry(value: (distribution['Nightlife'] ?? insights.vibeSoulNightlife) * value),
-                              RadarEntry(value: (distribution['Nature'] ?? insights.vibeSoulNature) * value),
+                              RadarEntry(
+                                value:
+                                    (distribution['Food'] ??
+                                        insights.vibeSoulGastronomy) *
+                                    value,
+                              ),
+                              RadarEntry(
+                                value:
+                                    (distribution['Art'] ??
+                                        insights.vibeSoulArt) *
+                                    value,
+                              ),
+                              RadarEntry(
+                                value:
+                                    (distribution['History'] ??
+                                        insights.vibeSoulHistory) *
+                                    value,
+                              ),
+                              RadarEntry(
+                                value:
+                                    (distribution['Nightlife'] ??
+                                        insights.vibeSoulNightlife) *
+                                    value,
+                              ),
+                              RadarEntry(
+                                value:
+                                    (distribution['Nature'] ??
+                                        insights.vibeSoulNature) *
+                                    value,
+                              ),
                             ],
                           ),
                         ],
@@ -602,16 +773,25 @@ class AdminDashboardScreen extends StatelessWidget {
                         gridBorderData: BorderSide(color: Colors.white10),
                         getTitle: (index, angle) {
                           switch (index) {
-                            case 0: return RadarChartTitle(text: 'Food');
-                            case 1: return RadarChartTitle(text: 'Art');
-                            case 2: return RadarChartTitle(text: 'History');
-                            case 3: return RadarChartTitle(text: 'Night');
-                            case 4: return RadarChartTitle(text: 'Nature');
-                            default: return RadarChartTitle(text: '');
+                            case 0:
+                              return RadarChartTitle(text: 'Food');
+                            case 1:
+                              return RadarChartTitle(text: 'Art');
+                            case 2:
+                              return RadarChartTitle(text: 'History');
+                            case 3:
+                              return RadarChartTitle(text: 'Night');
+                            case 4:
+                              return RadarChartTitle(text: 'Nature');
+                            default:
+                              return RadarChartTitle(text: '');
                           }
                         },
                         ticksTextStyle: TextStyle(color: Colors.transparent),
-                        titleTextStyle: TextStyle(color: Colors.white70, fontSize: 10),
+                        titleTextStyle: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ),
@@ -636,7 +816,10 @@ class AdminDashboardScreen extends StatelessWidget {
               height: 300 * value,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(1 - value), width: 1),
+                border: Border.all(
+                  color: Colors.white.withOpacity(1 - value),
+                  width: 1,
+                ),
               ),
             );
           },
@@ -652,7 +835,9 @@ class AdminDashboardScreen extends StatelessWidget {
       duration: const Duration(milliseconds: 1500),
       curve: Curves.easeInOutQuad,
       builder: (context, value, child) {
-        final data = velocity.every((v) => v == 0) ? insights.discoveryVelocity : velocity;
+        final data = velocity.every((v) => v == 0)
+            ? insights.discoveryVelocity
+            : velocity;
         return Container(
           width: double.infinity,
           padding: EdgeInsets.all(24),
@@ -665,7 +850,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 color: Colors.black.withOpacity(0.02),
                 blurRadius: 15,
                 offset: Offset(0, 8),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -686,7 +871,11 @@ class AdminDashboardScreen extends StatelessWidget {
                     ),
                     child: Text(
                       '+${velocity.last.toInt()}',
-                      style: TextStyle(color: Color(0xFF3E5641), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Color(0xFF3E5641),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -694,7 +883,9 @@ class AdminDashboardScreen extends StatelessWidget {
               SizedBox(height: 4),
               Text(
                 'New submissions over the last 7 days.',
-                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353)),
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                  color: Color(0xFF4D6353),
+                ),
               ),
               SizedBox(height: 32),
               AspectRatio(
@@ -729,7 +920,6 @@ class AdminDashboardScreen extends StatelessWidget {
       },
     );
   }
-
 
   Widget _buildNeighborhoodInsights() {
     return Column(
@@ -769,13 +959,20 @@ class AdminDashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: TextStyleHelper.instance.body14BoldInter),
-                Text(trend, style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353))),
+                Text(
+                  trend,
+                  style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                    color: Color(0xFF4D6353),
+                  ),
+                ),
               ],
             ),
           ),
           Text(
             '${(score * 100).toInt()}%',
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF3E5641)),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              color: Color(0xFF3E5641),
+            ),
           ),
         ],
       ),
@@ -788,36 +985,56 @@ class AdminDashboardScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.cleaning_services_outlined, color: Color(0xFF1B3022), size: 20),
+            Icon(
+              Icons.cleaning_services_outlined,
+              color: Color(0xFF1B3022),
+              size: 20,
+            ),
             SizedBox(width: 8),
-            Text('AI Maintenance Suggestions', style: TextStyleHelper.instance.title18SemiBoldInter),
+            Text(
+              'AI Maintenance Suggestions',
+              style: TextStyleHelper.instance.title18SemiBoldInter,
+            ),
           ],
         ),
         SizedBox(height: 16),
-        ...insights.staleGemSuggestions.map((suggestion) => Container(
-          margin: EdgeInsets.only(bottom: 12),
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Color(0xFFF0F4EC),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Cleanup required for: $suggestion',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF1B3022)),
+        ...insights.staleGemSuggestions.map(
+          (suggestion) => Container(
+            margin: EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Color(0xFFF0F4EC),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 20,
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF3E5641))),
-              ),
-            ],
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Cleanup required for: $suggestion',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF1B3022)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Review',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3E5641),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        )).toList(),
+        ),
       ],
     );
   }

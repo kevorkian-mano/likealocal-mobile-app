@@ -16,13 +16,17 @@ import '../../widgets/premium_upgrade_sheet.dart';
 class PlaceDetailsScreen extends StatefulWidget {
   final HiddenGem? gem;
 
-  const PlaceDetailsScreen({Key? key, this.gem}) : super(key: key);
+  const PlaceDetailsScreen({super.key, this.gem});
 
   static Widget builder(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
       // Handle deep link by fetching from GemsProvider
-      final gem = Provider.of<GemsProvider>(context, listen: false).gems.firstWhere((g) => g.id == args, orElse: () => throw Exception('Gem not found'));
+      final gem = Provider.of<GemsProvider>(context, listen: false).gems
+          .firstWhere(
+            (g) => g.id == args,
+            orElse: () => throw Exception('Gem not found'),
+          );
       return PlaceDetailsScreen(gem: gem);
     }
     return PlaceDetailsScreen(gem: args as HiddenGem?);
@@ -38,11 +42,14 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     super.initState();
     if (widget.gem != null) {
       Future.microtask(() {
-        Provider.of<GemsProvider>(context, listen: false).incrementViews(widget.gem!.id);
-        Provider.of<UserProvider>(context, listen: false).trackInteraction(
-          widget.gem!.category,
-          widget.gem!.vibe,
-        );
+        Provider.of<GemsProvider>(
+          context,
+          listen: false,
+        ).incrementViews(widget.gem!.id);
+        Provider.of<UserProvider>(
+          context,
+          listen: false,
+        ).trackInteraction(widget.gem!.category, widget.gem!.vibe);
       });
     }
   }
@@ -50,12 +57,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.gem == null) {
-      return const Scaffold(body: Center(child: Text('Gem details not found.')));
+      return const Scaffold(
+        body: Center(child: Text('Gem details not found.')),
+      );
     }
     final displayGem = widget.gem!;
     final currentUser = Provider.of<UserProvider>(context).user;
     final bool isOwner = currentUser?.id == displayGem.contributorId;
-    final bool isSaved = currentUser?.savedGems.contains(displayGem.id) ?? false;
+    final bool isSaved =
+        currentUser?.savedGems.contains(displayGem.id) ?? false;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -92,7 +102,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -112,7 +126,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                             color: Colors.white.withOpacity(0.3),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.report_problem_outlined, color: Colors.white, size: 24),
+                          child: const Icon(
+                            Icons.report_problem_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ],
@@ -145,42 +163,62 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       Expanded(
                         child: Text(
                           displayGem.name,
-                          style: TextStyleHelper.instance.headline30ExtraBoldOutfit.copyWith(
-                            color: const Color(0xFF191C1A),
-                          ),
+                          style: TextStyleHelper
+                              .instance
+                              .headline30ExtraBoldOutfit
+                              .copyWith(color: const Color(0xFF191C1A)),
                         ),
                       ),
                       GestureDetector(
                         onTap: () async {
                           if (currentUser == null) {
-                            _showGuestSignUpPrompt(context, 'You need an account to set location reminders.');
+                            _showGuestSignUpPrompt(
+                              context,
+                              'You need an account to set location reminders.',
+                            );
                             return;
                           }
                           try {
-                            await Provider.of<UserProvider>(context, listen: false).toggleReminder(displayGem.id);
-                            final isReminding = Provider.of<UserProvider>(context, listen: false).user?.reminders.contains(displayGem.id) ?? false;
+                            await Provider.of<UserProvider>(
+                              context,
+                              listen: false,
+                            ).toggleReminder(displayGem.id);
+                            final isReminding =
+                                Provider.of<UserProvider>(
+                                  context,
+                                  listen: false,
+                                ).user?.reminders.contains(displayGem.id) ??
+                                false;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(isReminding ? 'Reminder removed' : 'Reminder set for when you are nearby!'),
+                                content: Text(
+                                  isReminding
+                                      ? 'Reminder removed'
+                                      : 'Reminder set for when you are nearby!',
+                                ),
                                 backgroundColor: const Color(0xFF1B3022),
-                              )
+                              ),
                             );
                           } catch (e) {
                             if (e.toString().contains('LIMIT_REACHED')) {
                               PremiumUpgradeSheet.show(context);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to set reminder'))
+                                const SnackBar(
+                                  content: Text('Failed to set reminder'),
+                                ),
                               );
                             }
                           }
                         },
                         child: Icon(
-                          userProvider.user?.reminders.contains(displayGem.id) == true 
-                              ? Icons.notifications_active 
+                          currentUser?.reminders.contains(displayGem.id) == true
+                              ? Icons.notifications_active
                               : Icons.notifications_none,
-                          color: userProvider.user?.reminders.contains(displayGem.id) == true 
-                              ? const Color(0xFF1B3022) 
+                          color:
+                              currentUser?.reminders.contains(displayGem.id) ==
+                                  true
+                              ? const Color(0xFF1B3022)
                               : const Color(0xFF191C1A),
                           size: 28,
                         ),
@@ -189,30 +227,49 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       GestureDetector(
                         onTap: () async {
                           if (currentUser == null) {
-                            _showGuestSignUpPrompt(context, 'You need an account to save favorite places.');
+                            _showGuestSignUpPrompt(
+                              context,
+                              'You need an account to save favorite places.',
+                            );
                             return;
                           }
                           try {
-                            await Provider.of<GemsProvider>(context, listen: false)
-                                .toggleSaveGem(currentUser.id, displayGem.id, isSaved);
-                            
+                            await Provider.of<GemsProvider>(
+                              context,
+                              listen: false,
+                            ).toggleSaveGem(
+                              currentUser.id,
+                              displayGem.id,
+                              isSaved,
+                            );
+
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(isSaved ? 'Removed from favorites' : 'Saved to favorites'))
+                              SnackBar(
+                                content: Text(
+                                  isSaved
+                                      ? 'Removed from favorites'
+                                      : 'Saved to favorites',
+                                ),
+                              ),
                             );
                           } catch (e) {
                             if (e.toString().contains('LIMIT_REACHED')) {
                               PremiumUpgradeSheet.show(context);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to update favorites'))
+                                const SnackBar(
+                                  content: Text('Failed to update favorites'),
+                                ),
                               );
                             }
                           }
                         },
                         child: Icon(
-                          isSaved ? Icons.bookmark : Icons.bookmark_outline, 
-                          color: isSaved ? const Color(0xFF1B3022) : const Color(0xFF191C1A), 
-                          size: 28
+                          isSaved ? Icons.bookmark : Icons.bookmark_outline,
+                          color: isSaved
+                              ? const Color(0xFF1B3022)
+                              : const Color(0xFF191C1A),
+                          size: 28,
                         ),
                       ),
                     ],
@@ -220,13 +277,16 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, color: Color(0xFF3E5641), size: 16),
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFF3E5641),
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Zamalek, Cairo',
-                        style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                          color: const Color(0xFF4D6353),
-                        ),
+                        style: TextStyleHelper.instance.body14MediumInter
+                            .copyWith(color: const Color(0xFF4D6353)),
                       ),
                     ],
                   ),
@@ -262,32 +322,49 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.tips_and_updates_outlined, color: Color(0xFF3E5641), size: 20),
+                            const Icon(
+                              Icons.tips_and_updates_outlined,
+                              color: Color(0xFF3E5641),
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Local Tip',
-                              style: TextStyleHelper.instance.body14BoldInter.copyWith(
-                                color: const Color(0xFF191C1A),
-                              ),
+                              style: TextStyleHelper.instance.body14BoldInter
+                                  .copyWith(color: const Color(0xFF191C1A)),
                             ),
                             if (displayGem.contributorIsSuperUser) ...[
                               const Spacer(),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFD700).withOpacity(0.2),
+                                  color: const Color(
+                                    0xFFFFD700,
+                                  ).withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFFFD700)),
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD700),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.star, color: Color(0xFFB8860B), size: 12),
+                                    const Icon(
+                                      Icons.star,
+                                      color: Color(0xFFB8860B),
+                                      size: 12,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Local Legend',
-                                      style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                        color: const Color(0xFFB8860B),
-                                      ),
+                                      style: TextStyleHelper
+                                          .instance
+                                          .label10BoldInter
+                                          .copyWith(
+                                            color: const Color(0xFFB8860B),
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -298,10 +375,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         const SizedBox(height: 12),
                         Text(
                           displayGem.localsTip,
-                          style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                            color: const Color(0xFF4D6353),
-                            height: 1.5,
-                          ),
+                          style: TextStyleHelper.instance.body14MediumInter
+                              .copyWith(
+                                color: const Color(0xFF4D6353),
+                                height: 1.5,
+                              ),
                         ),
                       ],
                     ),
@@ -310,12 +388,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     const SizedBox(height: 32),
                     Text(
                       'Try these dishes',
-                      style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-                        color: const Color(0xFF191C1A),
-                      ),
+                      style: TextStyleHelper.instance.title20BoldOutfit
+                          .copyWith(color: const Color(0xFF191C1A)),
                     ),
                     const SizedBox(height: 16),
-                    ...displayGem.recommendedDishes.map((dish) => _buildDishItem(dish)).toList(),
+                    ...displayGem.recommendedDishes.map(
+                      (dish) => _buildDishItem(dish),
+                    ),
                   ],
                   const SizedBox(height: 40),
                   if (true) // Simulated availability check
@@ -323,11 +402,19 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Row(
                         children: [
-                          const Icon(Icons.nightlight_round, color: Colors.orange, size: 14),
+                          const Icon(
+                            Icons.nightlight_round,
+                            color: Colors.orange,
+                            size: 14,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Owner is currently away (FR5-4)',
-                            style: TextStyle(fontSize: 12, color: Colors.orange[800], fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[800],
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -347,11 +434,24 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         icon: Icons.share_outlined,
                         label: 'Share',
                         onPressed: () {
-                          final shareText = '🗺️ Discover "${displayGem.name}" on LikeALocal!\nCode: ${displayGem.uniqueCode}\n${displayGem.description}';
+                          final shareText =
+                              '🗺️ Discover "${displayGem.name}" on LikeALocal!\nCode: ${displayGem.uniqueCode}\n${displayGem.description}';
                           Clipboard.setData(ClipboardData(text: shareText));
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Row(children: [Icon(Icons.copy, color: Colors.white, size: 16), SizedBox(width: 8), Expanded(child: Text('Link copied to clipboard!'))]),
+                              content: Row(
+                                children: [
+                                  Icon(
+                                    Icons.copy,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text('Link copied to clipboard!'),
+                                  ),
+                                ],
+                              ),
                               backgroundColor: Color(0xFF1B3022),
                             ),
                           );
@@ -364,14 +464,19 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           label: 'Chat',
                           onPressed: () {
                             if (currentUser == null) {
-                              _showGuestSignUpPrompt(context, 'You need an account to chat with the post owner.');
+                              _showGuestSignUpPrompt(
+                                context,
+                                'You need an account to chat with the post owner.',
+                              );
                               return;
                             }
                             final chatPreview = ChatPreview(
                               id: 'new_${displayGem.name}',
                               userName: 'Local Contributor',
-                              userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150',
-                              lastMessage: 'Ask me anything about ${displayGem.name}!',
+                              userAvatar:
+                                  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150',
+                              lastMessage:
+                                  'Ask me anything about ${displayGem.name}!',
                               lastMessageTime: DateTime.now(),
                               relatedGemName: displayGem.name,
                             );
@@ -395,7 +500,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           child: _buildActionButton(
                             icon: Icons.notifications_outlined,
                             label: 'Set Reminder',
-                            onPressed: () => _showSetReminderDialog(context, displayGem),
+                            onPressed: () =>
+                                _showSetReminderDialog(context, displayGem),
                           ),
                         ),
                       ],
@@ -452,7 +558,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   Navigator.pop(context); // Close modal
                   Navigator.pushNamed(context, AppRoutes.signUpPage);
                 },
-                child: Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Create Account',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 16),
@@ -461,7 +573,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 Navigator.pop(context); // Close modal
                 Navigator.pushNamed(context, AppRoutes.signInPage);
               },
-              child: Text('Already have an account? Log In', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold)),
+              child: Text(
+                'Already have an account? Log In',
+                style: TextStyle(
+                  color: Color(0xFF1B3022),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -476,20 +594,26 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       children: [
         Text(
           'Community Vibe',
-          style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A)),
+          style: TextStyleHelper.instance.body14BoldInter.copyWith(
+            color: Color(0xFF191C1A),
+          ),
         ),
         SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: emojis.map((emoji) => Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFFF0F4EC)),
-            ),
-            child: Text(emoji, style: TextStyle(fontSize: 20)),
-          )).toList(),
+          children: emojis
+              .map(
+                (emoji) => Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Color(0xFFF0F4EC)),
+                  ),
+                  child: Text(emoji, style: TextStyle(fontSize: 20)),
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -513,17 +637,25 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   color: const Color(0xFFFFD700).withOpacity(0.3 * value),
                   blurRadius: 15 * value,
                   spreadRadius: 2 * value,
-                )
+                ),
               ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFF1B3022), size: 16),
+                const Icon(
+                  Icons.auto_awesome,
+                  color: Color(0xFF1B3022),
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   text,
-                  style: const TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF1B3022),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -544,7 +676,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               children: [
                 Text(
                   'Live Crowd Level',
-                  style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A)),
+                  style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                    color: Color(0xFF191C1A),
+                  ),
                 ),
                 SizedBox(width: 8),
                 _buildLiveIndicator(),
@@ -558,7 +692,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               ),
               child: Text(
                 'Quiet',
-                style: TextStyle(color: Color(0xFF3E5641), fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFF3E5641),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -568,7 +706,20 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: List.generate(12, (index) {
-            final height = [10, 15, 30, 45, 60, 55, 40, 25, 20, 35, 50, 20][index];
+            final height = [
+              10,
+              15,
+              30,
+              45,
+              60,
+              55,
+              40,
+              25,
+              20,
+              35,
+              50,
+              20,
+            ][index];
             return Container(
               width: 20,
               height: height.toDouble(),
@@ -583,9 +734,18 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('12 PM', style: TextStyle(fontSize: 10, color: Color(0xFF4D6353))),
-            Text('6 PM', style: TextStyle(fontSize: 10, color: Color(0xFF4D6353))),
-            Text('12 AM', style: TextStyle(fontSize: 10, color: Color(0xFF4D6353))),
+            Text(
+              '12 PM',
+              style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
+            ),
+            Text(
+              '6 PM',
+              style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
+            ),
+            Text(
+              '12 AM',
+              style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
+            ),
           ],
         ),
       ],
@@ -604,7 +764,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
             color: Colors.red.withOpacity(1 - value),
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 4 * value, spreadRadius: 2 * value)
+              BoxShadow(
+                color: Colors.red.withOpacity(0.5),
+                blurRadius: 4 * value,
+                spreadRadius: 2 * value,
+              ),
             ],
           ),
         );
@@ -654,7 +818,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   SizedBox(width: 4),
                   Text(
                     'Must Try',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1B3022)),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B3022),
+                    ),
                   ),
                 ],
               ),
@@ -685,7 +853,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isPrimary ? Colors.white : Color(0xFF1B3022), size: 20),
+              Icon(
+                icon,
+                color: isPrimary ? Colors.white : Color(0xFF1B3022),
+                size: 20,
+              ),
               SizedBox(width: 8),
               Text(
                 label,
@@ -709,10 +881,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       children: [
         Text(
           'Similar Vibes Nearby',
-          style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A)),
+          style: TextStyleHelper.instance.body14BoldInter.copyWith(
+            color: Color(0xFF191C1A),
+          ),
         ),
         SizedBox(height: 16),
-        Container(
+        SizedBox(
           height: 100,
           child: Consumer<GemsProvider>(
             builder: (context, provider, child) {
@@ -752,7 +926,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         alignment: Alignment.bottomLeft,
                         child: Text(
                           gem.name,
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -779,10 +957,20 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Reviews', style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A))),
+            Text(
+              'Reviews',
+              style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                color: Color(0xFF191C1A),
+              ),
+            ),
             if (currentUser != null)
               GestureDetector(
-                onTap: () => _showWriteReviewDialog(context, displayGem, gemsProvider, currentUser),
+                onTap: () => _showWriteReviewDialog(
+                  context,
+                  displayGem,
+                  gemsProvider,
+                  currentUser,
+                ),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -791,9 +979,20 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.rate_review_outlined, color: Colors.white, size: 14),
+                      Icon(
+                        Icons.rate_review_outlined,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                       SizedBox(width: 4),
-                      Text('Write Review', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Write Review',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -809,17 +1008,35 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           stream: gemsProvider.getReviewsStream(displayGem.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFF1B3022))));
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(color: Color(0xFF1B3022)),
+                ),
+              );
             }
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return Container(
                 padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Color(0xFFF9F7F2), borderRadius: BorderRadius.circular(16)),
-                child: Center(child: Text('No reviews yet. Be the first!', style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.grey))),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF9F7F2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Text(
+                    'No reviews yet. Be the first!',
+                    style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
               );
             }
             final reviews = snapshot.data!.docs
-                .map((d) => GemReview.fromMap(d.data() as Map<String, dynamic>, d.id))
+                .map(
+                  (d) =>
+                      GemReview.fromMap(d.data() as Map<String, dynamic>, d.id),
+                )
                 .toList();
             return Column(
               children: reviews.map((review) {
@@ -840,44 +1057,95 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundImage: review.avatarUrl.isNotEmpty ? NetworkImage(review.avatarUrl) : null,
+                            backgroundImage: review.avatarUrl.isNotEmpty
+                                ? NetworkImage(review.avatarUrl)
+                                : null,
                             backgroundColor: Color(0xFFD7E8DE),
-                            child: review.avatarUrl.isEmpty ? Icon(Icons.person, size: 14, color: Color(0xFF1B3022)) : null,
+                            child: review.avatarUrl.isEmpty
+                                ? Icon(
+                                    Icons.person,
+                                    size: 14,
+                                    color: Color(0xFF1B3022),
+                                  )
+                                : null,
                           ),
                           SizedBox(width: 8),
                           Expanded(
-                            child: Text(review.userName, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              review.userName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           Row(
-                            children: List.generate(5, (i) => Icon(
-                              i < review.rating.round() ? Icons.star : Icons.star_border,
-                              color: Color(0xFFFFD700), size: 12,
-                            )),
-                          ),
-                          if (isOwner || isAdmin) ...
-                            [
-                              SizedBox(width: 8),
-                              PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                icon: Icon(Icons.more_vert, size: 16, color: Colors.grey),
-                                onSelected: (val) async {
-                                  if (val == 'edit') {
-                                    _showEditReviewDialog(context, displayGem.id, review, gemsProvider);
-                                  } else if (val == 'delete') {
-                                    await gemsProvider.deleteReview(displayGem.id, review.id);
-                                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Review deleted')));
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  if (isOwner) PopupMenuItem(value: 'edit', child: Text('Edit Review')),
-                                  PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
-                                ],
+                            children: List.generate(
+                              5,
+                              (i) => Icon(
+                                i < review.rating.round()
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: Color(0xFFFFD700),
+                                size: 12,
                               ),
-                            ],
+                            ),
+                          ),
+                          if (isOwner || isAdmin) ...[
+                            SizedBox(width: 8),
+                            PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.more_vert,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              onSelected: (val) async {
+                                if (val == 'edit') {
+                                  _showEditReviewDialog(
+                                    context,
+                                    displayGem.id,
+                                    review,
+                                    gemsProvider,
+                                  );
+                                } else if (val == 'delete') {
+                                  await gemsProvider.deleteReview(
+                                    displayGem.id,
+                                    review.id,
+                                  );
+                                  if (context.mounted)
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Review deleted')),
+                                    );
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                if (isOwner)
+                                  PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text('Edit Review'),
+                                  ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text(review.text, style: TextStyle(fontSize: 12, color: Color(0xFF4D6353), height: 1.4)),
+                      Text(
+                        review.text,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4D6353),
+                          height: 1.4,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -894,11 +1162,14 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     return FutureBuilder<QuerySnapshot>(
       future: gemsProvider.getReviewsStream(gemId).first,
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+          return SizedBox.shrink();
         return Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF1B3022), Color(0xFF2C4C3B)]),
+            gradient: LinearGradient(
+              colors: [Color(0xFF1B3022), Color(0xFF2C4C3B)],
+            ),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -908,12 +1179,18 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               Expanded(
                 child: FutureBuilder<String>(
                   future: AIService.summarizeReviews(
-                    snapshot.data!.docs.map((d) => (d.data() as Map)['text'] as String? ?? '').toList()
+                    snapshot.data!.docs
+                        .map((d) => (d.data() as Map)['text'] as String? ?? '')
+                        .toList(),
                   ),
                   builder: (ctx, aiSnap) {
                     return Text(
                       aiSnap.data ?? 'Analyzing reviews...',
-                      style: TextStyle(color: Colors.white, fontSize: 11, height: 1.4),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
                     );
                   },
                 ),
@@ -925,29 +1202,51 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     );
   }
 
-  void _showWriteReviewDialog(BuildContext context, HiddenGem gem, GemsProvider gemsProvider, user) {
+  void _showWriteReviewDialog(
+    BuildContext context,
+    HiddenGem gem,
+    GemsProvider gemsProvider,
+    user,
+  ) {
     double rating = 4.0;
     final textController = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
         child: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Your Review', style: TextStyleHelper.instance.title20BoldOutfit),
+              Text(
+                'Your Review',
+                style: TextStyleHelper.instance.title20BoldOutfit,
+              ),
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) => GestureDetector(
-                  onTap: () => setState(() => rating = (i + 1).toDouble()),
-                  child: Icon(i < rating ? Icons.star : Icons.star_border, color: Color(0xFFFFD700), size: 36),
-                )),
+                children: List.generate(
+                  5,
+                  (i) => GestureDetector(
+                    onTap: () => setState(() => rating = (i + 1).toDouble()),
+                    child: Icon(
+                      i < rating ? Icons.star : Icons.star_border,
+                      color: Color(0xFFFFD700),
+                      size: 36,
+                    ),
+                  ),
+                ),
               ),
               SizedBox(height: 16),
               TextField(
@@ -955,7 +1254,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Share your experience...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -965,7 +1266,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF1B3022),
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                   ),
                   onPressed: () async {
                     if (textController.text.trim().isEmpty) return;
@@ -978,9 +1281,21 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       rating: rating,
                       text: textController.text.trim(),
                     );
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Review submitted!'), backgroundColor: Color(0xFF1B3022)));
+                    if (context.mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Review submitted!'),
+                          backgroundColor: Color(0xFF1B3022),
+                        ),
+                      );
                   },
-                  child: Text('Submit Review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Submit Review',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -990,29 +1305,51 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     );
   }
 
-  void _showEditReviewDialog(BuildContext context, String gemId, GemReview review, GemsProvider gemsProvider) {
+  void _showEditReviewDialog(
+    BuildContext context,
+    String gemId,
+    GemReview review,
+    GemsProvider gemsProvider,
+  ) {
     double rating = review.rating;
     final textController = TextEditingController(text: review.text);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
         child: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Edit Review', style: TextStyleHelper.instance.title20BoldOutfit),
+              Text(
+                'Edit Review',
+                style: TextStyleHelper.instance.title20BoldOutfit,
+              ),
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) => GestureDetector(
-                  onTap: () => setState(() => rating = (i + 1).toDouble()),
-                  child: Icon(i < rating ? Icons.star : Icons.star_border, color: Color(0xFFFFD700), size: 36),
-                )),
+                children: List.generate(
+                  5,
+                  (i) => GestureDetector(
+                    onTap: () => setState(() => rating = (i + 1).toDouble()),
+                    child: Icon(
+                      i < rating ? Icons.star : Icons.star_border,
+                      color: Color(0xFFFFD700),
+                      size: 36,
+                    ),
+                  ),
+                ),
               ),
               SizedBox(height: 16),
               TextField(
@@ -1020,7 +1357,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Update your review...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -1030,14 +1369,30 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF1B3022),
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                   ),
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    await gemsProvider.editReview(gemId, review.id, rating: rating, text: textController.text.trim());
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Review updated!')));
+                    await gemsProvider.editReview(
+                      gemId,
+                      review.id,
+                      rating: rating,
+                      text: textController.text.trim(),
+                    );
+                    if (context.mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Review updated!')),
+                      );
                   },
-                  child: Text('Update Review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Update Review',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1054,17 +1409,32 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
         child: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Set Location Reminder', style: TextStyleHelper.instance.title20BoldOutfit),
+              Text(
+                'Set Location Reminder',
+                style: TextStyleHelper.instance.title20BoldOutfit,
+              ),
               SizedBox(height: 8),
-              Text('Get notified when you\'re near this place', style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.grey)),
+              Text(
+                'Get notified when you\'re near this place',
+                style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
               SizedBox(height: 24),
               Container(
                 padding: EdgeInsets.all(16),
@@ -1075,11 +1445,18 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Notification Radius', style: TextStyleHelper.instance.body14BoldInter),
+                    Text(
+                      'Notification Radius',
+                      style: TextStyleHelper.instance.body14BoldInter,
+                    ),
                     SizedBox(height: 12),
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Color(0xFF1B3022), size: 16),
+                        Icon(
+                          Icons.location_on,
+                          color: Color(0xFF1B3022),
+                          size: 16,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Slider(
@@ -1087,8 +1464,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                             min: 100,
                             max: 2000,
                             divisions: 19,
-                            label: '${(radiusMeters / 1000).toStringAsFixed(1)}km',
-                            onChanged: (val) => setState(() => radiusMeters = val),
+                            label:
+                                '${(radiusMeters / 1000).toStringAsFixed(1)}km',
+                            onChanged: (val) =>
+                                setState(() => radiusMeters = val),
                             activeColor: Color(0xFF1B3022),
                           ),
                         ),
@@ -1097,7 +1476,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     SizedBox(height: 8),
                     Text(
                       'You\'ll be notified when within ${(radiusMeters / 1000).toStringAsFixed(1)}km of "${gem.name}"',
-                      style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.grey),
+                      style: TextStyleHelper.instance.body12MediumInter
+                          .copyWith(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -1109,25 +1489,35 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF1B3022),
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                   ),
                   onPressed: () async {
                     Navigator.pop(ctx);
                     try {
-                      final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+                      final currentUser = Provider.of<UserProvider>(
+                        context,
+                        listen: false,
+                      ).user;
                       if (currentUser == null) return;
-                      
-                      final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+
+                      final gemsProvider = Provider.of<GemsProvider>(
+                        context,
+                        listen: false,
+                      );
                       await gemsProvider.createReminder(
                         userId: currentUser.id,
                         gem: gem,
                         radiusMeters: radiusMeters,
                       );
-                      
+
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Reminder set! You\'ll be notified when nearby.'),
+                            content: Text(
+                              'Reminder set! You\'ll be notified when nearby.',
+                            ),
                             backgroundColor: Color(0xFF1B3022),
                           ),
                         );
@@ -1135,12 +1525,22 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error setting reminder: ${e.toString()}')),
+                          SnackBar(
+                            content: Text(
+                              'Error setting reminder: ${e.toString()}',
+                            ),
+                          ),
                         );
                       }
                     }
                   },
-                  child: Text('Set Reminder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Set Reminder',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1161,7 +1561,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       ),
       child: Text(
         code,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 1,
+        ),
       ),
     );
   }
@@ -1169,23 +1574,39 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   void _showReportDialog(BuildContext context, HiddenGem gem) {
     final currentUser = Provider.of<UserProvider>(context, listen: false).user;
     if (currentUser == null) {
-      _showGuestSignUpPrompt(context, 'You need an account to report inaccurate information.');
+      _showGuestSignUpPrompt(
+        context,
+        'You need an account to report inaccurate information.',
+      );
       return;
     }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Report Inaccurate Info'),
-        content: const Text('Is something wrong with this place? Our moderators will verify your report.'),
+        content: const Text(
+          'Is something wrong with this place? Our moderators will verify your report.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
-              Provider.of<GemsProvider>(context, listen: false).updateGem(gem.id, {'reportCount': FieldValue.increment(1)});
+              Provider.of<GemsProvider>(
+                context,
+                listen: false,
+              ).updateGem(gem.id, {'reportCount': FieldValue.increment(1)});
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report submitted. Thank you!')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Report submitted. Thank you!')),
+              );
             },
-            child: const Text('Report', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Report',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -1224,7 +1645,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -1233,7 +1659,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Manage Your Contribution', style: TextStyleHelper.instance.body14BoldInter),
+        Text(
+          'Manage Your Contribution',
+          style: TextStyleHelper.instance.body14BoldInter,
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -1241,7 +1670,11 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               child: OutlinedButton.icon(
                 onPressed: () {
                   // Navigate to Edit Screen (Reuse Share Screen with gem data)
-                  Navigator.pushNamed(context, AppRoutes.shareHiddenGemScreen, arguments: gem);
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.shareHiddenGemScreen,
+                    arguments: gem,
+                  );
                 },
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Edit Details'),
@@ -1249,7 +1682,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   foregroundColor: const Color(0xFF1B3022),
                   side: const BorderSide(color: Color(0xFF1B3022)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -1263,7 +1698,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -1278,25 +1715,33 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Place?'),
-        content: const Text('This action cannot be undone. Are you sure you want to remove this gem from the map?'),
+        content: const Text(
+          'This action cannot be undone. Are you sure you want to remove this gem from the map?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () async {
-              await Provider.of<GemsProvider>(context, listen: false).deleteGem(gem.id);
+              await Provider.of<GemsProvider>(
+                context,
+                listen: false,
+              ).deleteGem(gem.id);
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Go back to map/explore
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gem deleted successfully.')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Gem deleted successfully.')),
+              );
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
-
-
-

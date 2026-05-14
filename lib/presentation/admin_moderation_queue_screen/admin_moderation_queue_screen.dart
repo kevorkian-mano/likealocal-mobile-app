@@ -1,12 +1,10 @@
-import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
-import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
 
 class AdminModerationQueueScreen extends StatelessWidget {
-  const AdminModerationQueueScreen({Key? key}) : super(key: key);
+  const AdminModerationQueueScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const AdminModerationQueueScreen();
@@ -25,7 +23,9 @@ class AdminModerationQueueScreen extends StatelessWidget {
         ),
         title: Text(
           'Moderation Queue',
-          style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Color(0xFF1B3022)),
+          style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
+            color: Color(0xFF1B3022),
+          ),
         ),
       ),
       body: Consumer<GemsProvider>(
@@ -41,9 +41,16 @@ class AdminModerationQueueScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   Text(
                     'Queue is empty!',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B3022)),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B3022),
+                    ),
                   ),
-                  Text('Great job keeping the map clean.', style: TextStyle(color: Color(0xFF4D6353))),
+                  Text(
+                    'Great job keeping the map clean.',
+                    style: TextStyle(color: Color(0xFF4D6353)),
+                  ),
                 ],
               ),
             );
@@ -54,7 +61,11 @@ class AdminModerationQueueScreen extends StatelessWidget {
             itemCount: pendingGems.length,
             separatorBuilder: (context, index) => SizedBox(height: 16),
             itemBuilder: (context, index) {
-              return _buildModerationCard(context, pendingGems[index], gemsProvider);
+              return _buildModerationCard(
+                context,
+                pendingGems[index],
+                gemsProvider,
+              );
             },
           );
         },
@@ -62,10 +73,15 @@ class AdminModerationQueueScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModerationCard(BuildContext context, HiddenGem gem, GemsProvider gemsProvider) {
+  Widget _buildModerationCard(
+    BuildContext context,
+    HiddenGem gem,
+    GemsProvider gemsProvider,
+  ) {
     return StatefulBuilder(
       builder: (context, setState) {
-        bool isExpanded = false; // Note: Simple state for demo, ideally part of a list state
+        bool isExpanded =
+            false; // Note: Simple state for demo, ideally part of a list state
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -76,7 +92,7 @@ class AdminModerationQueueScreen extends StatelessWidget {
                 color: Colors.black.withOpacity(0.03),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -107,31 +123,39 @@ class AdminModerationQueueScreen extends StatelessWidget {
                         children: [
                           Text(
                             gem.name,
-                            style: TextStyleHelper.instance.title16RegularInter.copyWith(color: const Color(0xFF191C1A)),
+                            style: TextStyleHelper.instance.title16RegularInter
+                                .copyWith(color: const Color(0xFF191C1A)),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Vibe: ${gem.vibe}',
-                            style: TextStyleHelper.instance.label10MediumInter.copyWith(color: const Color(0xFF4D6353)),
+                            style: TextStyleHelper.instance.label10MediumInter
+                                .copyWith(color: const Color(0xFF4D6353)),
                           ),
                           const SizedBox(height: 12),
                           GestureDetector(
                             onTap: () {
                               Navigator.pushNamed(
-                                context, 
+                                context,
                                 AppRoutes.placeDetailsScreen,
                                 arguments: gem,
                               );
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF1F4F1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 'Full Preview',
-                                style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF1B3022)),
+                                style: TextStyleHelper
+                                    .instance
+                                    .body12MediumInter
+                                    .copyWith(color: const Color(0xFF1B3022)),
                               ),
                             ),
                           ),
@@ -143,7 +167,10 @@ class AdminModerationQueueScreen extends StatelessWidget {
               ),
               const Divider(height: 1, color: Color(0x19C1C9C1)),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -151,7 +178,11 @@ class AdminModerationQueueScreen extends StatelessWidget {
                         label: 'Reject',
                         color: const Color(0xFFBEAFA7),
                         icon: Icons.close,
-                        onPressed: () => _confirmAction(context, 'Reject', () => gemsProvider.rejectGem(gem.id)),
+                        onPressed: () => _confirmAction(
+                          context,
+                          'Reject',
+                          () => gemsProvider.rejectGem(gem.id),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -160,7 +191,14 @@ class AdminModerationQueueScreen extends StatelessWidget {
                         label: 'Approve',
                         color: const Color(0xFF1B3022),
                         icon: Icons.check,
-                        onPressed: () => _confirmAction(context, 'Approve', () => gemsProvider.approveGem(gem.id, gem.contributorId)),
+                        onPressed: () => _confirmAction(
+                          context,
+                          'Approve',
+                          () => gemsProvider.approveGem(
+                            gem.id,
+                            gem.contributorId,
+                          ),
+                        ),
                         isPrimary: true,
                       ),
                     ),
@@ -170,18 +208,31 @@ class AdminModerationQueueScreen extends StatelessWidget {
             ],
           ),
         );
-      }
+      },
     );
   }
 
-  void _confirmAction(BuildContext context, String action, VoidCallback onConfirm) {
+  void _confirmAction(
+    BuildContext context,
+    String action,
+    VoidCallback onConfirm,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$action Gem?', style: TextStyleHelper.instance.title18SemiBold),
-        content: Text('Are you sure you want to $action this contribution to the public map?', style: TextStyleHelper.instance.body14MediumInter),
+        title: Text(
+          '$action Gem?',
+          style: TextStyleHelper.instance.title18SemiBold,
+        ),
+        content: Text(
+          'Are you sure you want to $action this contribution to the public map?',
+          style: TextStyleHelper.instance.body14MediumInter,
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               onConfirm();
@@ -189,11 +240,21 @@ class AdminModerationQueueScreen extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Gem ${action}ed successfully'),
-                  backgroundColor: action == 'Approve' ? const Color(0xFF1B3022) : Colors.red[800],
+                  backgroundColor: action == 'Approve'
+                      ? const Color(0xFF1B3022)
+                      : Colors.red[800],
                 ),
               );
             },
-            child: Text('Confirm', style: TextStyle(color: action == 'Approve' ? const Color(0xFF1B3022) : Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                color: action == 'Approve'
+                    ? const Color(0xFF1B3022)
+                    : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -239,17 +300,3 @@ class AdminModerationQueueScreen extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,11 +1,9 @@
-import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../routes/app_routes.dart';
 
 class VibePickerScreen extends StatefulWidget {
-  const VibePickerScreen({Key? key}) : super(key: key);
+  const VibePickerScreen({super.key});
 
   @override
   State<VibePickerScreen> createState() => _VibePickerScreenState();
@@ -30,7 +28,9 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
   Future<void> _saveVibes() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     await userProvider.updateProfile(selectedVibes: _selectedVibes.toList());
-    Navigator.of(context).pushReplacementNamed(AppRoutes.preferenceSummaryScreen);
+    Navigator.of(
+      context,
+    ).pushReplacementNamed(AppRoutes.preferenceSummaryScreen);
   }
 
   @override
@@ -41,9 +41,7 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: _buildVibeGrid(),
-            ),
+            Expanded(child: _buildVibeGrid()),
             _buildFooter(),
           ],
         ),
@@ -62,15 +60,18 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
             children: [
               Text(
                 'Personalize Your\nDiscovery',
-                style: TextStyleHelper.instance.headline30ExtraBoldOutfit.copyWith(
-                  color: const Color(0xFF191C1A),
-                  height: 1.1,
-                  letterSpacing: -1,
-                ),
+                style: TextStyleHelper.instance.headline30ExtraBoldOutfit
+                    .copyWith(
+                      color: const Color(0xFF191C1A),
+                      height: 1.1,
+                      letterSpacing: -1,
+                    ),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacementNamed(AppRoutes.explorePageWithNotifScreen);
+                  Navigator.of(
+                    context,
+                  ).pushReplacementNamed(AppRoutes.explorePageWithNotifScreen);
                 },
                 child: Text(
                   'Skip',
@@ -106,11 +107,15 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
           children: [
             Text(
               'AI Curation Strength',
-              style: TextStyleHelper.instance.label10BoldInter.copyWith(color: const Color(0xFF1B3022)),
+              style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                color: const Color(0xFF1B3022),
+              ),
             ),
             Text(
               '${(progress * 100).toInt()}%',
-              style: TextStyleHelper.instance.label10BoldInter.copyWith(color: const Color(0xFF1B3022)),
+              style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                color: const Color(0xFF1B3022),
+              ),
             ),
           ],
         ),
@@ -130,10 +135,16 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
               height: 6,
               width: MediaQuery.of(context).size.width * 0.8 * progress,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF3E5641), Color(0xFF1B3022)]),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3E5641), Color(0xFF1B3022)],
+                ),
                 borderRadius: BorderRadius.circular(3),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF1B3022).withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                  BoxShadow(
+                    color: const Color(0xFF1B3022).withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
             ),
@@ -176,16 +187,20 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
                 color: isSelected ? const Color(0xFF1B3022) : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF1B3022) : const Color(0x33C1C9C1),
+                  color: isSelected
+                      ? const Color(0xFF1B3022)
+                      : const Color(0x33C1C9C1),
                   width: 1.5,
                 ),
-                boxShadow: isSelected ? [
-                  BoxShadow(
-                    color: const Color(0xFF1B3022).withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  )
-                ] : [],
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF1B3022).withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
+                    : [],
               ),
               child: Stack(
                 children: [
@@ -193,7 +208,11 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
                     const Positioned(
                       top: 12,
                       right: 12,
-                      child: Icon(Icons.check_circle, color: Colors.white, size: 16),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   Center(
                     child: Column(
@@ -201,15 +220,20 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
                       children: [
                         Icon(
                           vibe['icon'],
-                          color: isSelected ? Colors.white : const Color(0xFF3E5641),
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF3E5641),
                           size: 32,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           vibe['name'],
-                          style: TextStyleHelper.instance.body14BoldInter.copyWith(
-                            color: isSelected ? Colors.white : const Color(0xFF191C1A),
-                          ),
+                          style: TextStyleHelper.instance.body14BoldInter
+                              .copyWith(
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF191C1A),
+                              ),
                         ),
                       ],
                     ),
@@ -236,13 +260,15 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
           decoration: BoxDecoration(
             color: canProceed ? const Color(0xFF1B3022) : Colors.grey[300],
             borderRadius: BorderRadius.circular(9999),
-            boxShadow: canProceed ? [
-              BoxShadow(
-                color: const Color(0xFF1B3022).withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              )
-            ] : [],
+            boxShadow: canProceed
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF1B3022).withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [],
           ),
           child: Center(
             child: Text(
@@ -257,4 +283,3 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
     );
   }
 }
-

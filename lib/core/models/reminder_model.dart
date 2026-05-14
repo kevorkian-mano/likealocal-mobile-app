@@ -59,14 +59,13 @@ class Reminder {
       'message': message,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),
-      'triggeredAt': triggeredAt != null ? Timestamp.fromDate(triggeredAt!) : null,
+      'triggeredAt': triggeredAt != null
+          ? Timestamp.fromDate(triggeredAt!)
+          : null,
     };
   }
 
-  Reminder copyWith({
-    bool? isActive,
-    DateTime? triggeredAt,
-  }) {
+  Reminder copyWith({bool? isActive, DateTime? triggeredAt}) {
     return Reminder(
       id: id,
       userId: userId,

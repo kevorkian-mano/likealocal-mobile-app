@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../core/providers/user_provider.dart';
@@ -7,7 +6,7 @@ import '../../core/providers/chat_provider.dart';
 import '../../core/services/ai_service.dart';
 
 class ChatDetailsScreen extends StatefulWidget {
-  const ChatDetailsScreen({Key? key}) : super(key: key);
+  const ChatDetailsScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const ChatDetailsScreen();
@@ -29,7 +28,8 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _chat = ModalRoute.of(context)!.settings.arguments as ChatPreview;
-    _currentUserId = Provider.of<UserProvider>(context, listen: false).user?.id ?? '';
+    _currentUserId =
+        Provider.of<UserProvider>(context, listen: false).user?.id ?? '';
   }
 
   @override
@@ -43,7 +43,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
     if (text.trim().isEmpty) return;
     _messageController.clear();
     try {
-      await Provider.of<ChatProvider>(context, listen: false).sendMessage(_chat.id, _currentUserId, text.trim());
+      await Provider.of<ChatProvider>(
+        context,
+        listen: false,
+      ).sendMessage(_chat.id, _currentUserId, text.trim());
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -54,7 +57,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         }
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message.')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send message.')));
     }
   }
 
@@ -63,7 +69,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
     if (lastMsg.isEmpty) return;
     setState(() => _loadingAi = true);
     final suggestions = await AIService.suggestChatReplies(lastMsg, gemName);
-    if (mounted) setState(() { _aiSuggestions = suggestions; _loadingAi = false; });
+    if (mounted)
+      setState(() {
+        _aiSuggestions = suggestions;
+        _loadingAi = false;
+      });
   }
 
   @override
@@ -78,7 +88,14 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
       body: Column(
         children: [
           _buildGemContext(chat),
-          Expanded(child: _buildMessageList(chat.id, currentUser?.id ?? '', isSuperUser, chat.relatedGemName)),
+          Expanded(
+            child: _buildMessageList(
+              chat.id,
+              currentUser?.id ?? '',
+              isSuperUser,
+              chat.relatedGemName,
+            ),
+          ),
           if (isSuperUser) _buildQuickSuggestions(chat.relatedGemName),
           _buildInputArea(),
         ],
@@ -86,7 +103,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, ChatPreview chat, currentUser) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    ChatPreview chat,
+    currentUser,
+  ) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -96,13 +117,26 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
       ),
       title: Row(
         children: [
-          CircleAvatar(radius: 18, backgroundImage: NetworkImage(chat.userAvatar)),
+          CircleAvatar(
+            radius: 18,
+            backgroundImage: NetworkImage(chat.userAvatar),
+          ),
           SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(chat.userName, style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A))),
-              Text('Active Now', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF3E5641))),
+              Text(
+                chat.userName,
+                style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                  color: Color(0xFF191C1A),
+                ),
+              ),
+              Text(
+                'Active Now',
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                  color: Color(0xFF3E5641),
+                ),
+              ),
             ],
           ),
         ],
@@ -111,11 +145,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         PopupMenuButton(
           icon: Icon(Icons.more_vert, color: Color(0xFF1B3022)),
           itemBuilder: (context) => [
-            PopupMenuItem(child: Text('Report User'), value: 'report'),
+            PopupMenuItem(value: 'report', child: Text('Report User')),
             // FR5-5: Block user
             PopupMenuItem(
-              child: Text('Block User', style: TextStyle(color: Colors.red)),
               value: 'block',
+              child: Text('Block User', style: TextStyle(color: Colors.red)),
             ),
           ],
           onSelected: (value) async {
@@ -124,26 +158,44 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: Text('Block User?'),
-                  content: Text('You won\'t be able to message them and they won\'t be able to start new chats with you.'),
+                  content: Text(
+                    'You won\'t be able to message them and they won\'t be able to start new chats with you.',
+                  ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text('Cancel'),
+                    ),
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: Text('Block', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Block',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               );
               if (confirmed == true && currentUser != null) {
-                await Provider.of<UserProvider>(context, listen: false).blockUser(chat.targetUserId);
+                await Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                ).blockUser(chat.targetUserId);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User blocked.')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('User blocked.')));
                 }
               }
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Report submitted for moderation (FR5-5)')),
+                SnackBar(
+                  content: Text('Report submitted for moderation (FR5-5)'),
+                ),
               );
             }
           },
@@ -164,31 +216,63 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         children: [
           Icon(Icons.location_on, color: Color(0xFF3E5641), size: 16),
           SizedBox(width: 8),
-          Text('Discussing: ', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353))),
-          Text(chat.relatedGemName, style: TextStyleHelper.instance.label10BoldInter.copyWith(color: Color(0xFF1B3022))),
+          Text(
+            'Discussing: ',
+            style: TextStyleHelper.instance.label10MediumInter.copyWith(
+              color: Color(0xFF4D6353),
+            ),
+          ),
+          Text(
+            chat.relatedGemName,
+            style: TextStyleHelper.instance.label10BoldInter.copyWith(
+              color: Color(0xFF1B3022),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMessageList(String chatId, String userId, bool isSuperUser, String gemName) {
+  Widget _buildMessageList(
+    String chatId,
+    String userId,
+    bool isSuperUser,
+    String gemName,
+  ) {
     return StreamBuilder<List<ChatMessage>>(
-      stream: Provider.of<ChatProvider>(context, listen: false).getMessages(chatId, userId),
+      stream: Provider.of<ChatProvider>(
+        context,
+        listen: false,
+      ).getMessages(chatId, userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: Color(0xFF1B3022)));
+          return Center(
+            child: CircularProgressIndicator(color: Color(0xFF1B3022)),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('Say hi! 👋', style: TextStyle(color: Colors.grey)));
+          return Center(
+            child: Text('Say hi! 👋', style: TextStyle(color: Colors.grey)),
+          );
         }
 
         final messages = snapshot.data!;
-        
+
         // Load AI suggestions if last message is from other user and we haven't loaded yet
-        if (isSuperUser && messages.isNotEmpty && !messages.first.isMe && _aiSuggestions.isEmpty && !_loadingAi) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _loadAiSuggestions(gemName, messages.first.text));
-        } else if (messages.isNotEmpty && messages.first.isMe && _aiSuggestions.isNotEmpty) {
-           WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => _aiSuggestions.clear()));
+        if (isSuperUser &&
+            messages.isNotEmpty &&
+            !messages.first.isMe &&
+            _aiSuggestions.isEmpty &&
+            !_loadingAi) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _loadAiSuggestions(gemName, messages.first.text),
+          );
+        } else if (messages.isNotEmpty &&
+            messages.first.isMe &&
+            _aiSuggestions.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => setState(() => _aiSuggestions.clear()),
+          );
         }
 
         return ListView.builder(
@@ -196,7 +280,8 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
           padding: EdgeInsets.all(20),
           reverse: true, // Messages are ordered descending from Firestore
           itemCount: messages.length,
-          itemBuilder: (context, index) => _buildBubble(messages[index].text, messages[index].isMe),
+          itemBuilder: (context, index) =>
+              _buildBubble(messages[index].text, messages[index].isMe),
         );
       },
     );
@@ -221,8 +306,18 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(text, style: TextStyle(color: isMe ? Colors.white : Color(0xFF191C1A), fontSize: 14, height: 1.4)),
-            if (isMe) ...[SizedBox(height: 4), Icon(Icons.done_all, color: Colors.white60, size: 12)],
+            Text(
+              text,
+              style: TextStyle(
+                color: isMe ? Colors.white : Color(0xFF191C1A),
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+            if (isMe) ...[
+              SizedBox(height: 4),
+              Icon(Icons.done_all, color: Colors.white60, size: 12),
+            ],
           ],
         ),
       ),
@@ -235,19 +330,39 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         ? _aiSuggestions
         : ["Entrance fee?", "Best time?", "Safe for solo?", "Hidden menu?"];
 
-    return Container(
+    return SizedBox(
       height: 50,
       child: _loadingAi
-          ? Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B3022))))
+          ? Center(
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF1B3022),
+                ),
+              ),
+            )
           : ListView.separated(
               padding: EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
               itemCount: suggestions.length,
-              separatorBuilder: (_, __) => SizedBox(width: 10),
+              separatorBuilder: (_, _) => SizedBox(width: 10),
               itemBuilder: (context, index) => ActionChip(
-                avatar: index < _aiSuggestions.length ? Icon(Icons.auto_awesome, size: 12, color: Color(0xFF1B3022)) : null,
-                label: Text(suggestions[index], style: TextStyle(fontSize: 12, color: Color(0xFF1B3022))),
-                backgroundColor: index < _aiSuggestions.length ? Color(0xFFE8F2E9) : Colors.white,
+                avatar: index < _aiSuggestions.length
+                    ? Icon(
+                        Icons.auto_awesome,
+                        size: 12,
+                        color: Color(0xFF1B3022),
+                      )
+                    : null,
+                label: Text(
+                  suggestions[index],
+                  style: TextStyle(fontSize: 12, color: Color(0xFF1B3022)),
+                ),
+                backgroundColor: index < _aiSuggestions.length
+                    ? Color(0xFFE8F2E9)
+                    : Colors.white,
                 side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.2)),
                 onPressed: () {
                   _messageController.text = suggestions[index];
@@ -291,7 +406,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
             onTap: () => _sendMessage(_messageController.text),
             child: Container(
               padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Color(0xFF1B3022), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: Color(0xFF1B3022),
+                shape: BoxShape.circle,
+              ),
               child: Icon(Icons.send, color: Colors.white, size: 20),
             ),
           ),

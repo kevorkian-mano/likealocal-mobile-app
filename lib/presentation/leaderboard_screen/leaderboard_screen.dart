@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/providers/user_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/models/user_model.dart';
 
 class LeaderboardScreen extends StatelessWidget {
-  const LeaderboardScreen({Key? key}) : super(key: key);
+  const LeaderboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: AppBar(
-        title: Text('Local Legends', style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans),
+        title: Text(
+          'Local Legends',
+          style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans,
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
@@ -29,14 +30,19 @@ class LeaderboardScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: appTheme.midnightPine));
+            return Center(
+              child: CircularProgressIndicator(color: appTheme.midnightPine),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(child: Text('No legends yet. Start contributing!'));
           }
 
           final users = snapshot.data!.docs
-              .map((d) => UserModel.fromMap(d.data() as Map<String, dynamic>, d.id))
+              .map(
+                (d) =>
+                    UserModel.fromMap(d.data() as Map<String, dynamic>, d.id),
+              )
               .toList();
 
           return Column(
@@ -46,12 +52,18 @@ class LeaderboardScreen extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(32.h)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(32.h),
+                    ),
                   ),
                   child: ListView.separated(
-                    padding: EdgeInsets.symmetric(horizontal: 20.h, vertical: 24.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.h,
+                      vertical: 24.h,
+                    ),
                     itemCount: users.length > 3 ? users.length - 3 : 0,
-                    separatorBuilder: (context, index) => Divider(color: Colors.grey.shade100, height: 32.h),
+                    separatorBuilder: (context, index) =>
+                        Divider(color: Colors.grey.shade100, height: 32.h),
                     itemBuilder: (context, index) {
                       final user = users[index + 3];
                       return _buildLeaderboardTile(user, index + 4);
@@ -92,15 +104,21 @@ class LeaderboardScreen extends StatelessWidget {
               padding: EdgeInsets.all(rank == 1 ? 4.h : 2.h),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: rank == 1 
-                  ? LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFB8860B)])
-                  : null,
+                gradient: rank == 1
+                    ? LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFB8860B)],
+                      )
+                    : null,
                 color: rank == 1 ? null : Colors.grey.shade300,
               ),
               child: CircleAvatar(
                 radius: rank == 1 ? 40.h : 30.h,
-                backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
-                child: user.avatarUrl.isEmpty ? Icon(Icons.person, size: 30.h) : null,
+                backgroundImage: user.avatarUrl.isNotEmpty
+                    ? NetworkImage(user.avatarUrl)
+                    : null,
+                child: user.avatarUrl.isEmpty
+                    ? Icon(Icons.person, size: 30.h)
+                    : null,
               ),
             ),
             Container(
@@ -124,7 +142,9 @@ class LeaderboardScreen extends StatelessWidget {
         ),
         Text(
           '${user.karmaPoints} KP',
-          style: TextStyleHelper.instance.label10MediumInter.copyWith(color: appTheme.midnightPine),
+          style: TextStyleHelper.instance.label10MediumInter.copyWith(
+            color: appTheme.midnightPine,
+          ),
         ),
       ],
     );
@@ -137,12 +157,16 @@ class LeaderboardScreen extends StatelessWidget {
           width: 32.h,
           child: Text(
             rank.toString(),
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.grey),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              color: Colors.grey,
+            ),
           ),
         ),
         CircleAvatar(
           radius: 20.h,
-          backgroundImage: user.avatarUrl.isNotEmpty ? NetworkImage(user.avatarUrl) : null,
+          backgroundImage: user.avatarUrl.isNotEmpty
+              ? NetworkImage(user.avatarUrl)
+              : null,
           child: user.avatarUrl.isEmpty ? Icon(Icons.person, size: 16.h) : null,
         ),
         SizedBox(width: 16.h),
@@ -150,15 +174,25 @@ class LeaderboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user.fullName, style: TextStyleHelper.instance.body14BoldInter),
+              Text(
+                user.fullName,
+                style: TextStyleHelper.instance.body14BoldInter,
+              ),
               if (user.isSuperUser)
-                Text('Local Legend', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFFB8860B))),
+                Text(
+                  'Local Legend',
+                  style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                    color: Color(0xFFB8860B),
+                  ),
+                ),
             ],
           ),
         ),
         Text(
           '${user.karmaPoints} KP',
-          style: TextStyleHelper.instance.body14BoldInter.copyWith(color: appTheme.midnightPine),
+          style: TextStyleHelper.instance.body14BoldInter.copyWith(
+            color: appTheme.midnightPine,
+          ),
         ),
       ],
     );

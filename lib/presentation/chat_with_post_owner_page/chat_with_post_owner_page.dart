@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ChatWithPostOwnerPage extends StatelessWidget {
-  const ChatWithPostOwnerPage({Key? key}) : super(key: key);
+  const ChatWithPostOwnerPage({super.key});
 
   static Widget builder(BuildContext context) {
     return ChatWithPostOwnerPage();
@@ -58,21 +58,51 @@ class ChatWithPostOwnerPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 24),
-                _buildMyMessage('Can you tell me the phone \nnumber of crismon resturant!', '10:26 AM • Read'),
+                _buildMyMessage(
+                  'Can you tell me the phone \nnumber of crismon resturant!',
+                  '10:26 AM • Read',
+                ),
                 SizedBox(height: 8),
-                _buildMyMessage('and there location also, thank you!!', '10:26 AM • Read'),
+                _buildMyMessage(
+                  'and there location also, thank you!!',
+                  '10:26 AM • Read',
+                ),
                 SizedBox(height: 16),
                 _buildOtherMessage('+20 127 505 5555', '10:30 AM'),
                 SizedBox(height: 8),
-                _buildOtherMessage('16 Kamal El Tawil St, Zamalek, Cairo \n(inside Riverside Complex)', '10:30 AM'),
+                _buildOtherMessage(
+                  '16 Kamal El Tawil St, Zamalek, Cairo \n(inside Riverside Complex)',
+                  '10:30 AM',
+                ),
                 SizedBox(height: 16),
                 Row(
                   children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: Color(0xFF546353), shape: BoxShape.circle)),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF546353),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     SizedBox(width: 4),
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: Color(0xFF546353), shape: BoxShape.circle)),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF546353),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     SizedBox(width: 4),
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: Color(0xFF546353), shape: BoxShape.circle)),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF546353),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -138,10 +168,7 @@ class ChatWithPostOwnerPage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 4),
-          Text(
-            time,
-            style: TextStyle(color: Color(0xFF727971), fontSize: 10),
-          ),
+          Text(time, style: TextStyle(color: Color(0xFF727971), fontSize: 10)),
         ],
       ),
     );

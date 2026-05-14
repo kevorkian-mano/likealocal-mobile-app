@@ -6,7 +6,6 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../models/user_model.dart';
 
-
 class UserProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   UserModel? _user;
@@ -24,15 +23,17 @@ class UserProvider extends ChangeNotifier {
     _authService.authStateChanges.listen((User? firebaseUser) async {
       if (firebaseUser != null) {
         _user = await _authService.getUserData(firebaseUser.uid);
-        
+
         // FR11-7: Update FCM Token for notifications
         try {
-          final token = await NotificationService().getDeviceToken();
-          if (token != null) {
-            await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).update({
-              'fcmToken': token,
-            });
-          }
+          NotificationService().getDeviceToken().then((token) async {
+            if (token != null) {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(firebaseUser.uid)
+                  .update({'fcmToken': token});
+            }
+          });
         } catch (e) {
           debugPrint('Error updating FCM token: $e');
         }
@@ -100,10 +101,10 @@ class UserProvider extends ChangeNotifier {
     if (updates.isEmpty) return;
 
     try {
-      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
-          .collection('users')
-          .doc(_user!.id)
-          .update(updates);
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id).update(updates);
 
       // Refresh local state immediately using copyWith
       _user = _user!.copyWith(
@@ -124,7 +125,7 @@ class UserProvider extends ChangeNotifier {
   // FR6-1: Track user interactions for personalization
   Future<void> trackInteraction(String category, String vibe) async {
     if (_user == null) return;
-    
+
     final interaction = {
       'category': category,
       'vibe': vibe,
@@ -132,10 +133,10 @@ class UserProvider extends ChangeNotifier {
     };
 
     try {
-      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
-          .collection('users')
-          .doc(_user!.id)
-          .update({
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id).update({
         'interactionHistory': FieldValue.arrayUnion([interaction]),
       });
 
@@ -148,19 +149,21 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-
   Future<void> addKarmaPoints(int points) async {
     if (_user == null) return;
-    
+
     final newPoints = _user!.karmaPoints + points;
     bool shouldPromote = newPoints >= 500 && !_user!.isSuperUser;
 
     try {
-      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').collection('users').doc(_user!.id).update({
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id).update({
         'karmaPoints': newPoints,
         if (shouldPromote) 'isSuperUser': true,
       });
-      
+
       // Local refresh
       _user = _user!.copyWith(
         karmaPoints: newPoints,
@@ -175,12 +178,11 @@ class UserProvider extends ChangeNotifier {
   Future<void> purchasePro() async {
     if (_user == null) return;
     try {
-      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').collection('users').doc(_user!.id).update({
-        'isPro': true,
-      });
-      _user = _user!.copyWith(
-        isPro: true,
-      );
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id).update({'isPro': true});
+      _user = _user!.copyWith(isPro: true);
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -210,10 +212,10 @@ class UserProvider extends ChangeNotifier {
   Future<void> blockUser(String targetUserId) async {
     if (_user == null) return;
     try {
-      await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
-          .collection('users')
-          .doc(_user!.id)
-          .update({
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id).update({
         'blockedUsers': FieldValue.arrayUnion([targetUserId]),
       });
       _user = _user!.copyWith(
@@ -240,9 +242,10 @@ class UserProvider extends ChangeNotifier {
   // FR11-7: Broadcast notification (admin only)
   Future<void> broadcastNotification(String title, String message) async {
     if (_user == null || !_user!.isAdmin) return;
-    await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
-        .collection('notifications')
-        .add({
+    await FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'default',
+    ).collection('notifications').add({
       'title': title,
       'message': message,
       'createdAt': FieldValue.serverTimestamp(),
@@ -253,7 +256,10 @@ class UserProvider extends ChangeNotifier {
 
   // FR11-7: Stream of active admin notifications
   Stream<List<Map<String, dynamic>>> getActiveNotifications() {
-    return FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
+    return FirebaseFirestore.instanceFor(
+          app: Firebase.app(),
+          databaseId: 'default',
+        )
         .collection('notifications')
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: true)
@@ -261,12 +267,13 @@ class UserProvider extends ChangeNotifier {
         .snapshots()
         .map((s) => s.docs.map((d) => {...d.data(), 'id': d.id}).toList());
   }
+
   // FR3-7/FR10-1: Toggle Location Reminder with limits
   Future<void> toggleReminder(String gemId) async {
     if (_user == null) return;
-    
+
     final isRemoving = _user!.reminders.contains(gemId);
-    
+
     if (!isRemoving) {
       // Enforce limit: 1 reminder for Free users
       if (!_user!.isPro && !_user!.isSuperUser && _user!.reminders.isNotEmpty) {
@@ -275,18 +282,21 @@ class UserProvider extends ChangeNotifier {
     }
 
     try {
-      final docRef = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
-          .collection('users')
-          .doc(_user!.id);
+      final docRef = FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(_user!.id);
 
       if (isRemoving) {
         await docRef.update({
-          'reminders': FieldValue.arrayRemove([gemId])
+          'reminders': FieldValue.arrayRemove([gemId]),
         });
-        _user = _user!.copyWith(reminders: _user!.reminders.where((id) => id != gemId).toList());
+        _user = _user!.copyWith(
+          reminders: _user!.reminders.where((id) => id != gemId).toList(),
+        );
       } else {
         await docRef.update({
-          'reminders': FieldValue.arrayUnion([gemId])
+          'reminders': FieldValue.arrayUnion([gemId]),
         });
         _user = _user!.copyWith(reminders: [..._user!.reminders, gemId]);
       }
@@ -296,4 +306,3 @@ class UserProvider extends ChangeNotifier {
     }
   }
 }
-

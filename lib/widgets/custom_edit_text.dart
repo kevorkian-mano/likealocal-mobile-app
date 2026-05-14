@@ -3,25 +3,23 @@ import 'package:flutter/material.dart';
 import '../core/app_export.dart';
 import './custom_image_view.dart';
 
-/**
- * CustomEditText - A flexible text input component that supports various input types,
- * optional prefix icons, customizable styling, and validation.
- * 
- * @param hintText - Placeholder text displayed in the input field
- * @param prefixIconPath - Optional path to SVG icon displayed on the left
- * @param backgroundColor - Background fill color of the input field
- * @param hasBorder - Whether to show a border around the input
- * @param isMultiline - Whether the input supports multiple lines
- * @param isTimeInput - Whether this is a time/date input with picker
- * @param controller - TextEditingController for managing input value
- * @param validator - Validation function for form validation
- * @param onTap - Callback function when the field is tapped
- * @param keyboardType - Type of keyboard to display
- * @param maxLines - Maximum number of lines for multiline input
- */
+/// CustomEditText - A flexible text input component that supports various input types,
+/// optional prefix icons, customizable styling, and validation.
+///
+/// @param hintText - Placeholder text displayed in the input field
+/// @param prefixIconPath - Optional path to SVG icon displayed on the left
+/// @param backgroundColor - Background fill color of the input field
+/// @param hasBorder - Whether to show a border around the input
+/// @param isMultiline - Whether the input supports multiple lines
+/// @param isTimeInput - Whether this is a time/date input with picker
+/// @param controller - TextEditingController for managing input value
+/// @param validator - Validation function for form validation
+/// @param onTap - Callback function when the field is tapped
+/// @param keyboardType - Type of keyboard to display
+/// @param maxLines - Maximum number of lines for multiline input
 class CustomEditText extends StatelessWidget {
-  CustomEditText({
-    Key? key,
+  const CustomEditText({
+    super.key,
     this.hintText,
     this.prefixIconPath,
     this.backgroundColor,
@@ -33,7 +31,7 @@ class CustomEditText extends StatelessWidget {
     this.onTap,
     this.keyboardType,
     this.maxLines,
-  }) : super(key: key);
+  });
 
   /// Placeholder text displayed in the input field
   final String? hintText;

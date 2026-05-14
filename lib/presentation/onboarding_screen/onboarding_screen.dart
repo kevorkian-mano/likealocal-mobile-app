@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_export.dart';
-import '../../routes/app_routes.dart';
 import '../../widgets/custom_button.dart';
-import '../../widgets/custom_image_view.dart';
 import './provider/onboarding_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return ChangeNotifierProvider<OnboardingProvider>(
@@ -72,8 +70,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: Transform.translate(
                               offset: Offset(0, 20 * (1 - value)),
                               child: Text(
-                                provider.onboardingModel.mainHeading ?? 'Explore like\na local.',
-                                style: TextStyleHelper.instance.display48BoldOutfit.copyWith(height: 1.1),
+                                provider.onboardingModel.mainHeading ??
+                                    'Explore like\na local.',
+                                style: TextStyleHelper
+                                    .instance
+                                    .display48BoldOutfit
+                                    .copyWith(height: 1.1),
                               ),
                             ),
                           );
@@ -90,8 +92,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             child: Transform.translate(
                               offset: Offset(0, 20 * (1 - value)),
                               child: Text(
-                                provider.onboardingModel.subHeading ?? 'The best authentic experiences,\ncurated by the people who live there.',
-                                style: TextStyleHelper.instance.title18RegularInter.copyWith(height: 1.5, color: appTheme.paleSand.withOpacity(0.8)),
+                                provider.onboardingModel.subHeading ??
+                                    'The best authentic experiences,\ncurated by the people who live there.',
+                                style: TextStyleHelper
+                                    .instance
+                                    .title18RegularInter
+                                    .copyWith(
+                                      height: 1.5,
+                                      color: appTheme.paleSand.withOpacity(0.8),
+                                    ),
                               ),
                             ),
                           );
@@ -108,10 +117,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 decoration: BoxDecoration(
                                   boxShadow: [
                                     BoxShadow(
-                                      color: appTheme.sunlightGold.withOpacity(0.2 * (1 - value.abs())),
+                                      color: appTheme.sunlightGold.withOpacity(
+                                        0.2 * (1 - value.abs()),
+                                      ),
                                       blurRadius: 15 * (1 - value.abs()),
                                       spreadRadius: 5 * (1 - value.abs()),
-                                    )
+                                    ),
                                   ],
                                 ),
                                 child: CustomButton(
@@ -126,7 +137,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   margin: EdgeInsets.zero,
                                   width: double.infinity,
                                   onPressed: () {
-                                    Navigator.of(context).pushReplacementNamed(AppRoutes.explorePageWithNotifScreen);
+                                    Navigator.of(context).pushReplacementNamed(
+                                      AppRoutes.explorePageWithNotifScreen,
+                                    );
                                   },
                                 ),
                               ),
@@ -136,8 +149,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 child: OutlinedButton(
                                   onPressed: provider.onGetStartedPressed,
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.white, width: 1.5),
-                                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                                    side: const BorderSide(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 16.h,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -166,13 +184,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               children: [
                                 TextSpan(
                                   text: 'Already have an account? ',
-                                  style: TextStyleHelper.instance.body14MediumInter,
+                                  style: TextStyleHelper
+                                      .instance
+                                      .body14MediumInter,
                                 ),
                                 TextSpan(
                                   text: 'Log In',
-                                  style: TextStyleHelper.instance.body14BoldInter.copyWith(
-                                    color: appTheme.sunlightGold,
-                                  ),
+                                  style: TextStyleHelper
+                                      .instance
+                                      .body14BoldInter
+                                      .copyWith(color: appTheme.sunlightGold),
                                 ),
                               ],
                             ),

@@ -19,13 +19,12 @@ class UserModel {
   final List<String> savedGems; // FR3-3
   final List<String> reminders; // FR3-7
   final bool acceptsMessages; // FR5-2
-  final bool isDndEnabled;    // FR5-3
-  final int dndStartHour;     // FR5-3 (0-23)
-  final int dndEndHour;       // FR5-3 (0-23)
+  final bool isDndEnabled; // FR5-3
+  final int dndStartHour; // FR5-3 (0-23)
+  final int dndEndHour; // FR5-3 (0-23)
   final List<String> blockedUsers; // FR5-5
-  final bool isBanned;             // FR11-6
+  final bool isBanned; // FR11-6
   final List<Map<String, dynamic>> interactionHistory; // FR6-1
-
 
   UserModel({
     required this.id,
@@ -54,7 +53,6 @@ class UserModel {
     this.interactionHistory = const [],
   });
 
-
   factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
     return UserModel(
       id: documentId,
@@ -67,12 +65,12 @@ class UserModel {
       isSuperUser: map['isSuperUser'] ?? false,
       isAdmin: map['isAdmin'] ?? false,
       isPro: map['isPro'] ?? false,
-      lastContributionTime: map['lastContributionTime'] != null 
-          ? (map['lastContributionTime'] as Timestamp).toDate() 
+      lastContributionTime: map['lastContributionTime'] != null
+          ? (map['lastContributionTime'] as Timestamp).toDate()
           : null,
       chatsStartedToday: map['chatsStartedToday'] ?? 0,
-      lastChatResetDate: map['lastChatResetDate'] != null 
-          ? (map['lastChatResetDate'] as Timestamp).toDate() 
+      lastChatResetDate: map['lastChatResetDate'] != null
+          ? (map['lastChatResetDate'] as Timestamp).toDate()
           : null,
       contributionStreak: map['contributionStreak'] ?? 0,
       badges: List<String>.from(map['badges'] ?? []),
@@ -84,7 +82,9 @@ class UserModel {
       dndEndHour: map['dndEndHour'] ?? 8,
       blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
       isBanned: map['isBanned'] ?? false,
-      interactionHistory: List<Map<String, dynamic>>.from(map['interactionHistory'] ?? []),
+      interactionHistory: List<Map<String, dynamic>>.from(
+        map['interactionHistory'] ?? [],
+      ),
     );
   }
 
@@ -152,12 +152,12 @@ class UserModel {
       'isSuperUser': isSuperUser,
       'isAdmin': isAdmin,
       'isPro': isPro,
-      'lastContributionTime': lastContributionTime != null 
-          ? Timestamp.fromDate(lastContributionTime!) 
+      'lastContributionTime': lastContributionTime != null
+          ? Timestamp.fromDate(lastContributionTime!)
           : null,
       'chatsStartedToday': chatsStartedToday,
-      'lastChatResetDate': lastChatResetDate != null 
-          ? Timestamp.fromDate(lastChatResetDate!) 
+      'lastChatResetDate': lastChatResetDate != null
+          ? Timestamp.fromDate(lastChatResetDate!)
           : null,
       'contributionStreak': contributionStreak,
       'badges': badges,
@@ -172,5 +172,4 @@ class UserModel {
       'interactionHistory': interactionHistory,
     };
   }
-
 }

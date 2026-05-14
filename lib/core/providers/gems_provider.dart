@@ -15,7 +15,10 @@ const int FREE_USER_PIN_LIMIT = 10;
 const int PRO_USER_PIN_LIMIT = 100;
 
 class GemsProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'default',
+  );
   StreamSubscription? _gemsSubscription;
   StreamSubscription? _usersSubscription;
   List<HiddenGem> _gems = [];
@@ -49,12 +52,18 @@ class GemsProvider extends ChangeNotifier {
   }
 
   List<HiddenGem> get approvedGems {
-    final approved = _gems.where((gem) => gem.status == GemStatus.approved).toList();
-    debugPrint('[GemsProvider] Total gems: ${_gems.length}, Approved gems: ${approved.length}');
+    final approved = _gems
+        .where((gem) => gem.status == GemStatus.approved)
+        .toList();
+    debugPrint(
+      '[GemsProvider] Total gems: ${_gems.length}, Approved gems: ${approved.length}',
+    );
     if (_gems.isNotEmpty && approved.isEmpty) {
-      debugPrint('[GemsProvider] WARNING: No approved gems found. Gem statuses: ${_gems.map((g) => g.status).toSet()}');
+      debugPrint(
+        '[GemsProvider] WARNING: No approved gems found. Gem statuses: ${_gems.map((g) => g.status).toSet()}',
+      );
     }
-    
+
     // Boosted gems always appear first (FR12-5)
     // Super User gems appear second (FR7-4)
     approved.sort((a, b) {
@@ -66,10 +75,16 @@ class GemsProvider extends ChangeNotifier {
 
       if (_userLocation != null) {
         double distA = LocationService.calculateDistance(
-          _userLocation!.latitude, _userLocation!.longitude, a.latitude, a.longitude
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          a.latitude,
+          a.longitude,
         );
         double distB = LocationService.calculateDistance(
-          _userLocation!.latitude, _userLocation!.longitude, b.latitude, b.longitude
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          b.latitude,
+          b.longitude,
         );
         return distA.compareTo(distB);
       }
@@ -85,21 +100,23 @@ class GemsProvider extends ChangeNotifier {
   /// Get the nearest approved gem from current user location
   HiddenGem? getNearestGem() {
     if (approvedGems.isEmpty || _userLocation == null) return null;
-    
+
     HiddenGem? nearest;
     double minDistance = double.infinity;
-    
+
     for (final gem in approvedGems) {
       final distance = LocationService.calculateDistance(
-        _userLocation!.latitude, _userLocation!.longitude,
-        gem.latitude, gem.longitude
+        _userLocation!.latitude,
+        _userLocation!.longitude,
+        gem.latitude,
+        gem.longitude,
       );
       if (distance < minDistance) {
         minDistance = distance;
         nearest = gem;
       }
     }
-    
+
     return nearest;
   }
 
@@ -114,44 +131,68 @@ class GemsProvider extends ChangeNotifier {
 
   void _initGemsListener() {
     _isLoading = true;
-    _gemsSubscription = _firestore.collection('gems')
-      .where('status', whereIn: ['approved', 'pending'])
-      .snapshots().listen((snapshot) {
-      debugPrint('[GemsProvider] Loaded ${snapshot.docs.length} gems from Firestore');
-      _gems = snapshot.docs.map((doc) {
-        final map = doc.data();
-        final gem = HiddenGem.fromMap(map, doc.id);
-        final isSuper = (map['contributorIsSuperUser'] ?? false) || _superUserIds.contains(map['contributorId']);
-        return gem.copyWith(contributorIsSuperUser: isSuper);
-      }).toList();
-      _isLoading = false;
-      notifyListeners();
-    }, onError: (error) {
-      debugPrint('[GemsProvider] Firestore Stream Error: $error');
-      _isLoading = false;
-      notifyListeners();
-    });
+    _gemsSubscription = _firestore
+        .collection('gems')
+        .where('status', whereIn: ['approved', 'pending'])
+        .snapshots()
+        .listen(
+          (snapshot) {
+            debugPrint(
+              '[GemsProvider] Loaded ${snapshot.docs.length} gems from Firestore',
+            );
+            _gems = snapshot.docs.map((doc) {
+              final map = doc.data();
+              final gem = HiddenGem.fromMap(map, doc.id);
+              final isSuper =
+                  (map['contributorIsSuperUser'] ?? false) ||
+                  _superUserIds.contains(map['contributorId']);
+              return gem.copyWith(contributorIsSuperUser: isSuper);
+            }).toList();
+            _isLoading = false;
+            notifyListeners();
+          },
+          onError: (error) {
+            debugPrint('[GemsProvider] Firestore Stream Error: $error');
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
   void _initSuperUserListener() {
-    _usersSubscription = _firestore.collection('users')
-      .where('isSuperUser', isEqualTo: true)
-      .snapshots()
-      .listen((snapshot) {
-        _superUserIds = snapshot.docs.map((d) => d.id).toSet();
-        // Update gems list to reflect current super-user set
-        _gems = _gems.map((g) => g.copyWith(contributorIsSuperUser: _superUserIds.contains(g.contributorId))).toList();
-        notifyListeners();
-      }, onError: (error) {
-        debugPrint('SuperUser listener error: $error');
-      });
+    _usersSubscription = _firestore
+        .collection('users')
+        .where('isSuperUser', isEqualTo: true)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            _superUserIds = snapshot.docs.map((d) => d.id).toSet();
+            // Update gems list to reflect current super-user set
+            _gems = _gems
+                .map(
+                  (g) => g.copyWith(
+                    contributorIsSuperUser: _superUserIds.contains(
+                      g.contributorId,
+                    ),
+                  ),
+                )
+                .toList();
+            notifyListeners();
+          },
+          onError: (error) {
+            debugPrint('SuperUser listener error: $error');
+          },
+        );
   }
 
-  List<HiddenGem> get pendingGems => _gems.where((gem) => gem.status == GemStatus.pending).toList();
+  List<HiddenGem> get pendingGems =>
+      _gems.where((gem) => gem.status == GemStatus.pending).toList();
 
   Future<void> approveGem(String gemId, String contributorId) async {
     try {
-      await _firestore.collection('gems').doc(gemId).update({'status': 'approved'});
+      await _firestore.collection('gems').doc(gemId).update({
+        'status': 'approved',
+      });
       await _awardKarmaAndCheckBadges(contributorId, 50);
     } catch (e) {
       debugPrint('Error approving gem: $e');
@@ -160,7 +201,9 @@ class GemsProvider extends ChangeNotifier {
 
   Future<void> rejectGem(String gemId) async {
     try {
-      await _firestore.collection('gems').doc(gemId).update({'status': 'rejected'});
+      await _firestore.collection('gems').doc(gemId).update({
+        'status': 'rejected',
+      });
     } catch (e) {
       debugPrint('Error rejecting gem: $e');
     }
@@ -172,7 +215,7 @@ class GemsProvider extends ChangeNotifier {
     if (userSnap.exists) {
       final user = UserModel.fromMap(userSnap.data()!, userSnap.id);
       final gamification = GamificationHelper.updateStreakAndBadges(user);
-      
+
       await userDoc.update({
         'karmaPoints': FieldValue.increment(points),
         'contributionStreak': gamification['streak'],
@@ -187,16 +230,20 @@ class GemsProvider extends ChangeNotifier {
     if (user.lastContributionTime != null) {
       final diff = DateTime.now().difference(user.lastContributionTime!);
       if (diff.inMinutes < 5) {
-        throw Exception('Slow down! Wait ${5 - diff.inMinutes} mins between posts.');
+        throw Exception(
+          'Slow down! Wait ${5 - diff.inMinutes} mins between posts.',
+        );
       }
     }
 
     final batch = _firestore.batch();
     final gemRef = _firestore.collection('gems').doc();
-    
+
     // FR4-11: Immediate approval for Super Users
-    final finalStatus = user.isSuperUser ? GemStatus.approved : GemStatus.pending;
-    
+    final finalStatus = user.isSuperUser
+        ? GemStatus.approved
+        : GemStatus.pending;
+
     // Create new gem object to inject finalStatus, id, and contributorIsSuperUser
     final finalGem = HiddenGem(
       id: gemRef.id,
@@ -253,7 +300,7 @@ class GemsProvider extends ChangeNotifier {
   Future<void> incrementViews(String gemId) async {
     try {
       await _firestore.collection('gems').doc(gemId).update({
-        'views': FieldValue.increment(1)
+        'views': FieldValue.increment(1),
       });
     } catch (e) {
       debugPrint('Error incrementing views: $e');
@@ -261,53 +308,53 @@ class GemsProvider extends ChangeNotifier {
   }
 
   // FR3-3: Bookmark favorite places with FR3-6 pin limit enforcement
-  Future<void> toggleSaveGem(String userId, String gemId, bool isCurrentlySaved) async {
+  Future<void> toggleSaveGem(
+    String userId,
+    String gemId,
+    bool isCurrentlySaved,
+  ) async {
     _isSyncing = true;
     notifyListeners();
     try {
       final userDoc = _firestore.collection('users').doc(userId);
       final userSnap = await userDoc.get();
       final user = UserModel.fromMap(userSnap.data()!, userSnap.id);
-      
+
       // FR3-6: Check pin limit enforcement for free users
       if (!isCurrentlySaved) {
         // User is trying to add a new pin
         final pinLimit = user.isPro ? PRO_USER_PIN_LIMIT : FREE_USER_PIN_LIMIT;
         final currentPinCount = user.savedGems.length;
-        
+
         if (currentPinCount >= pinLimit) {
           // FR3-6: Notify user they've reached limit
           throw Exception(
             'Pin limit reached! ${user.isPro ? "Pro" : "Free"} users can save up to $pinLimit places. '
-            '${user.isPro ? "" : "Upgrade to Pro to save more!"}'
+            '${user.isPro ? "" : "Upgrade to Pro to save more!"}',
           );
         }
       }
-      
+
       final gemDoc = _firestore.collection('gems').doc(gemId);
-      
+
       if (isCurrentlySaved) {
         await userDoc.update({
-          'savedGems': FieldValue.arrayRemove([gemId])
+          'savedGems': FieldValue.arrayRemove([gemId]),
         });
-        await gemDoc.update({
-          'saves': FieldValue.increment(-1)
-        });
+        await gemDoc.update({'saves': FieldValue.increment(-1)});
       } else {
         // FR10-1: Enforcement (3 pins for Free users)
         final userSnap = await userDoc.get();
         final user = UserModel.fromMap(userSnap.data()!, userSnap.id);
-        
+
         if (!user.isPro && !user.isSuperUser && user.savedGems.length >= 3) {
           throw Exception('LIMIT_REACHED');
         }
 
         await userDoc.update({
-          'savedGems': FieldValue.arrayUnion([gemId])
+          'savedGems': FieldValue.arrayUnion([gemId]),
         });
-        await gemDoc.update({
-          'saves': FieldValue.increment(1)
-        });
+        await gemDoc.update({'saves': FieldValue.increment(1)});
       }
     } catch (e) {
       debugPrint('Error toggling save gem: $e');
@@ -332,13 +379,16 @@ class GemsProvider extends ChangeNotifier {
   List<double> get discoveryVelocity {
     // Last 7 days submission counts
     final now = DateTime.now();
-    final last7Days = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    final last7Days = List.generate(
+      7,
+      (i) => now.subtract(Duration(days: 6 - i)),
+    );
     final velocity = List.filled(7, 0.0);
 
     for (var gem in _gems) {
       if (gem.createdAt == null) continue;
       for (int i = 0; i < 7; i++) {
-        if (gem.createdAt!.day == last7Days[i].day && 
+        if (gem.createdAt!.day == last7Days[i].day &&
             gem.createdAt!.month == last7Days[i].month) {
           velocity[i]++;
         }
@@ -356,7 +406,11 @@ class GemsProvider extends ChangeNotifier {
     required double rating,
     required String text,
   }) async {
-    final reviewRef = _firestore.collection('gems').doc(gemId).collection('reviews').doc();
+    final reviewRef = _firestore
+        .collection('gems')
+        .doc(gemId)
+        .collection('reviews')
+        .doc();
     await reviewRef.set({
       'gemId': gemId,
       'userId': userId,
@@ -367,23 +421,49 @@ class GemsProvider extends ChangeNotifier {
       'createdAt': FieldValue.serverTimestamp(),
     });
     // Update overall gem rating (running average approximation)
-    final allReviews = await _firestore.collection('gems').doc(gemId).collection('reviews').get();
-    final avgRating = allReviews.docs.fold<double>(0, (sum, d) => sum + (d['rating'] as num).toDouble()) / allReviews.docs.length;
-    await _firestore.collection('gems').doc(gemId).update({'rating': double.parse(avgRating.toStringAsFixed(1))});
+    final allReviews = await _firestore
+        .collection('gems')
+        .doc(gemId)
+        .collection('reviews')
+        .get();
+    final avgRating =
+        allReviews.docs.fold<double>(
+          0,
+          (sum, d) => sum + (d['rating'] as num).toDouble(),
+        ) /
+        allReviews.docs.length;
+    await _firestore.collection('gems').doc(gemId).update({
+      'rating': double.parse(avgRating.toStringAsFixed(1)),
+    });
   }
 
   // FR3-9: Edit an existing review (only allowed for review owner)
-  Future<void> editReview(String gemId, String reviewId, {double? rating, String? text}) async {
+  Future<void> editReview(
+    String gemId,
+    String reviewId, {
+    double? rating,
+    String? text,
+  }) async {
     final updates = <String, dynamic>{};
     if (rating != null) updates['rating'] = rating;
     if (text != null) updates['text'] = text;
     if (updates.isEmpty) return;
-    await _firestore.collection('gems').doc(gemId).collection('reviews').doc(reviewId).update(updates);
+    await _firestore
+        .collection('gems')
+        .doc(gemId)
+        .collection('reviews')
+        .doc(reviewId)
+        .update(updates);
   }
 
   // FR3-9: Delete a review (owner or admin)
   Future<void> deleteReview(String gemId, String reviewId) async {
-    await _firestore.collection('gems').doc(gemId).collection('reviews').doc(reviewId).delete();
+    await _firestore
+        .collection('gems')
+        .doc(gemId)
+        .collection('reviews')
+        .doc(reviewId)
+        .delete();
   }
 
   // FR3-8/10: Stream all reviews for a gem
@@ -405,7 +485,7 @@ class GemsProvider extends ChangeNotifier {
     try {
       final remindersRef = _firestore.collection('reminders');
       final docRef = remindersRef.doc();
-      
+
       final reminder = Reminder(
         id: docRef.id,
         userId: userId,
@@ -418,7 +498,7 @@ class GemsProvider extends ChangeNotifier {
         isActive: true,
         createdAt: DateTime.now(),
       );
-      
+
       await docRef.set(reminder.toMap());
       debugPrint('[GemsProvider] Reminder created for ${gem.name}');
       return docRef.id;
@@ -450,16 +530,19 @@ class GemsProvider extends ChangeNotifier {
   }
 
   // FR3-7: Check if user is near a reminder location (should be called periodically by location service)
-  Future<List<Reminder>> checkNearbyReminders(String userId, Position userLocation) async {
+  Future<List<Reminder>> checkNearbyReminders(
+    String userId,
+    Position userLocation,
+  ) async {
     try {
       final remindersSnap = await _firestore
           .collection('reminders')
           .where('userId', isEqualTo: userId)
           .where('isActive', isEqualTo: true)
           .get();
-      
+
       final nearbyReminders = <Reminder>[];
-      
+
       for (final doc in remindersSnap.docs) {
         final reminder = Reminder.fromMap(doc.data(), doc.id);
         final distance = LocationService.calculateDistance(
@@ -468,9 +551,10 @@ class GemsProvider extends ChangeNotifier {
           reminder.latitude,
           reminder.longitude,
         );
-        
+
         // If within geofence radius and not already triggered
-        if ((distance * 1000) < reminder.radiusMeters && reminder.triggeredAt == null) {
+        if ((distance * 1000) < reminder.radiusMeters &&
+            reminder.triggeredAt == null) {
           nearbyReminders.add(reminder);
           // Mark as triggered
           await _firestore.collection('reminders').doc(reminder.id).update({
@@ -478,7 +562,7 @@ class GemsProvider extends ChangeNotifier {
           });
         }
       }
-      
+
       return nearbyReminders;
     } catch (e) {
       debugPrint('Error checking reminders: $e');
@@ -498,7 +582,8 @@ class GemsProvider extends ChangeNotifier {
   // FR12-5: Expire boosts that have passed their time
   Future<void> expireBoosts() async {
     final now = Timestamp.now();
-    final boosted = await _firestore.collection('gems')
+    final boosted = await _firestore
+        .collection('gems')
         .where('isBoosted', isEqualTo: true)
         .where('boostedUntil', isLessThan: now)
         .get();
@@ -507,6 +592,3 @@ class GemsProvider extends ChangeNotifier {
     }
   }
 }
-
-
-

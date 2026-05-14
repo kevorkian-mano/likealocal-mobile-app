@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 
 class PreferenceSummaryScreen extends StatelessWidget {
-  const PreferenceSummaryScreen({Key? key}) : super(key: key);
+  const PreferenceSummaryScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const PreferenceSummaryScreen();
@@ -11,7 +11,11 @@ class PreferenceSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vibes = ['Gastronomy Enthusiast', 'Historical Soul', 'Nightlife Seeker'];
+    final vibes = [
+      'Gastronomy Enthusiast',
+      'Historical Soul',
+      'Nightlife Seeker',
+    ];
 
     return Scaffold(
       backgroundColor: Color(0xFF1B3022), // Midnight Pine
@@ -25,27 +29,39 @@ class PreferenceSummaryScreen extends StatelessWidget {
               tween: Tween(begin: 0.0, end: 1.0),
               duration: Duration(seconds: 2),
               builder: (context, value, child) {
-                return Icon(Icons.psychology, color: Color(0xFFFFD700).withOpacity(value), size: 80);
+                return Icon(
+                  Icons.psychology,
+                  color: Color(0xFFFFD700).withOpacity(value),
+                  size: 80,
+                );
               },
             ),
             SizedBox(height: 24),
             Text(
               'AI Profile Initialized',
-              style: TextStyleHelper.instance.headline30ExtraBoldOutfit.copyWith(color: Colors.white),
+              style: TextStyleHelper.instance.headline30ExtraBoldOutfit
+                  .copyWith(color: Colors.white),
             ),
             SizedBox(height: 12),
             Text(
               'Based on your choices, we\'ve identified your travel DNA.',
               textAlign: TextAlign.center,
-              style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.white70),
+              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                color: Colors.white70,
+              ),
             ),
             SizedBox(height: 48),
-            ...vibes.asMap().entries.map((e) => _buildAnimatedVibeChip(e.value, e.key)).toList(),
+            ...vibes.asMap().entries.map(
+              (e) => _buildAnimatedVibeChip(e.value, e.key),
+            ),
             SizedBox(height: 64),
             CustomButton(
               text: 'Start Exploring',
               margin: EdgeInsets.zero,
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.explorePageWithNotifScreen),
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.explorePageWithNotifScreen,
+              ),
             ),
           ],
         ),
@@ -85,12 +101,12 @@ class PreferenceSummaryScreen extends StatelessWidget {
           SizedBox(width: 16),
           Text(
             text,
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.white),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              color: Colors.white,
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-

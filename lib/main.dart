@@ -19,27 +19,28 @@ import 'core/services/background_task_service.dart';
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Enable Firestore offline persistence (works in low-connectivity areas)
-  FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').settings = const Settings(
+  FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'default',
+  ).settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
   await DatabaseSeeder.seed();
-  
+
   // 🔔 Initialize Notifications
   await NotificationService().initialize();
-  
+
   // ⚙️ Initialize Background Tasks
   await BackgroundTaskService().initialize();
   await BackgroundTaskService().scheduleProximityChecks();
   await BackgroundTaskService().scheduleWeeklySummary();
-  
+
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   Future.wait([
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
@@ -60,6 +61,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Sizer(
@@ -92,4 +95,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

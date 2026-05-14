@@ -10,7 +10,7 @@ import './provider/share_hidden_gem_provider.dart';
 import './share_hidden_gem_initial_page.dart';
 
 class ShareHiddenGemScreen extends StatefulWidget {
-  const ShareHiddenGemScreen({Key? key}) : super(key: key);
+  const ShareHiddenGemScreen({super.key});
 
   @override
   ShareHiddenGemScreenState createState() => ShareHiddenGemScreenState();
@@ -22,7 +22,6 @@ class ShareHiddenGemScreen extends StatefulWidget {
       child: const ShareHiddenGemScreen(),
     );
   }
-
 }
 
 class ShareHiddenGemScreenState extends State<ShareHiddenGemScreen> {
@@ -94,7 +93,10 @@ class ShareHiddenGemScreenState extends State<ShareHiddenGemScreen> {
       onChanged: (index) {
         if (index == 2) {
           // If the middle tab (Add) is tapped, show it as a modal bottom sheet
-          var provider = Provider.of<ShareHiddenGemProvider>(context, listen: false);
+          var provider = Provider.of<ShareHiddenGemProvider>(
+            context,
+            listen: false,
+          );
           showModalBottomSheet(
             context: Navigator.of(context, rootNavigator: true).context,
             isScrollControlled: true,
@@ -104,7 +106,7 @@ class ShareHiddenGemScreenState extends State<ShareHiddenGemScreen> {
                 value: provider,
                 child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.9,
-                  child: ShareHiddenGemInitialPage.builder(context)
+                  child: ShareHiddenGemInitialPage.builder(context),
                 ),
               );
             },
@@ -116,7 +118,9 @@ class ShareHiddenGemScreenState extends State<ShareHiddenGemScreen> {
           _selectedIndex = index;
         });
         var bottomBarItem = bottomBarItemList[index];
-        navigatorKey.currentState?.pushReplacementNamed(bottomBarItem.routeName);
+        navigatorKey.currentState?.pushReplacementNamed(
+          bottomBarItem.routeName,
+        );
       },
       selectedIndex: _selectedIndex,
     );

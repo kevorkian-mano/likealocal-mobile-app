@@ -1,13 +1,11 @@
-
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
-import 'package:provider/provider.dart';
 
 class PremiumDashboardScreen extends StatefulWidget {
-  const PremiumDashboardScreen({Key? key}) : super(key: key);
+  const PremiumDashboardScreen({super.key});
 
   @override
   _PremiumDashboardScreenState createState() => _PremiumDashboardScreenState();
@@ -25,7 +23,10 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: AppBar(
-        title: Text('Nomad Premium', style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans),
+        title: Text(
+          'Nomad Premium',
+          style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans,
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -40,11 +41,17 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
           children: [
             _buildStatusHeader(isPremium),
             SizedBox(height: 32.h),
-            Text('AI AI Itinerary (FR10-4)', style: TextStyleHelper.instance.body16BoldInter),
+            Text(
+              'AI AI Itinerary (FR10-4)',
+              style: TextStyleHelper.instance.body16BoldInter,
+            ),
             SizedBox(height: 12.h),
             _buildItineraryCard(isPremium, user),
             SizedBox(height: 32.h),
-            Text('Offline Maps (FR10-5)', style: TextStyleHelper.instance.body16BoldInter),
+            Text(
+              'Offline Maps (FR10-5)',
+              style: TextStyleHelper.instance.body16BoldInter,
+            ),
             SizedBox(height: 12.h),
             _buildOfflineMapCard(isPremium),
           ],
@@ -60,7 +67,11 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
         color: isPremium ? appTheme.midnightPine : Colors.white,
         borderRadius: BorderRadius.circular(24.h),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -82,7 +93,9 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
                   ),
                 ),
                 Text(
-                  isPremium ? 'Enjoy all exclusive features.' : 'Upgrade to unlock these features.',
+                  isPremium
+                      ? 'Enjoy all exclusive features.'
+                      : 'Upgrade to unlock these features.',
                   style: TextStyleHelper.instance.body12RegularInter.copyWith(
                     color: isPremium ? Colors.white70 : Colors.grey,
                   ),
@@ -92,8 +105,15 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
           ),
           if (!isPremium)
             TextButton(
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
-              child: Text('UPGRADE', style: TextStyle(color: appTheme.midnightPine, fontWeight: FontWeight.bold)),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.pricingPage),
+              child: Text(
+                'UPGRADE',
+                style: TextStyle(
+                  color: appTheme.midnightPine,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),
@@ -111,37 +131,68 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
       child: Column(
         children: [
           if (_itinerary.isEmpty) ...[
-            Icon(Icons.auto_awesome_outlined, color: appTheme.midnightPine, size: 48.h),
+            Icon(
+              Icons.auto_awesome_outlined,
+              color: appTheme.midnightPine,
+              size: 48.h,
+            ),
             SizedBox(height: 16.h),
             Text(
               'Generate a custom daily itinerary based on your vibes and nearby gems.',
               textAlign: TextAlign.center,
-              style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.grey),
+              style: TextStyleHelper.instance.body12RegularInter.copyWith(
+                color: Colors.grey,
+              ),
             ),
             SizedBox(height: 24.h),
             ElevatedButton(
-              onPressed: !isPremium || _isGenerating ? null : _generateAIItinerary,
+              onPressed: !isPremium || _isGenerating
+                  ? null
+                  : _generateAIItinerary,
               style: ElevatedButton.styleFrom(
                 backgroundColor: appTheme.midnightPine,
                 disabledBackgroundColor: Colors.grey.shade300,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: _isGenerating 
-                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text('Generate with Gemini', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: _isGenerating
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'Generate with Gemini',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ] else ...[
-            Text('Your Personal Itinerary', style: TextStyleHelper.instance.body14BoldInter),
+            Text(
+              'Your Personal Itinerary',
+              style: TextStyleHelper.instance.body14BoldInter,
+            ),
             SizedBox(height: 12.h),
             Text(
               _itinerary,
-              style: TextStyleHelper.instance.body12RegularInter.copyWith(height: 1.5),
+              style: TextStyleHelper.instance.body12RegularInter.copyWith(
+                height: 1.5,
+              ),
             ),
             SizedBox(height: 16.h),
             TextButton(
               onPressed: _generateAIItinerary,
-              child: Text('Regenerate', style: TextStyle(color: appTheme.midnightPine)),
+              child: Text(
+                'Regenerate',
+                style: TextStyle(color: appTheme.midnightPine),
+              ),
             ),
           ],
         ],
@@ -149,7 +200,7 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
     );
   }
 
-  Map<String, double> _downloadProgress = {};
+  final Map<String, double> _downloadProgress = {};
 
   Widget _buildOfflineMapCard(bool isPremium) {
     return Container(
@@ -177,7 +228,9 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
     return Row(
       children: [
         Icon(
-          isDownloaded ? Icons.offline_pin : Icons.download_for_offline_outlined,
+          isDownloaded
+              ? Icons.offline_pin
+              : Icons.download_for_offline_outlined,
           color: isDownloaded ? Colors.green : appTheme.midnightPine,
           size: 32.h,
         ),
@@ -199,17 +252,25 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
                 )
               else
                 Text(
-                  isDownloaded ? 'Downloaded • Available Offline' : '$size • Recommended for you',
-                  style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.grey),
+                  isDownloaded
+                      ? 'Downloaded • Available Offline'
+                      : '$size • Recommended for you',
+                  style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                    color: Colors.grey,
+                  ),
                 ),
             ],
           ),
         ),
         IconButton(
-          onPressed: !isPremium || isDownloading || isDownloaded ? null : () => _simulateDownload(title),
+          onPressed: !isPremium || isDownloading || isDownloaded
+              ? null
+              : () => _simulateDownload(title),
           icon: Icon(
             isDownloaded ? Icons.check_circle : Icons.download,
-            color: isDownloaded ? Colors.green : (isPremium ? appTheme.midnightPine : Colors.grey),
+            color: isDownloaded
+                ? Colors.green
+                : (isPremium ? appTheme.midnightPine : Colors.grey),
           ),
         ),
       ],
@@ -237,9 +298,12 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
     setState(() => _isGenerating = true);
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
     final vibes = userProvider.user?.selectedVibes ?? ['Culture', 'Adventure'];
-    final gemNames = gemsProvider.approvedGems.take(5).map((g) => g.name).toList();
+    final gemNames = gemsProvider.approvedGems
+        .take(5)
+        .map((g) => g.name)
+        .toList();
 
     try {
       final result = await AIService.generateItinerary(vibes, gemNames);
@@ -249,7 +313,9 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
       });
     } catch (e) {
       setState(() => _isGenerating = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 }

@@ -10,7 +10,7 @@ import '../../core/app_export.dart';
 import '../../core/models/super_user_insight_model.dart';
 
 class SuperUserDashboardScreen extends StatelessWidget {
-  const SuperUserDashboardScreen({Key? key}) : super(key: key);
+  const SuperUserDashboardScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const SuperUserDashboardScreen();
@@ -21,21 +21,31 @@ class SuperUserDashboardScreen extends StatelessWidget {
     return Consumer2<UserProvider, GemsProvider>(
       builder: (context, userProvider, gemsProvider, child) {
         final user = userProvider.user;
-        
+
         if (user == null || !user.isSuperUser) {
           return _buildAccessDenied(context);
         }
 
         // Real Data Engine (FR5-6)
-        final userGems = gemsProvider.gems.where((g) => g.contributorId == user.id).toList();
+        final userGems = gemsProvider.gems
+            .where((g) => g.contributorId == user.id)
+            .toList();
         final totalViews = userGems.fold<int>(0, (sum, g) => sum + g.views);
         final totalSaves = userGems.fold<int>(0, (sum, g) => sum + g.saves);
-        final totalReach = totalViews + (totalSaves * 5); // Saves weighted higher
-        
-        final approvedCount = userGems.where((g) => g.status == GemStatus.approved).length;
+        final totalReach =
+            totalViews + (totalSaves * 5); // Saves weighted higher
+
+        final approvedCount = userGems
+            .where((g) => g.status == GemStatus.approved)
+            .length;
         final trendingCount = userGems.where((g) => g.isTrending).length;
         final karma = user.karmaPoints;
-        final reputationScore = (karma * 0.45) + (approvedCount * 18) + (totalViews * 0.02) + (totalSaves * 0.25) + (trendingCount * 12);
+        final reputationScore =
+            (karma * 0.45) +
+            (approvedCount * 18) +
+            (totalViews * 0.02) +
+            (totalSaves * 0.25) +
+            (trendingCount * 12);
         final level = (reputationScore / 100).floor() + 1;
         final progress = (reputationScore % 100) / 100.0;
 
@@ -47,7 +57,13 @@ class SuperUserDashboardScreen extends StatelessWidget {
           cityInfluenceRadius: influenceRadius,
           reputationLevel: level,
           nextLevelProgress: progress,
-          earnedBadges: _buildBadges(user, userGems, approvedCount, trendingCount, totalSaves),
+          earnedBadges: _buildBadges(
+            user,
+            userGems,
+            approvedCount,
+            trendingCount,
+            totalSaves,
+          ),
           weeklyImpact: [], // Weekly trend data
         );
 
@@ -62,9 +78,17 @@ class SuperUserDashboardScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildReputationCard(level, progress, totalReach, reputationScore),
+                      _buildReputationCard(
+                        level,
+                        progress,
+                        totalReach,
+                        reputationScore,
+                      ),
                       const SizedBox(height: 24),
-                      _buildSuperActions(gemsProvider.pendingGems.length),
+                      _buildSuperActions(
+                        context,
+                        gemsProvider.pendingGems.length,
+                      ),
                       const SizedBox(height: 32),
                       _buildCityInfluenceSection(influenceRadius),
                       const SizedBox(height: 32),
@@ -92,27 +116,43 @@ class SuperUserDashboardScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_person_outlined, size: 80, color: Color(0xFF1B3022)),
+              const Icon(
+                Icons.lock_person_outlined,
+                size: 80,
+                color: Color(0xFF1B3022),
+              ),
               const SizedBox(height: 24),
               Text(
                 'Super User Access Only',
-                style: TextStyleHelper.instance.title20BoldOutfit.copyWith(color: const Color(0xFF1B3022)),
+                style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
+                  color: const Color(0xFF1B3022),
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Share more hidden gems and earn 500 karma points to unlock your local impact dashboard.',
                 textAlign: TextAlign.center,
-                style: TextStyleHelper.instance.body14MediumInter.copyWith(color: const Color(0xFF4D6353)),
+                style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                  color: const Color(0xFF4D6353),
+                ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1B3022),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-                child: const Text('Keep Exploring', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Keep Exploring',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -135,14 +175,21 @@ class SuperUserDashboardScreen extends StatelessWidget {
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           '${user.fullName.split(' ').first}\'s Local Impact',
-          style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Color(0xFF1B3022)),
+          style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
+            color: Color(0xFF1B3022),
+          ),
         ),
         centerTitle: true,
       ),
     );
   }
 
-  Widget _buildReputationCard(int level, double progress, int totalReach, double reputationScore) {
+  Widget _buildReputationCard(
+    int level,
+    double progress,
+    int totalReach,
+    double reputationScore,
+  ) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1500),
@@ -171,15 +218,21 @@ class SuperUserDashboardScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Level $level',
-                        style: TextStyleHelper.instance.title20BoldOutfit.copyWith(color: Colors.white),
+                        style: TextStyleHelper.instance.title20BoldOutfit
+                            .copyWith(color: Colors.white),
                       ),
                       Text(
                         'Reputation Score: ${reputationScore.toStringAsFixed(0)}',
-                        style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+                        style: TextStyleHelper.instance.label10MediumInter
+                            .copyWith(color: Colors.white70),
                       ),
                     ],
                   ),
-                  const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 32),
+                  const Icon(
+                    Icons.auto_awesome,
+                    color: Color(0xFFFFD700),
+                    size: 32,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -203,7 +256,10 @@ class SuperUserDashboardScreen extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 10),
+                          BoxShadow(
+                            color: const Color(0xFFFFD700).withOpacity(0.5),
+                            blurRadius: 10,
+                          ),
                         ],
                       ),
                     ),
@@ -213,12 +269,16 @@ class SuperUserDashboardScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 '${(progress * 100).toInt()}% to next level',
-                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                  color: Colors.white70,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Local impact: $totalReach',
-                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                  color: Colors.white70,
+                ),
               ),
             ],
           ),
@@ -239,10 +299,14 @@ class SuperUserDashboardScreen extends StatelessWidget {
     ];
 
     if (approvedCount >= 3) {
-      badges.add(Badge(name: 'Trusted Publisher', icon: '✅', color: 0xFF3E5641));
+      badges.add(
+        Badge(name: 'Trusted Publisher', icon: '✅', color: 0xFF3E5641),
+      );
     }
     if (totalSaves >= 25) {
-      badges.add(Badge(name: 'Community Magnet', icon: '📌', color: 0xFFBDB76B));
+      badges.add(
+        Badge(name: 'Community Magnet', icon: '📌', color: 0xFFBDB76B),
+      );
     }
     if (trendingCount > 0) {
       badges.add(Badge(name: 'Trend Setter', icon: '🔥', color: 0xFFFFD700));
@@ -254,7 +318,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
     return badges;
   }
 
-  Widget _buildSuperActions(int pendingCount) {
+  Widget _buildSuperActions(BuildContext context, int pendingCount) {
     return Column(
       children: [
         Builder(
@@ -264,7 +328,8 @@ class SuperUserDashboardScreen extends StatelessWidget {
             subtitle: '$pendingCount gems waiting for review',
             color: const Color(0xFF3E5641),
             badge: pendingCount > 0 ? '$pendingCount' : null,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.adminModerationQueue),
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.adminModerationQueue),
           ),
         ),
         const SizedBox(height: 12),
@@ -309,7 +374,11 @@ class SuperUserDashboardScreen extends StatelessWidget {
 
     if (myGems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No approved gems to boost yet. Share more hidden gems first!')),
+        SnackBar(
+          content: Text(
+            'No approved gems to boost yet. Share more hidden gems first!',
+          ),
+        ),
       );
       return;
     }
@@ -317,7 +386,9 @@ class SuperUserDashboardScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,13 +398,28 @@ class SuperUserDashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Icon(Icons.rocket_launch_outlined, color: Color(0xFFBDB76B)),
-                  SizedBox(width: 8),
-                  Text('Select Gem to Boost', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
-                ]),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.rocket_launch_outlined,
+                      color: Color(0xFFBDB76B),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Select Gem to Boost',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B3022),
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 4),
-                Text('Boosted gems appear at the top of discovery for 24 hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  'Boosted gems appear at the top of discovery for 24 hours.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -347,30 +433,62 @@ class SuperUserDashboardScreen extends StatelessWidget {
                 return ListTile(
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(gem.imageUrl, width: 48, height: 48, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(width: 48, height: 48, color: Color(0xFFD7E8DE), child: Icon(Icons.place))),
+                    child: Image.network(
+                      gem.imageUrl,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 48,
+                        height: 48,
+                        color: Color(0xFFD7E8DE),
+                        child: Icon(Icons.place),
+                      ),
+                    ),
                   ),
-                  title: Text(gem.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text(gem.isBoosted ? '🚀 Already boosted' : gem.category, style: TextStyle(fontSize: 12)),
+                  title: Text(
+                    gem.name,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    gem.isBoosted ? '🚀 Already boosted' : gem.category,
+                    style: TextStyle(fontSize: 12),
+                  ),
                   trailing: gem.isBoosted
                       ? Icon(Icons.check_circle, color: Colors.green)
                       : ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFFBDB76B),
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(99),
+                            ),
                           ),
                           onPressed: () async {
                             Navigator.pop(ctx);
                             await gemsProvider.boostGem(gem.id);
-                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('"${gem.name}" is now boosted for 24 hours! 🚀'),
-                                backgroundColor: Color(0xFF1B3022),
-                              ),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '"${gem.name}" is now boosted for 24 hours! 🚀',
+                                  ),
+                                  backgroundColor: Color(0xFF1B3022),
+                                ),
+                              );
+                            }
                           },
-                          child: Text('Boost', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            'Boost',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                 );
               },
@@ -403,7 +521,10 @@ class SuperUserDashboardScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 16),
@@ -411,16 +532,36 @@ class SuperUserDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyleHelper.instance.body14BoldInter.copyWith(color: const Color(0xFF191C1A))),
-                  Text(subtitle, style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF4D6353))),
+                  Text(
+                    title,
+                    style: TextStyleHelper.instance.body14BoldInter.copyWith(
+                      color: const Color(0xFF191C1A),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                      color: const Color(0xFF4D6353),
+                    ),
+                  ),
                 ],
               ),
             ),
             if (badge != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFF1B3022), borderRadius: BorderRadius.circular(10)),
-                child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B3022),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               )
             else
               const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
@@ -445,7 +586,9 @@ class SuperUserDashboardScreen extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(32),
             image: const DecorationImage(
-              image: NetworkImage('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80'),
+              image: NetworkImage(
+                'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80',
+              ),
               fit: BoxFit.cover,
             ),
           ),
@@ -464,26 +607,40 @@ class SuperUserDashboardScreen extends StatelessWidget {
                         height: (100 * radius) * (1 + 0.1 * value),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5 * (1 - value)), width: 3),
+                          border: Border.all(
+                            color: const Color(
+                              0xFFFFD700,
+                            ).withOpacity(0.5 * (1 - value)),
+                            width: 3,
+                          ),
                           color: const Color(0xFFFFD700).withOpacity(0.1),
                         ),
                       );
                     },
                   ),
                 ),
-                const Center(child: Icon(Icons.my_location, color: Colors.white, size: 24)),
+                const Center(
+                  child: Icon(Icons.my_location, color: Colors.white, size: 24),
+                ),
                 Positioned(
                   bottom: 16,
                   left: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1B3022).withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${radius.toStringAsFixed(1)} km Radius',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -526,28 +683,45 @@ class SuperUserDashboardScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             text,
-                            style: TextStyleHelper.instance.label10MediumInter.copyWith(color: const Color(0xFF4D6353)),
+                            style: TextStyleHelper.instance.label10MediumInter
+                                .copyWith(color: const Color(0xFF4D6353)),
                           ),
                         );
                       },
                     ),
                   ),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: [
                   BarChartGroupData(
                     x: 0,
                     barRods: [
-                      BarChartRodData(toY: views.toDouble(), color: const Color(0xFF1B3022), width: 40, borderRadius: BorderRadius.circular(8)),
+                      BarChartRodData(
+                        toY: views.toDouble(),
+                        color: const Color(0xFF1B3022),
+                        width: 40,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ],
                   ),
                   BarChartGroupData(
                     x: 1,
                     barRods: [
-                      BarChartRodData(toY: saves.toDouble(), color: const Color(0xFFFFD700), width: 40, borderRadius: BorderRadius.circular(8)),
+                      BarChartRodData(
+                        toY: saves.toDouble(),
+                        color: const Color(0xFFFFD700),
+                        width: 40,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ],
                   ),
                 ],
@@ -571,7 +745,9 @@ class SuperUserDashboardScreen extends StatelessWidget {
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: insights.earnedBadges.map((badge) => _buildBadgeItem(badge)).toList(),
+          children: insights.earnedBadges
+              .map((badge) => _buildBadgeItem(badge))
+              .toList(),
         ),
       ],
     );
@@ -592,7 +768,9 @@ class SuperUserDashboardScreen extends StatelessWidget {
           SizedBox(width: 8),
           Text(
             badge.name,
-            style: TextStyleHelper.instance.body14BoldInter.copyWith(fontSize: 12),
+            style: TextStyleHelper.instance.body14BoldInter.copyWith(
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -605,13 +783,17 @@ class _RadarScanOverlay extends StatefulWidget {
   __RadarScanOverlayState createState() => __RadarScanOverlayState();
 }
 
-class __RadarScanOverlayState extends State<_RadarScanOverlay> with SingleTickerProviderStateMixin {
+class __RadarScanOverlayState extends State<_RadarScanOverlay>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: Duration(seconds: 4))..repeat();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 4),
+    )..repeat();
   }
 
   @override
@@ -658,18 +840,3 @@ class _RadarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _RadarPainter oldDelegate) => true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

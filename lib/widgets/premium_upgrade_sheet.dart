@@ -3,7 +3,7 @@ import '../core/app_export.dart';
 import '../widgets/custom_button.dart';
 
 class PremiumUpgradeSheet extends StatelessWidget {
-  const PremiumUpgradeSheet({Key? key}) : super(key: key);
+  const PremiumUpgradeSheet({super.key});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
@@ -40,7 +40,11 @@ class PremiumUpgradeSheet extends StatelessWidget {
               color: appTheme.midnightPine.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.star_rounded, color: appTheme.midnightPine, size: 40.h),
+            child: Icon(
+              Icons.star_rounded,
+              color: appTheme.midnightPine,
+              size: 40.h,
+            ),
           ),
           SizedBox(height: 16.h),
           Text(
@@ -51,12 +55,20 @@ class PremiumUpgradeSheet extends StatelessWidget {
           Text(
             'Free users can save up to 3 pins. Upgrade to Premium to unlock unlimited discoveries!',
             textAlign: TextAlign.center,
-            style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Colors.grey.shade600),
+            style: TextStyleHelper.instance.body14MediumInter.copyWith(
+              color: Colors.grey.shade600,
+            ),
           ),
           SizedBox(height: 32.h),
-          _buildFeatureRow(Icons.all_inclusive, 'Unlimited Saved Pins & Reminders'),
+          _buildFeatureRow(
+            Icons.all_inclusive,
+            'Unlimited Saved Pins & Reminders',
+          ),
           _buildFeatureRow(Icons.auto_awesome, 'AI Personalized Itineraries'),
-          _buildFeatureRow(Icons.download_for_offline, 'Offline Neighborhood Maps'),
+          _buildFeatureRow(
+            Icons.download_for_offline,
+            'Offline Neighborhood Maps',
+          ),
           _buildFeatureRow(Icons.verified, 'Exclusive Super User Tips'),
           SizedBox(height: 32.h),
           CustomButton(
@@ -71,7 +83,10 @@ class PremiumUpgradeSheet extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Maybe Later',
-              style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -86,10 +101,7 @@ class PremiumUpgradeSheet extends StatelessWidget {
         children: [
           Icon(icon, color: appTheme.midnightPine, size: 20.h),
           SizedBox(width: 16.h),
-          Text(
-            text,
-            style: TextStyleHelper.instance.body14BoldInter,
-          ),
+          Text(text, style: TextStyleHelper.instance.body14BoldInter),
         ],
       ),
     );

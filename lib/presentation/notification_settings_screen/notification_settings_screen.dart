@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/providers/user_provider.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
-  const NotificationSettingsScreen({Key? key}) : super(key: key);
+  const NotificationSettingsScreen({super.key});
 
   @override
-  _NotificationSettingsScreenState createState() => _NotificationSettingsScreenState();
+  _NotificationSettingsScreenState createState() =>
+      _NotificationSettingsScreenState();
 
   static Widget builder(BuildContext context) {
     return const NotificationSettingsScreen();
   }
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   bool _proximityAlerts = true;
   bool _chatNotifications = true;
   bool _weeklySummary = true;
@@ -81,9 +82,14 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: appTheme.gray_900_01,
                   padding: EdgeInsets.symmetric(vertical: 16.h),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.h)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.h),
+                  ),
                 ),
-                child: Text('Save Preferences', style: TextStyle(color: Colors.white)),
+                child: Text(
+                  'Save Preferences',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -115,14 +121,19 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: TextStyleHelper.instance.body14BoldInter),
-              Text(subtitle, style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.grey)),
+              Text(
+                subtitle,
+                style: TextStyleHelper.instance.body12RegularInter.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
             ],
           ),
         ),
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: appTheme.gray_900_01,
+          activeThumbColor: appTheme.gray_900_01,
         ),
       ],
     );

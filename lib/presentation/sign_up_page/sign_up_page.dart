@@ -136,7 +136,11 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.location_on, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -225,14 +229,20 @@ class _SignUpPageState extends State<SignUpPage> {
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400,
                                 ),
-                                prefixIcon: const Icon(Icons.person, color: Color(0xFF434940)),
+                                prefixIcon: const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF434940),
+                                ),
                                 filled: true,
                                 fillColor: const Color(0xFFF0F4EC),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(9999),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ],
@@ -273,14 +283,20 @@ class _SignUpPageState extends State<SignUpPage> {
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400,
                                 ),
-                                prefixIcon: const Icon(Icons.email, color: Color(0xFF434940)),
+                                prefixIcon: const Icon(
+                                  Icons.email,
+                                  color: Color(0xFF434940),
+                                ),
                                 filled: true,
                                 fillColor: const Color(0xFFF0F4EC),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(9999),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ],
@@ -323,10 +339,15 @@ class _SignUpPageState extends State<SignUpPage> {
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400,
                                 ),
-                                prefixIcon: const Icon(Icons.lock, color: Color(0xFF434940)),
+                                prefixIcon: const Icon(
+                                  Icons.lock,
+                                  color: Color(0xFF434940),
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: const Color(0xFF434940),
                                   ),
                                   onPressed: () {
@@ -341,16 +362,24 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(9999),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                             if (_passwordStrength.isNotEmpty)
                               Padding(
-                                padding: const EdgeInsets.only(top: 4, left: 16),
+                                padding: const EdgeInsets.only(
+                                  top: 4,
+                                  left: 16,
+                                ),
                                 child: Text(
                                   'Strength: $_passwordStrength',
                                   style: TextStyle(
-                                    color: _passwordStrength == 'Strong' ? Colors.green : Colors.red,
+                                    color: _passwordStrength == 'Strong'
+                                        ? Colors.green
+                                        : Colors.red,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -395,15 +424,21 @@ class _SignUpPageState extends State<SignUpPage> {
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400,
                                 ),
-                                prefixIcon: const Icon(Icons.lock, color: Color(0xFF434940)),
+                                prefixIcon: const Icon(
+                                  Icons.lock,
+                                  color: Color(0xFF434940),
+                                ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: const Color(0xFF434940),
                                   ),
                                   onPressed: () {
                                     setState(() {
-                                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                                      _obscureConfirmPassword =
+                                          !_obscureConfirmPassword;
                                     });
                                   },
                                 ),
@@ -413,7 +448,10 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(9999),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ],
@@ -433,11 +471,15 @@ class _SignUpPageState extends State<SignUpPage> {
                                 });
                               },
                               fillColor: WidgetStateProperty.all(
-                                _termsAccepted ? const Color(0xFF1B3022) : const Color(0xFFF0F4EC),
+                                _termsAccepted
+                                    ? const Color(0xFF1B3022)
+                                    : const Color(0xFFF0F4EC),
                               ),
                               side: BorderSide(
                                 width: 1,
-                                color: _termsAccepted ? const Color(0xFF1B3022) : const Color(0x4CC3C8BC),
+                                color: _termsAccepted
+                                    ? const Color(0xFF1B3022)
+                                    : const Color(0x4CC3C8BC),
                               ),
                             ),
                             Expanded(
@@ -530,26 +572,29 @@ class _SignUpPageState extends State<SignUpPage> {
                             color: const Color(0x261B3022),
                             blurRadius: 32,
                             offset: const Offset(0, 8),
-                          )
+                          ),
                         ],
                       ),
-                      child: _isLoading 
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Create Account',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontFamily: 'Plus Jakarta Sans',
-                              fontWeight: FontWeight.w700,
-                              height: 1.50,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Create Account',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'Plus Jakarta Sans',
+                                fontWeight: FontWeight.w700,
+                                height: 1.50,
+                              ),
                             ),
-                          ),
                     ),
                   ),
                   // Divider
@@ -605,7 +650,11 @@ class _SignUpPageState extends State<SignUpPage> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.g_mobiledata, size: 20, color: Colors.red),
+                              Icon(
+                                Icons.g_mobiledata,
+                                size: 20,
+                                color: Colors.red,
+                              ),
                               SizedBox(width: 12),
                               Text(
                                 'Google',
@@ -636,7 +685,11 @@ class _SignUpPageState extends State<SignUpPage> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.facebook, size: 20, color: Color(0xFF1877F2)),
+                              Icon(
+                                Icons.facebook,
+                                size: 20,
+                                color: Color(0xFF1877F2),
+                              ),
                               SizedBox(width: 12),
                               Text(
                                 'Facebook',
@@ -697,4 +750,3 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 }
-

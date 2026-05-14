@@ -36,7 +36,8 @@ class AppRoutes {
   static const String placeDetailsScreen = '/place_details_screen';
   static const String mapsPage = '/maps_page';
   static const String mapViewPage = '/map_view_page';
-  static const String explorePageWithNotifScreen = '/explore_page_with_notif_screen';
+  static const String explorePageWithNotifScreen =
+      '/explore_page_with_notif_screen';
   static const String chatWithPostOwnerPage = '/chat_with_post_owner_page';
   static const String userProfilePage = '/user_profile_page';
   static const String settingsPage = '/settings_page';
@@ -50,7 +51,8 @@ class AppRoutes {
   static const String superUserDashboard = '/super_user_dashboard';
   static const String chatListScreen = '/chat_list_screen';
   static const String chatDetailsScreen = '/chat_details_screen';
-  static const String notificationSettingsScreen = '/notification_settings_screen';
+  static const String notificationSettingsScreen =
+      '/notification_settings_screen';
   static const String manualPaymentScreen = '/manual_payment_screen';
   static const String premiumDashboard = '/premium_dashboard';
   static const String aiChatbotScreen = '/ai_chatbot_screen';
@@ -63,29 +65,60 @@ class AppRoutes {
   static Map<String, WidgetBuilder> get routes => {
     onboardingScreen: OnboardingScreen.builder,
     vibePickerScreen: (context) => const VibePickerScreen(),
-    preferenceSummaryScreen: (context) => const RoleGuard(requireAuth: true, child: PreferenceSummaryScreen()),
+    preferenceSummaryScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: PreferenceSummaryScreen()),
     pricingPage: PricingPage.builder,
-    shareHiddenGemScreen: (context) => const RoleGuard(requireAuth: true, child: ShareHiddenGemScreen()),
+    shareHiddenGemScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: ShareHiddenGemScreen()),
     placeDetailsScreen: PlaceDetailsScreen.builder,
     mapsPage: MapsPage.builder, // Guests can view maps
     mapViewPage: MapViewPage.builder, // Guests can view map view
-    explorePageWithNotifScreen: ExplorePageWithNotifScreen.builder, // Guests can view explore
-    chatWithPostOwnerPage: (context) => RoleGuard(requireAuth: true, child: ChatWithPostOwnerPage.builder(context)),
-    userProfilePage: (context) => const RoleGuard(requireAuth: true, child: UserProfilePage()),
-    settingsPage: (context) => RoleGuard(requireAuth: true, child: SettingsPage.builder(context)),
+    explorePageWithNotifScreen:
+        ExplorePageWithNotifScreen.builder, // Guests can view explore
+    chatWithPostOwnerPage: (context) => RoleGuard(
+      requireAuth: true,
+      child: ChatWithPostOwnerPage.builder(context),
+    ),
+    userProfilePage: (context) =>
+        const RoleGuard(requireAuth: true, child: UserProfilePage()),
+    settingsPage: (context) =>
+        RoleGuard(requireAuth: true, child: SettingsPage.builder(context)),
     signInPage: (context) => const SignInPage(),
     signUpPage: (context) => const SignUpPage(),
-    adminDashboard: (context) => RoleGuard(requireAuth: true, requireAdmin: true, child: AdminDashboardScreen.builder(context)),
-    adminModerationQueue: (context) => RoleGuard(requireAuth: true, requireAdmin: true, child: AdminModerationQueueScreen.builder(context)),
-    superUserDashboard: (context) => RoleGuard(requireAuth: true, requireSuperUser: true, child: SuperUserDashboardScreen.builder(context)),
-    chatListScreen: (context) => RoleGuard(requireAuth: true, child: ChatListScreen.builder(context)),
-    chatDetailsScreen: (context) => RoleGuard(requireAuth: true, child: ChatDetailsScreen.builder(context)),
-    notificationSettingsScreen: (context) => const RoleGuard(requireAuth: true, child: NotificationSettingsScreen()),
-    manualPaymentScreen: (context) => const RoleGuard(requireAuth: true, child: ManualPaymentScreen()),
-    premiumDashboard: (context) => const RoleGuard(requireAuth: true, child: PremiumDashboardScreen()),
-    aiChatbotScreen: (context) => const RoleGuard(requireAuth: true, child: AIChatbotScreen()),
-    leaderboardScreen: (context) => const RoleGuard(requireAuth: true, child: LeaderboardScreen()),
-    adminUserManagement: (context) => const RoleGuard(requireAuth: true, requireAdmin: true, child: AdminUserManagementScreen()),
+    adminDashboard: (context) => RoleGuard(
+      requireAuth: true,
+      requireAdmin: true,
+      child: AdminDashboardScreen.builder(context),
+    ),
+    adminModerationQueue: (context) => RoleGuard(
+      requireAuth: true,
+      requireAdmin: true,
+      child: AdminModerationQueueScreen.builder(context),
+    ),
+    superUserDashboard: (context) => RoleGuard(
+      requireAuth: true,
+      requireSuperUser: true,
+      child: SuperUserDashboardScreen.builder(context),
+    ),
+    chatListScreen: (context) =>
+        RoleGuard(requireAuth: true, child: ChatListScreen.builder(context)),
+    chatDetailsScreen: (context) =>
+        RoleGuard(requireAuth: true, child: ChatDetailsScreen.builder(context)),
+    notificationSettingsScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: NotificationSettingsScreen()),
+    manualPaymentScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: ManualPaymentScreen()),
+    premiumDashboard: (context) =>
+        const RoleGuard(requireAuth: true, child: PremiumDashboardScreen()),
+    aiChatbotScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: AIChatbotScreen()),
+    leaderboardScreen: (context) =>
+        const RoleGuard(requireAuth: true, child: LeaderboardScreen()),
+    adminUserManagement: (context) => const RoleGuard(
+      requireAuth: true,
+      requireAdmin: true,
+      child: AdminUserManagementScreen(),
+    ),
     appNavigationScreen: AppNavigationScreen.builder,
     initialRoute: (context) => const AuthWrapper(),
   };

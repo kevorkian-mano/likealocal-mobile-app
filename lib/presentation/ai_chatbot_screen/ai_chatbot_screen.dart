@@ -3,11 +3,10 @@ import '../../core/app_export.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
-import 'package:provider/provider.dart';
 import '../../core/models/hidden_gem_model.dart';
 
 class AIChatbotScreen extends StatefulWidget {
-  const AIChatbotScreen({Key? key}) : super(key: key);
+  const AIChatbotScreen({super.key});
 
   @override
   _AIChatbotScreenState createState() => _AIChatbotScreenState();
@@ -18,8 +17,9 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
   final List<Map<String, dynamic>> _messages = [
     {
       'isAi': true,
-      'text': 'Hi! I\'m Localie, your AI travel assistant. Ask me anything about hidden gems in Cairo!',
-    }
+      'text':
+          'Hi! I\'m Localie, your AI travel assistant. Ask me anything about hidden gems in Cairo!',
+    },
   ];
   bool _isTyping = false;
 
@@ -32,14 +32,26 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
           children: [
             CircleAvatar(
               backgroundColor: appTheme.midnightPine.withOpacity(0.1),
-              child: Icon(Icons.auto_awesome, color: appTheme.midnightPine, size: 20),
+              child: Icon(
+                Icons.auto_awesome,
+                color: appTheme.midnightPine,
+                size: 20,
+              ),
             ),
             SizedBox(width: 12.h),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Localie AI', style: TextStyleHelper.instance.title16SemiBoldInter),
-                Text('Online', style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.green)),
+                Text(
+                  'Localie AI',
+                  style: TextStyleHelper.instance.title16SemiBoldInter,
+                ),
+                Text(
+                  'Online',
+                  style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                    color: Colors.green,
+                  ),
+                ),
               ],
             ),
           ],
@@ -53,7 +65,13 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
         actions: [
           TextButton(
             onPressed: () => _sendMessage('Surprise me! (FR6-4)'),
-            child: Text('Surprise Me', style: TextStyle(color: appTheme.midnightPine, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Surprise Me',
+              style: TextStyle(
+                color: appTheme.midnightPine,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -83,11 +101,15 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
     return Padding(
       padding: EdgeInsets.only(bottom: 24.h),
       child: Column(
-        crossAxisAlignment: isAi ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isAi
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: [
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.h),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
             decoration: BoxDecoration(
               color: isAi ? Colors.white : appTheme.midnightPine,
               borderRadius: BorderRadius.only(
@@ -97,7 +119,11 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
                 bottomRight: Radius.circular(isAi ? 20.h : 0),
               ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
               ],
             ),
             child: Text(
@@ -112,7 +138,9 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: (msg['suggestedGems'] as List<HiddenGem>).map((gem) => _buildGemCard(gem)).toList(),
+                children: (msg['suggestedGems'] as List<HiddenGem>)
+                    .map((gem) => _buildGemCard(gem))
+                    .toList(),
               ),
             ),
           ],
@@ -123,7 +151,11 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
 
   Widget _buildGemCard(HiddenGem gem) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.placeDetailsScreen, arguments: gem),
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.placeDetailsScreen,
+        arguments: gem,
+      ),
       child: Container(
         width: 200.h,
         margin: EdgeInsets.only(right: 12.h),
@@ -137,15 +169,28 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16.h)),
-              child: Image.network(gem.imageUrl, height: 100.h, width: double.infinity, fit: BoxFit.cover),
+              child: Image.network(
+                gem.imageUrl,
+                height: 100.h,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
             ),
             Padding(
               padding: EdgeInsets.all(12.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(gem.name, style: TextStyleHelper.instance.body12BoldInter),
-                  Text(gem.category, style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.grey)),
+                  Text(
+                    gem.name,
+                    style: TextStyleHelper.instance.body12BoldInter,
+                  ),
+                  Text(
+                    gem.category,
+                    style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -181,7 +226,13 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
       padding: EdgeInsets.fromLTRB(20.h, 12.h, 20.h, 32.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -207,7 +258,7 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
 
   void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-    
+
     setState(() {
       _messages.add({'isAi': false, 'text': text});
       _isTyping = true;
@@ -216,7 +267,7 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
-    
+
     // FR6-5: Pass user context (vibes, budget indirectly via preferences)
     final response = await AIService.chatWithAI(
       userMessage: text,

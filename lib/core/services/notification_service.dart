@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/material.dart';
 import '../app_export.dart';
 
 // Top level background message handler
@@ -16,7 +15,8 @@ class NotificationService {
   NotificationService._internal();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
     // 1. Request Permissions
@@ -33,10 +33,9 @@ class NotificationService {
     // 2. Initialize Local Notifications
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
 
     await _localNotifications.initialize(
       initializationSettings,
@@ -81,16 +80,17 @@ class NotificationService {
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'likelocal_channel',
-      'LikeALocal Notifications',
-      channelDescription: 'General notifications for LikeALocal app',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
+          'likelocal_channel',
+          'LikeALocal Notifications',
+          channelDescription: 'General notifications for LikeALocal app',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
     );
-    
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await _localNotifications.show(
       id,
@@ -110,7 +110,10 @@ class NotificationService {
   void _handleDeepLink(Map<String, dynamic> data) {
     final gemId = data['gemId'];
     if (gemId != null && gemId.toString().isNotEmpty) {
-      NavigatorService.pushNamed(AppRoutes.placeDetailsScreen, arguments: gemId);
+      NavigatorService.pushNamed(
+        AppRoutes.placeDetailsScreen,
+        arguments: gemId,
+      );
     }
   }
 

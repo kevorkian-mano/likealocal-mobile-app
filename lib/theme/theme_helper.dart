@@ -6,15 +6,15 @@ ThemeData get theme => ThemeHelper().themeData();
 /// Helper class for managing themes and colors.
 class ThemeHelper {
   // The current app theme
-  var _appTheme = "midnightPine";
+  final _appTheme = "midnightPine";
 
   // A map of custom color themes supported by the app
-  Map<String, LightCodeColors> _supportedCustomColor = {
+  final Map<String, LightCodeColors> _supportedCustomColor = {
     'midnightPine': LightCodeColors(),
   };
 
   // A map of color schemes supported by the app
-  Map<String, ColorScheme> _supportedColorScheme = {
+  final Map<String, ColorScheme> _supportedColorScheme = {
     'midnightPine': ColorSchemes.midnightPineColorScheme,
   };
 
@@ -26,7 +26,8 @@ class ThemeHelper {
   /// Returns the current theme data.
   ThemeData _getThemeData() {
     var colorScheme =
-        _supportedColorScheme[_appTheme] ?? ColorSchemes.midnightPineColorScheme;
+        _supportedColorScheme[_appTheme] ??
+        ColorSchemes.midnightPineColorScheme;
     return ThemeData(
       visualDensity: VisualDensity.standard,
       colorScheme: colorScheme,
@@ -90,7 +91,7 @@ class LightCodeColors {
   Color get gray_900 => Color(0xFF191C1A);
   Color get gray_50 => Color(0xFFFBFDFB);
   Color get white_A700 => Color(0xFFFFFFFF);
-  
+
   // Additional Colors
   Color get transparentCustom => Colors.transparent;
   Color get whiteCustom => Colors.white;

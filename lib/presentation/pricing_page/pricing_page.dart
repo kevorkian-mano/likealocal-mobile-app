@@ -1,10 +1,9 @@
-import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 
 class PricingPage extends StatelessWidget {
-  const PricingPage({Key? key}) : super(key: key);
+  const PricingPage({super.key});
 
   static Widget builder(BuildContext context) {
     return const PricingPage();
@@ -89,7 +88,9 @@ class PricingPage extends StatelessWidget {
                   ],
                   isSuperUser: true,
                   isCurrent: isSuper,
-                  buttonText: isSuper ? 'You are a Legend' : 'Learn How to Earn',
+                  buttonText: isSuper
+                      ? 'You are a Legend'
+                      : 'Learn How to Earn',
                 ),
                 SizedBox(height: 40),
                 _buildPhilosophySection(),
@@ -123,14 +124,19 @@ class PricingPage extends StatelessWidget {
           Icon(Icons.diversity_3_outlined, color: Color(0xFF1B3022), size: 32),
           SizedBox(height: 16),
           Text(
-            'The LikeALocal Philosophy (FR0-6)',
-            style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Color(0xFF1B3022)),
+            'The LikeALocal Philosophy',
+            style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
+              color: Color(0xFF1B3022),
+            ),
           ),
           SizedBox(height: 12),
           Text(
             'We believe cities are best experienced through souls, not search engines. Our AI doesn\'t just find "spots"; it learns your "vibe" and matches you with gems curated by trusted Local Legends.',
             textAlign: TextAlign.center,
-            style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Color(0xFF4D6353), height: 1.5),
+            style: TextStyleHelper.instance.body14MediumInter.copyWith(
+              color: Color(0xFF4D6353),
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -225,7 +231,9 @@ class PricingPage extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyleHelper.instance.body14MediumInter.copyWith(
-              color: isPopular ? Colors.white.withOpacity(0.7) : Color(0xFF4D6353),
+              color: isPopular
+                  ? Colors.white.withOpacity(0.7)
+                  : Color(0xFF4D6353),
             ),
           ),
           SizedBox(height: 16),
@@ -237,29 +245,36 @@ class PricingPage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24),
-          Divider(color: isPopular ? Colors.white.withOpacity(0.2) : Color(0x33C1C9C1)),
+          Divider(
+            color: isPopular
+                ? Colors.white.withOpacity(0.2)
+                : Color(0x33C1C9C1),
+          ),
           SizedBox(height: 16),
-          ...features.map((feature) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: isPopular ? Colors.white : Color(0xFF3E5641),
-                  size: 18,
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    feature,
-                    style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                      color: isPopular ? Colors.white : Color(0xFF191C1A),
+          ...features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: isPopular ? Colors.white : Color(0xFF3E5641),
+                    size: 18,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: TextStyleHelper.instance.body14MediumInter
+                          .copyWith(
+                            color: isPopular ? Colors.white : Color(0xFF191C1A),
+                          ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )).toList(),
+          ),
           SizedBox(height: 24),
           GestureDetector(
             onTap: isCurrent ? null : onTap,
@@ -285,4 +300,3 @@ class PricingPage extends StatelessWidget {
     );
   }
 }
-

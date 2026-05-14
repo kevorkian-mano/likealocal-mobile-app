@@ -91,6 +91,20 @@ class TextStyleHelper {
     color: theme.colorScheme.onSurface,
   );
 
+  TextStyle get title16SemiBoldInter => TextStyle(
+    fontSize: 16.fSize,
+    fontWeight: FontWeight.w600,
+    fontFamily: 'Inter',
+    color: theme.colorScheme.onSurface,
+  );
+
+  TextStyle get body16BoldInter => TextStyle(
+    fontSize: 16.fSize,
+    fontWeight: FontWeight.w700,
+    fontFamily: 'Inter',
+    color: theme.colorScheme.onSurface,
+  );
+
   // Body Styles
   // Standard text styles for body content
 

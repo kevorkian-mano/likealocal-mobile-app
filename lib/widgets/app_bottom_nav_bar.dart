@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../core/app_export.dart';
 import '../core/providers/user_provider.dart';
 import '../presentation/share_hidden_gem_screen/share_hidden_gem_initial_page.dart';
@@ -8,7 +7,7 @@ import 'custom_bottom_bar.dart';
 class AppBottomNavBar extends StatelessWidget {
   final int selectedIndex;
 
-  const AppBottomNavBar({Key? key, required this.selectedIndex}) : super(key: key);
+  const AppBottomNavBar({super.key, required this.selectedIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +123,13 @@ class AppBottomNavBar extends StatelessWidget {
                   Navigator.pop(context); // Close modal
                   Navigator.pushNamed(context, AppRoutes.signUpPage);
                 },
-                child: Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Create Account',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 16),
@@ -133,7 +138,13 @@ class AppBottomNavBar extends StatelessWidget {
                 Navigator.pop(context); // Close modal
                 Navigator.pushNamed(context, AppRoutes.signInPage);
               },
-              child: Text('Already have an account? Log In', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold)),
+              child: Text(
+                'Already have an account? Log In',
+                style: TextStyle(
+                  color: Color(0xFF1B3022),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),

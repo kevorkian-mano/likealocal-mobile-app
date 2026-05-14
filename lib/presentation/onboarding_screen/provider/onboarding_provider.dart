@@ -6,11 +6,6 @@ import '../models/onboarding_model.dart';
 class OnboardingProvider extends ChangeNotifier {
   OnboardingModel onboardingModel = OnboardingModel();
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   void onGetStartedPressed() {
     // Navigate to the next screen for new users (onboarding flow)
     // Since no specific route is mentioned, navigate to the share hidden gem screen

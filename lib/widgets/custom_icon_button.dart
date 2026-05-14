@@ -3,30 +3,28 @@ import 'package:flutter/material.dart';
 import '../core/app_export.dart';
 import './custom_image_view.dart';
 
-/**
- * A customizable icon button widget that supports different icons, colors, and sizes.
- * 
- * This widget provides a circular icon button with customizable background color,
- * icon, size, and padding. It uses Flutter's default IconButton for proper
- * accessibility and interaction handling.
- * 
- * @param iconPath - Path to the icon image (SVG, PNG, or network URL)
- * @param onPressed - Callback function triggered when button is pressed
- * @param backgroundColor - Background color of the button
- * @param size - Size of the button (both width and height)
- * @param padding - Padding around the icon
- * @param iconColor - Color tint for the icon (optional)
- */
+/// A customizable icon button widget that supports different icons, colors, and sizes.
+///
+/// This widget provides a circular icon button with customizable background color,
+/// icon, size, and padding. It uses Flutter's default IconButton for proper
+/// accessibility and interaction handling.
+///
+/// @param iconPath - Path to the icon image (SVG, PNG, or network URL)
+/// @param onPressed - Callback function triggered when button is pressed
+/// @param backgroundColor - Background color of the button
+/// @param size - Size of the button (both width and height)
+/// @param padding - Padding around the icon
+/// @param iconColor - Color tint for the icon (optional)
 class CustomIconButton extends StatelessWidget {
-  CustomIconButton({
-    Key? key,
+  const CustomIconButton({
+    super.key,
     required this.iconPath,
     this.onPressed,
     this.backgroundColor,
     this.size,
     this.padding,
     this.iconColor,
-  }) : super(key: key);
+  });
 
   /// Path to the icon image (SVG, PNG, or network URL)
   final String iconPath;

@@ -1,4 +1,5 @@
 /// This class is used in the [OnboardingScreen] screen.
+library;
 
 // ignore_for_file: must_be_immutable
 class OnboardingModel {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../core/providers/chat_provider.dart';
@@ -7,7 +6,7 @@ import '../../core/providers/user_provider.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 
 class ChatListScreen extends StatelessWidget {
-  const ChatListScreen({Key? key}) : super(key: key);
+  const ChatListScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return const ChatListScreen();
@@ -33,22 +32,34 @@ class ChatListScreen extends StatelessWidget {
                     stream: chatProvider.getMyChats(user.id),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator(color: Color(0xFF1B3022)));
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF1B3022),
+                          ),
+                        );
                       }
                       if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return Center(child: Text('No conversations yet.'));
                       }
-                      
+
                       final chats = snapshot.data!;
                       return ListView.separated(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
                         itemCount: chats.length,
-                        separatorBuilder: (context, index) => SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           return TweenAnimationBuilder<double>(
                             tween: Tween(begin: 0.0, end: 1.0),
                             duration: Duration(milliseconds: 600),
-                            curve: Interval(index * 0.1, 1.0, curve: Curves.easeOutCubic),
+                            curve: Interval(
+                              index * 0.1,
+                              1.0,
+                              curve: Curves.easeOutCubic,
+                            ),
                             builder: (context, value, child) {
                               return Opacity(
                                 opacity: value,
@@ -103,7 +114,9 @@ class ChatListScreen extends StatelessWidget {
             SizedBox(width: 12),
             Text(
               'Search chats...',
-              style: TextStyleHelper.instance.body14MediumInter.copyWith(color: Color(0xFF4D6353)),
+              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                color: Color(0xFF4D6353),
+              ),
             ),
           ],
         ),
@@ -113,7 +126,11 @@ class ChatListScreen extends StatelessWidget {
 
   Widget _buildChatItem(BuildContext context, ChatPreview chat) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.chatDetailsScreen, arguments: chat),
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.chatDetailsScreen,
+        arguments: chat,
+      ),
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -124,7 +141,7 @@ class ChatListScreen extends StatelessWidget {
               color: Colors.black.withOpacity(0.02),
               blurRadius: 10,
               offset: Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Row(
@@ -160,11 +177,13 @@ class ChatListScreen extends StatelessWidget {
                     children: [
                       Text(
                         chat.userName,
-                        style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Color(0xFF191C1A)),
+                        style: TextStyleHelper.instance.body14BoldInter
+                            .copyWith(color: Color(0xFF191C1A)),
                       ),
                       Text(
                         '5m',
-                        style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Color(0xFF4D6353)),
+                        style: TextStyleHelper.instance.label10MediumInter
+                            .copyWith(color: Color(0xFF4D6353)),
                       ),
                     ],
                   ),
@@ -172,8 +191,12 @@ class ChatListScreen extends StatelessWidget {
                   Text(
                     chat.lastMessage,
                     style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                      color: chat.unreadCount > 0 ? Color(0xFF191C1A) : Color(0xFF4D6353),
-                      fontWeight: chat.unreadCount > 0 ? FontWeight.w700 : FontWeight.w400,
+                      color: chat.unreadCount > 0
+                          ? Color(0xFF191C1A)
+                          : Color(0xFF4D6353),
+                      fontWeight: chat.unreadCount > 0
+                          ? FontWeight.w700
+                          : FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -187,7 +210,11 @@ class ChatListScreen extends StatelessWidget {
                     ),
                     child: Text(
                       chat.relatedGemName,
-                      style: TextStyle(color: Color(0xFF3E5641), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Color(0xFF3E5641),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -203,7 +230,11 @@ class ChatListScreen extends StatelessWidget {
                 ),
                 child: Text(
                   '${chat.unreadCount}',
-                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
           ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MapViewPage extends StatelessWidget {
-  const MapViewPage({Key? key}) : super(key: key);
+  const MapViewPage({super.key});
 
   static Widget builder(BuildContext context) {
     return MapViewPage();
@@ -24,7 +24,7 @@ class MapViewPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Map markers
             Positioned(
               left: 120,
@@ -36,12 +36,8 @@ class MapViewPage extends StatelessWidget {
               top: 504,
               child: _buildMapMarker(const Color(0xFF4A5A4D)),
             ),
-            Positioned(
-              left: 175,
-              top: 332,
-              child: _buildMainMarker(),
-            ),
-            
+            Positioned(left: 175, top: 332, child: _buildMainMarker()),
+
             // App Bar area
             Positioned(
               left: 0,
@@ -52,7 +48,9 @@ class MapViewPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
                   color: const Color(0xCCF8FAF8),
-                  border: Border(bottom: BorderSide(color: const Color(0x33C1C9C2))),
+                  border: Border(
+                    bottom: BorderSide(color: const Color(0x33C1C9C2)),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -62,9 +60,7 @@ class MapViewPage extends StatelessWidget {
                       child: Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: BoxDecoration(shape: BoxShape.circle),
                         child: Icon(Icons.arrow_back, color: Colors.black),
                       ),
                     ),
@@ -78,7 +74,9 @@ class MapViewPage extends StatelessWidget {
                     ),
                     CircleAvatar(
                       radius: 23,
-                      backgroundImage: NetworkImage("https://placehold.co/47x47/png"),
+                      backgroundImage: NetworkImage(
+                        "https://placehold.co/47x47/png",
+                      ),
                     ),
                   ],
                 ),
@@ -150,10 +148,12 @@ class MapViewPage extends StatelessWidget {
                                 SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             'Crimson Bar\n& Grill',
@@ -170,16 +170,23 @@ class MapViewPage extends StatelessWidget {
                                             ),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFD7E8DB),
-                                              borderRadius: BorderRadius.circular(9999),
+                                              borderRadius:
+                                                  BorderRadius.circular(9999),
                                             ),
                                             child: Row(
                                               children: [
-                                                Icon(Icons.star, size: 12, color: Color(0xFF1B3022)),
+                                                Icon(
+                                                  Icons.star,
+                                                  size: 12,
+                                                  color: Color(0xFF1B3022),
+                                                ),
                                                 SizedBox(width: 4),
                                                 Text(
                                                   '4.9',
                                                   style: TextStyle(
-                                                    color: const Color(0xFF1B3022),
+                                                    color: const Color(
+                                                      0xFF1B3022,
+                                                    ),
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w700,
                                                   ),
@@ -212,7 +219,8 @@ class MapViewPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(9999),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Center(
@@ -233,7 +241,11 @@ class MapViewPage extends StatelessWidget {
                                       color: const Color(0xFF353B35),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: Icon(Icons.directions_walk, color: Colors.white, size: 20),
+                                    child: Icon(
+                                      Icons.directions_walk,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -263,7 +275,7 @@ class MapViewPage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildMainMarker() {
     return Container(
       width: 40,
@@ -277,8 +289,8 @@ class MapViewPage extends StatelessWidget {
             color: Colors.black.withOpacity(0.1),
             blurRadius: 15,
             offset: Offset(0, 10),
-          )
-        ]
+          ),
+        ],
       ),
       child: Icon(Icons.star, color: Colors.white, size: 20),
     );

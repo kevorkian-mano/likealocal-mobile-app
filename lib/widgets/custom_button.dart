@@ -2,27 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../core/app_export.dart';
 
-/**
- * A customizable button component that supports various styling options
- * including background colors, text styling, borders, shadows, and spacing.
- * 
- * @param text - The text to display on the button
- * @param onPressed - Callback function when button is pressed
- * @param backgroundColor - Background color of the button
- * @param textColor - Color of the button text  
- * @param borderRadius - Border radius for rounded corners
- * @param fontFamily - Font family for the text
- * @param fontSize - Font size for the text
- * @param fontWeight - Font weight for the text
- * @param padding - Internal padding of the button
- * @param margin - External margin around the button
- * @param boxShadow - Shadow effect for the button
- * @param width - Width of the button
- * @param height - Height of the button
- */
+/// A customizable button component that supports various styling options
+/// including background colors, text styling, borders, shadows, and spacing.
+///
+/// @param text - The text to display on the button
+/// @param onPressed - Callback function when button is pressed
+/// @param backgroundColor - Background color of the button
+/// @param textColor - Color of the button text
+/// @param borderRadius - Border radius for rounded corners
+/// @param fontFamily - Font family for the text
+/// @param fontSize - Font size for the text
+/// @param fontWeight - Font weight for the text
+/// @param padding - Internal padding of the button
+/// @param margin - External margin around the button
+/// @param boxShadow - Shadow effect for the button
+/// @param width - Width of the button
+/// @param height - Height of the button
 class CustomButton extends StatelessWidget {
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.backgroundColor,
@@ -36,7 +34,7 @@ class CustomButton extends StatelessWidget {
     this.boxShadow,
     this.width,
     this.height,
-  }) : super(key: key);
+  });
 
   /// The text to display on the button
   final String text;

@@ -1,15 +1,13 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
-import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 
 class MapsPage extends StatefulWidget {
-  const MapsPage({Key? key}) : super(key: key);
+  const MapsPage({super.key});
 
   static Widget builder(BuildContext context) {
     return const MapsPage();
@@ -47,44 +45,65 @@ class _MapsPageState extends State<MapsPage> {
 
             // Apply Map Filter (FR3-12)
             if (_selectedCategory != 'All') {
-              approvedGems = approvedGems.where((gem) => 
-                gem.vibe.toLowerCase().contains(_selectedCategory.toLowerCase())
-              ).toList();
+              approvedGems = approvedGems
+                  .where(
+                    (gem) => gem.vibe.toLowerCase().contains(
+                      _selectedCategory.toLowerCase(),
+                    ),
+                  )
+                  .toList();
             }
 
             // FR7-5: Super User Filter
             if (_superUserOnly) {
-              approvedGems = approvedGems.where((g) => g.contributorIsSuperUser).toList();
+              approvedGems = approvedGems
+                  .where((g) => g.contributorIsSuperUser)
+                  .toList();
             }
 
             // Create Visual Heatmap (FR3-9)
-            final Set<Circle> heatmapCircles = approvedGems.map((gem) => Circle(
-              circleId: CircleId('heat_${gem.id}'),
-              center: LatLng(gem.latitude, gem.longitude),
-              radius: 300 * (gem.rating / 5),
-              fillColor: const Color(0xFFFFD700).withOpacity(0.15),
-              strokeWidth: 0,
-            )).toSet();
+            final Set<Circle> heatmapCircles = approvedGems
+                .map(
+                  (gem) => Circle(
+                    circleId: CircleId('heat_${gem.id}'),
+                    center: LatLng(gem.latitude, gem.longitude),
+                    radius: 300 * (gem.rating / 5),
+                    fillColor: const Color(0xFFFFD700).withOpacity(0.15),
+                    strokeWidth: 0,
+                  ),
+                )
+                .toSet();
 
             if (userLoc != null) {
-              heatmapCircles.add(Circle(
-                circleId: const CircleId('user_influence'),
-                center: LatLng(userLoc.latitude, userLoc.longitude),
-                radius: 800,
-                fillColor: const Color(0xFF1B3022).withOpacity(0.05),
-                strokeColor: const Color(0xFF1B3022),
-                strokeWidth: 1,
-              ));
+              heatmapCircles.add(
+                Circle(
+                  circleId: const CircleId('user_influence'),
+                  center: LatLng(userLoc.latitude, userLoc.longitude),
+                  radius: 800,
+                  fillColor: const Color(0xFF1B3022).withOpacity(0.05),
+                  strokeColor: const Color(0xFF1B3022),
+                  strokeWidth: 1,
+                ),
+              );
             }
 
-            final markers = approvedGems.map((gem) => Marker(
-              markerId: MarkerId(gem.id),
-              position: LatLng(gem.latitude, gem.longitude),
-              infoWindow: InfoWindow(title: gem.name, snippet: '${gem.rating} ★ - ${gem.vibe}'),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                gem.rating > 4.5 ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueGreen
-              ),
-            )).toSet();
+            final markers = approvedGems
+                .map(
+                  (gem) => Marker(
+                    markerId: MarkerId(gem.id),
+                    position: LatLng(gem.latitude, gem.longitude),
+                    infoWindow: InfoWindow(
+                      title: gem.name,
+                      snippet: '${gem.rating} ★ - ${gem.vibe}',
+                    ),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                      gem.rating > 4.5
+                          ? BitmapDescriptor.hueOrange
+                          : BitmapDescriptor.hueGreen,
+                    ),
+                  ),
+                )
+                .toSet();
 
             return Stack(
               children: [
@@ -94,8 +113,8 @@ class _MapsPageState extends State<MapsPage> {
                       flex: 6,
                       child: GoogleMap(
                         initialCameraPosition: CameraPosition(
-                          target: userLoc != null 
-                              ? LatLng(userLoc.latitude, userLoc.longitude) 
+                          target: userLoc != null
+                              ? LatLng(userLoc.latitude, userLoc.longitude)
                               : const LatLng(30.0444, 31.2357),
                           zoom: 14,
                         ),
@@ -112,30 +131,46 @@ class _MapsPageState extends State<MapsPage> {
                     Expanded(
                       flex: 4,
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildPinsCard(context, !Provider.of<UserProvider>(context, listen: false).isAuthenticated),
+                            _buildPinsCard(
+                              context,
+                              !Provider.of<UserProvider>(
+                                context,
+                                listen: false,
+                              ).isAuthenticated,
+                            ),
                             const SizedBox(height: 24),
-                            Text('Nearby Secret Spots', style: TextStyleHelper.instance.title20BoldOutfit),
+                            Text(
+                              'Nearby Secret Spots',
+                              style: TextStyleHelper.instance.title20BoldOutfit,
+                            ),
                             const SizedBox(height: 12),
                             if (approvedGems.isEmpty)
                               const Padding(
                                 padding: EdgeInsets.all(20),
                                 child: Text('No spots in this category yet.'),
                               ),
-                            ...approvedGems.take(3).map((gem) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildMapCard(context, gem),
-                            )).toList(),
+                            ...approvedGems
+                                .take(3)
+                                .map(
+                                  (gem) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildMapCard(context, gem),
+                                  ),
+                                ),
                           ],
                         ),
                       ),
                     ),
                   ],
                 ),
-                  _buildTopOverlay(context),
+                _buildTopOverlay(context),
               ],
             );
           },
@@ -168,24 +203,32 @@ class _MapsPageState extends State<MapsPage> {
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
-                side: BorderSide(color: _superUserOnly ? const Color(0xFFFFD700) : const Color(0xFF1B3022).withOpacity(0.2)),
+                side: BorderSide(
+                  color: _superUserOnly
+                      ? const Color(0xFFFFD700)
+                      : const Color(0xFF1B3022).withOpacity(0.2),
+                ),
               ),
             ),
           ),
-          ...categories.map((cat) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(cat),
-              selected: _selectedCategory == cat,
-              onSelected: (val) => setState(() => _selectedCategory = cat),
-              selectedColor: const Color(0xFF1B3022),
-              labelStyle: TextStyle(
-                color: _selectedCategory == cat ? Colors.white : const Color(0xFF1B3022),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          ...categories.map(
+            (cat) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(cat),
+                selected: _selectedCategory == cat,
+                onSelected: (val) => setState(() => _selectedCategory = cat),
+                selectedColor: const Color(0xFF1B3022),
+                labelStyle: TextStyle(
+                  color: _selectedCategory == cat
+                      ? Colors.white
+                      : const Color(0xFF1B3022),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
-          )).toList(),
+          ),
         ],
       ),
     );
@@ -221,13 +264,17 @@ class _MapsPageState extends State<MapsPage> {
                   children: [
                     Text(
                       'LikeALocal Maps',
-                      style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-                        color: const Color(0xFF191C1A),
-                        letterSpacing: -0.5,
-                      ),
+                      style: TextStyleHelper.instance.title20BoldOutfit
+                          .copyWith(
+                            color: const Color(0xFF191C1A),
+                            letterSpacing: -0.5,
+                          ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.userProfilePage),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.userProfilePage,
+                      ),
                       child: Container(
                         width: 36,
                         height: 36,
@@ -235,7 +282,11 @@ class _MapsPageState extends State<MapsPage> {
                           color: Colors.black,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.person, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
@@ -265,7 +316,11 @@ class _MapsPageState extends State<MapsPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.info_outline, color: Color(0xFF1B3022), size: 24),
+                const Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF1B3022),
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Guest Mode',
@@ -288,19 +343,37 @@ class _MapsPageState extends State<MapsPage> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
-                  child: const Text('View Plans', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.pricingPage),
+                  child: const Text(
+                    'View Plans',
+                    style: TextStyle(
+                      color: Color(0xFF1B3022),
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.signUpPage),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.signUpPage),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1B3022),
                       borderRadius: BorderRadius.circular(9999),
                     ),
-                    child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -346,12 +419,21 @@ class _MapsPageState extends State<MapsPage> {
             child: GestureDetector(
               onTap: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1B3022),
                   borderRadius: BorderRadius.circular(9999),
                 ),
-                child: const Text('Go Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Go Premium',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ),
@@ -363,10 +445,10 @@ class _MapsPageState extends State<MapsPage> {
   Widget _buildMapCard(BuildContext context, HiddenGem gem) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context, rootNavigator: true).pushNamed(
-          AppRoutes.placeDetailsScreen,
-          arguments: gem,
-        );
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.placeDetailsScreen, arguments: gem);
       },
       child: Container(
         width: double.infinity,
@@ -392,20 +474,22 @@ class _MapsPageState extends State<MapsPage> {
                 children: [
                   Text(
                     gem.name,
-                    style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
-                      color: Color(0xFF191C1A),
-                    ),
+                    style: TextStyleHelper.instance.title18SemiBoldInter
+                        .copyWith(color: Color(0xFF191C1A)),
                   ),
                   SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Color(0xFF3E5641), size: 14),
+                      Icon(
+                        Icons.location_on,
+                        color: Color(0xFF3E5641),
+                        size: 14,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Zamalek, Cairo',
-                        style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                          color: Color(0xFF4D6353),
-                        ),
+                        style: TextStyleHelper.instance.body14MediumInter
+                            .copyWith(color: Color(0xFF4D6353)),
                       ),
                     ],
                   ),
@@ -438,4 +522,3 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 }
-

@@ -5,7 +5,10 @@ import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'default',
+  );
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -71,7 +74,10 @@ class AuthService {
         password: password,
       );
       // FR11-6: Check if user is banned
-      final userDoc = await _firestore.collection('users').doc(credential.user!.uid).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(credential.user!.uid)
+          .get();
       if (userDoc.exists && (userDoc.data()!['isBanned'] == true)) {
         await _auth.signOut();
         throw 'Your account has been suspended. Please contact support.';
@@ -124,7 +130,7 @@ class AuthService {
     try {
       // 1. Delete user data from Firestore
       await _firestore.collection('users').doc(uid).delete();
-      
+
       // 2. Delete the Auth account
       await _auth.currentUser?.delete();
     } on FirebaseAuthException catch (e) {
@@ -140,7 +146,10 @@ class AuthService {
   // Get User Data from Firestore
   Future<UserModel?> getUserData(String uid) async {
     try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get();
       if (doc.exists) {
         return UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }
@@ -167,4 +176,3 @@ class AuthService {
     await _firestore.collection('users').doc(uid).update({'isBanned': false});
   }
 }
-

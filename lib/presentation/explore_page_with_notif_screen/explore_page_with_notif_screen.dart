@@ -20,10 +20,12 @@ class ExplorePageWithNotifScreen extends StatefulWidget {
   }
 
   @override
-  State<ExplorePageWithNotifScreen> createState() => _ExplorePageWithNotifScreenState();
+  State<ExplorePageWithNotifScreen> createState() =>
+      _ExplorePageWithNotifScreenState();
 }
 
-class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen> {
+class _ExplorePageWithNotifScreenState
+    extends State<ExplorePageWithNotifScreen> {
   String _searchQuery = '';
   String? _dismissedNotifId; // FR11-7: track dismissed admin broadcast
   bool _superUserOnly = false; // FR7-5: Local legends only filter
@@ -35,7 +37,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Provider.of<UserProvider>(context, listen: false).user;
       if (user != null) {
-        Provider.of<ChatProvider>(context, listen: false).startListeningForNewMessages(user.id);
+        Provider.of<ChatProvider>(
+          context,
+          listen: false,
+        ).startListeningForNewMessages(user.id);
       }
     });
   }
@@ -64,47 +69,99 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           builder: (context, userProvider, _) {
                             if (!userProvider.isAuthenticated) {
                               return Container(
-                                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                                margin: const EdgeInsets.fromLTRB(
+                                  16,
+                                  16,
+                                  16,
+                                  0,
+                                ),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF9F7F2),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFFD7E8DE)),
+                                  border: Border.all(
+                                    color: const Color(0xFFD7E8DE),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(Icons.info_outline, color: Color(0xFF1B3022), size: 20),
+                                        const Icon(
+                                          Icons.info_outline,
+                                          color: Color(0xFF1B3022),
+                                          size: 20,
+                                        ),
                                         const SizedBox(width: 8),
                                         Text(
                                           'Guest Mode',
-                                          style: TextStyleHelper.instance.body14BoldInter.copyWith(color: const Color(0xFF1B3022)),
+                                          style: TextStyleHelper
+                                              .instance
+                                              .body14BoldInter
+                                              .copyWith(
+                                                color: const Color(0xFF1B3022),
+                                              ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       'You are exploring in guest mode. Sign up to save places, chat with locals, and add your own hidden gems!',
-                                      style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF4D6353), height: 1.4),
+                                      style: TextStyleHelper
+                                          .instance
+                                          .body12MediumInter
+                                          .copyWith(
+                                            color: const Color(0xFF4D6353),
+                                            height: 1.4,
+                                          ),
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
                                         ElevatedButton(
-                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.signUpPage),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1B3022),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          onPressed: () => Navigator.pushNamed(
+                                            context,
+                                            AppRoutes.signUpPage,
                                           ),
-                                          child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFF1B3022,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Sign Up',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                         const SizedBox(width: 8),
                                         TextButton(
-                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
-                                          child: const Text('View Premium Plans', style: TextStyle(color: Color(0xFF1B3022), fontSize: 12, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                                          onPressed: () => Navigator.pushNamed(
+                                            context,
+                                            AppRoutes.pricingPage,
+                                          ),
+                                          child: const Text(
+                                            'View Premium Plans',
+                                            style: TextStyle(
+                                              color: Color(0xFF1B3022),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -116,32 +173,51 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           },
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFECEFE8),
                                     borderRadius: BorderRadius.circular(9999),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.search, color: Colors.grey, size: 20),
+                                      const Icon(
+                                        Icons.search,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: TextField(
-                                          onChanged: (value) => setState(() => _searchQuery = value),
-                                          style: TextStyleHelper.instance.body14MediumInter,
+                                          onChanged: (value) => setState(
+                                            () => _searchQuery = value,
+                                          ),
+                                          style: TextStyleHelper
+                                              .instance
+                                              .body14MediumInter,
                                           decoration: InputDecoration(
                                             hintText: 'Search hidden gems...',
-                                            hintStyle: TextStyleHelper.instance.body14MediumInter.copyWith(
-                                              color: Colors.grey[600],
-                                            ),
+                                            hintStyle: TextStyleHelper
+                                                .instance
+                                                .body14MediumInter
+                                                .copyWith(
+                                                  color: Colors.grey[600],
+                                                ),
                                             border: InputBorder.none,
                                             isDense: true,
-                                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -151,14 +227,21 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                               ),
                               SizedBox(width: 12),
                               GestureDetector(
-                                onTap: () => Navigator.pushNamed(context, AppRoutes.aiChatbotScreen),
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.aiChatbotScreen,
+                                ),
                                 child: Container(
                                   padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: appTheme.midnightPine,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                                  child: Icon(
+                                    Icons.auto_awesome,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 8),
@@ -176,13 +259,19 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Color(0xFFFFD700).withValues(alpha: 0.3 * (1 - value.abs())),
+                                            color: Color(0xFFFFD700).withValues(
+                                              alpha: 0.3 * (1 - value.abs()),
+                                            ),
                                             blurRadius: 10 * (1 - value.abs()),
                                             spreadRadius: 5 * (1 - value.abs()),
-                                          )
+                                          ),
                                         ],
                                       ),
-                                      child: Icon(Icons.tune, color: Colors.white, size: 20),
+                                      child: Icon(
+                                        Icons.tune,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
                                     ),
                                   );
                                 },
@@ -195,13 +284,29 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
-                              _buildChip('Food', appTheme.midnightPine, Colors.white),
+                              _buildChip(
+                                'Food',
+                                appTheme.midnightPine,
+                                Colors.white,
+                              ),
                               const SizedBox(width: 8),
-                              _buildChip('Adventure', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
+                              _buildChip(
+                                'Adventure',
+                                const Color(0xFFD7E8DE),
+                                const Color(0xFF4D6353),
+                              ),
                               const SizedBox(width: 8),
-                              _buildChip('Culture', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
+                              _buildChip(
+                                'Culture',
+                                const Color(0xFFD7E8DE),
+                                const Color(0xFF4D6353),
+                              ),
                               const SizedBox(width: 8),
-                              _buildChip('Chill', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
+                              _buildChip(
+                                'Chill',
+                                const Color(0xFFD7E8DE),
+                                const Color(0xFF4D6353),
+                              ),
                             ],
                           ),
                         ),
@@ -211,22 +316,25 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           child: Consumer<GemsProvider>(
                             builder: (context, gemsProvider, _) {
                               final nearest = gemsProvider.getNearestGem();
-                              if (nearest == null || gemsProvider.userLocation == null) {
+                              if (nearest == null ||
+                                  gemsProvider.userLocation == null) {
                                 return const SizedBox.shrink();
                               }
-                              
-                              final distance = LocationService.calculateDistance(
-                                gemsProvider.userLocation!.latitude,
-                                gemsProvider.userLocation!.longitude,
-                                nearest.latitude,
-                                nearest.longitude
-                              );
-                              
+
+                              final distance =
+                                  LocationService.calculateDistance(
+                                    gemsProvider.userLocation!.latitude,
+                                    gemsProvider.userLocation!.longitude,
+                                    nearest.latitude,
+                                    nearest.longitude,
+                                  );
+
                               return GestureDetector(
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PlaceDetailsScreen(gem: nearest),
+                                    builder: (context) =>
+                                        PlaceDetailsScreen(gem: nearest),
                                   ),
                                 ),
                                 child: Container(
@@ -236,7 +344,9 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                     borderRadius: BorderRadius.circular(24),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.1),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         blurRadius: 15,
                                         offset: Offset(0, 10),
                                       ),
@@ -247,28 +357,42 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                       Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.1),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.1,
+                                          ),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Icon(Icons.location_on, color: Colors.white, size: 20),
+                                        child: Icon(
+                                          Icons.location_on,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                       ),
                                       SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               'NEAREST GEM',
-                                              style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                                color: Colors.white.withValues(alpha: 0.8),
-                                                letterSpacing: 0.6,
-                                              ),
+                                              style: TextStyleHelper
+                                                  .instance
+                                                  .label10BoldInter
+                                                  .copyWith(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.8),
+                                                    letterSpacing: 0.6,
+                                                  ),
                                             ),
                                             Text(
                                               '${nearest.name} is\njust ${gemsProvider.formatDistance(distance * 1000)} away!',
-                                              style: TextStyleHelper.instance.body14BoldInter.copyWith(
-                                                color: Colors.white,
-                                              ),
+                                              style: TextStyleHelper
+                                                  .instance
+                                                  .body14BoldInter
+                                                  .copyWith(
+                                                    color: Colors.white,
+                                                  ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -276,16 +400,24 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(9999),
+                                          borderRadius: BorderRadius.circular(
+                                            9999,
+                                          ),
                                         ),
                                         child: Text(
                                           'View',
-                                          style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                            color: Color(0xFF1B3022),
-                                          ),
+                                          style: TextStyleHelper
+                                              .instance
+                                              .label10BoldInter
+                                              .copyWith(
+                                                color: Color(0xFF1B3022),
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -301,7 +433,9 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Consumer2<GemsProvider, UserProvider>(
                             builder: (context, gemsProvider, userProvider, _) {
-                              final isPremium = (userProvider.user?.isPro ?? false) || (userProvider.user?.isSuperUser ?? false);
+                              final isPremium =
+                                  (userProvider.user?.isPro ?? false) ||
+                                  (userProvider.user?.isSuperUser ?? false);
                               return GestureDetector(
                                 onTap: () {
                                   if (!isPremium) {
@@ -314,15 +448,25 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF2C4C3B), Color(0xFF1B3022)],
+                                      colors: [
+                                        Color(0xFF2C4C3B),
+                                        Color(0xFF1B3022),
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.3), width: 1.5),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFFFFD700,
+                                      ).withValues(alpha: 0.3),
+                                      width: 1.5,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                                        color: const Color(
+                                          0xFFFFD700,
+                                        ).withValues(alpha: 0.1),
                                         blurRadius: 20,
                                         spreadRadius: 2,
                                       ),
@@ -333,45 +477,75 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                                          color: const Color(
+                                            0xFFFFD700,
+                                          ).withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(Icons.auto_awesome_motion_rounded, color: Color(0xFFFFD700), size: 28),
+                                        child: const Icon(
+                                          Icons.auto_awesome_motion_rounded,
+                                          color: Color(0xFFFFD700),
+                                          size: 28,
+                                        ),
                                       ),
                                       const SizedBox(width: 20),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
                                                 Text(
                                                   'AI ITINERARY',
-                                                  style: TextStyleHelper.instance.label10BoldInter.copyWith(
-                                                    color: const Color(0xFFFFD700),
-                                                    letterSpacing: 1.2,
-                                                  ),
+                                                  style: TextStyleHelper
+                                                      .instance
+                                                      .label10BoldInter
+                                                      .copyWith(
+                                                        color: const Color(
+                                                          0xFFFFD700,
+                                                        ),
+                                                        letterSpacing: 1.2,
+                                                      ),
                                                 ),
                                                 if (!isPremium) ...[
                                                   const SizedBox(width: 8),
-                                                  const Icon(Icons.lock, color: Color(0xFFFFD700), size: 10),
+                                                  const Icon(
+                                                    Icons.lock,
+                                                    color: Color(0xFFFFD700),
+                                                    size: 10,
+                                                  ),
                                                 ],
                                               ],
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
                                               'Plan your perfect day',
-                                              style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Colors.white),
+                                              style: TextStyleHelper
+                                                  .instance
+                                                  .title18SemiBoldInter
+                                                  .copyWith(
+                                                    color: Colors.white,
+                                                  ),
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
                                               'Based on your vibes and nearby gems',
-                                              style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.white70),
+                                              style: TextStyleHelper
+                                                  .instance
+                                                  .body12MediumInter
+                                                  .copyWith(
+                                                    color: Colors.white70,
+                                                  ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 16),
+                                      const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Colors.white30,
+                                        size: 16,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -388,39 +562,65 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 return Center(
                                   child: Padding(
                                     padding: const EdgeInsets.all(40),
-                                    child: CircularProgressIndicator(color: Color(0xFF1B3022)),
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFF1B3022),
+                                    ),
                                   ),
                                 );
                               }
 
-                              final userVibes = userProvider.user?.selectedVibes ?? [];
+                              final userVibes =
+                                  userProvider.user?.selectedVibes ?? [];
                               var displayGems = gemsProvider.approvedGems;
 
                               // FR7-5: Super User Filter
                               if (_superUserOnly) {
-                                displayGems = displayGems.where((g) => g.contributorIsSuperUser).toList();
+                                displayGems = displayGems
+                                    .where((g) => g.contributorIsSuperUser)
+                                    .toList();
                               }
 
                               // 1. Keyword & Code Search Filtering (FR2-3, FR4-15)
                               if (_searchQuery.isNotEmpty) {
                                 final query = _searchQuery.trim().toLowerCase();
-                                displayGems = displayGems.where((gem) => 
-                                  gem.name.toLowerCase().contains(query) ||
-                                  gem.description.toLowerCase().contains(query) ||
-                                  gem.category.toLowerCase().contains(query) ||
-                                  gem.vibe.toLowerCase().contains(query) ||
-                                  gem.uniqueCode.toLowerCase() == query ||
-                                  gem.localsTip.toLowerCase().contains(query)
-                                ).toList();
+                                displayGems = displayGems
+                                    .where(
+                                      (gem) =>
+                                          gem.name.toLowerCase().contains(
+                                            query,
+                                          ) ||
+                                          gem.description
+                                              .toLowerCase()
+                                              .contains(query) ||
+                                          gem.category.toLowerCase().contains(
+                                            query,
+                                          ) ||
+                                          gem.vibe.toLowerCase().contains(
+                                            query,
+                                          ) ||
+                                          gem.uniqueCode.toLowerCase() ==
+                                              query ||
+                                          gem.localsTip.toLowerCase().contains(
+                                            query,
+                                          ),
+                                    )
+                                    .toList();
                               }
 
                               // 2. Personalization Filter (Existing Vibe Matching)
                               bool showingVibeMatches = false;
-                              if (_searchQuery.isEmpty && userVibes.isNotEmpty) {
-                                final matchingGems = displayGems.where((gem) => 
-                                  userVibes.any((vibe) => gem.vibe.toLowerCase().contains(vibe.toLowerCase()))
-                                ).toList();
-                                
+                              if (_searchQuery.isEmpty &&
+                                  userVibes.isNotEmpty) {
+                                final matchingGems = displayGems
+                                    .where(
+                                      (gem) => userVibes.any(
+                                        (vibe) => gem.vibe
+                                            .toLowerCase()
+                                            .contains(vibe.toLowerCase()),
+                                      ),
+                                    )
+                                    .toList();
+
                                 if (matchingGems.isNotEmpty) {
                                   displayGems = matchingGems;
                                   showingVibeMatches = true;
@@ -432,11 +632,13 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                   child: Padding(
                                     padding: const EdgeInsets.all(40),
                                     child: Text(
-                                      _searchQuery.isEmpty 
+                                      _searchQuery.isEmpty
                                           ? 'No matching gems found. Try exploring more vibes!'
                                           : 'No results for "$_searchQuery"',
                                       textAlign: TextAlign.center,
-                                      style: TextStyleHelper.instance.body14MediumInter,
+                                      style: TextStyleHelper
+                                          .instance
+                                          .body14MediumInter,
                                     ),
                                   ),
                                 );
@@ -447,24 +649,39 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                 children: [
                                   if (showingVibeMatches)
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 16),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.auto_awesome, color: Color(0xFF1B3022), size: 16),
+                                          const Icon(
+                                            Icons.auto_awesome,
+                                            color: Color(0xFF1B3022),
+                                            size: 16,
+                                          ),
                                           const SizedBox(width: 8),
                                           Text(
                                             'Matching your vibe',
-                                            style: TextStyleHelper.instance.body14BoldInter.copyWith(
-                                              color: const Color(0xFF1B3022),
-                                            ),
+                                            style: TextStyleHelper
+                                                .instance
+                                                .body14BoldInter
+                                                .copyWith(
+                                                  color: const Color(
+                                                    0xFF1B3022,
+                                                  ),
+                                                ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ...displayGems.map((gem) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 24),
-                                    child: _buildCard(context, gem),
-                                  )),
+                                  ...displayGems.map(
+                                    (gem) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 24,
+                                      ),
+                                      child: _buildCard(context, gem),
+                                    ),
+                                  ),
                                 ],
                               );
                             },
@@ -492,15 +709,18 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                   children: [
                     Text(
                       'LikeALocal',
-                      style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-                        color: Color(0xFF191C1A),
-                        letterSpacing: -0.5,
-                      ),
+                      style: TextStyleHelper.instance.title20BoldOutfit
+                          .copyWith(
+                            color: Color(0xFF191C1A),
+                            letterSpacing: -0.5,
+                          ),
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.of(context, rootNavigator: true)
-                            .pushNamed(AppRoutes.userProfilePage);
+                        Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamed(AppRoutes.userProfilePage);
                       },
                       child: Container(
                         width: 36,
@@ -531,7 +751,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             icon: Icon(Icons.auto_awesome, color: Colors.white),
             label: Text(
               'Surprise Me',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           );
         },
@@ -550,7 +773,13 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
           children: [
             CircularProgressIndicator(color: Colors.white),
             SizedBox(height: 16),
-            Text('Localie is crafting your day...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(
+              'Localie is crafting your day...',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
@@ -559,11 +788,17 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
-      
-      final vibes = userProvider.user?.selectedVibes ?? ['General'];
-      final nearbyGemNames = gemsProvider.approvedGems.take(5).map((g) => g.name).toList();
 
-      final itinerary = await AIService.generateItinerary(vibes, nearbyGemNames);
+      final vibes = userProvider.user?.selectedVibes ?? ['General'];
+      final nearbyGemNames = gemsProvider.approvedGems
+          .take(5)
+          .map((g) => g.name)
+          .toList();
+
+      final itinerary = await AIService.generateItinerary(
+        vibes,
+        nearbyGemNames,
+      );
 
       if (!context.mounted) return;
       Navigator.pop(context); // close loading
@@ -584,7 +819,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(24),
@@ -592,7 +830,10 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                   children: [
                     const Icon(Icons.auto_awesome, color: Color(0xFF1B3022)),
                     const SizedBox(width: 12),
-                    Text('Your Personalized Day', style: TextStyleHelper.instance.title20BoldOutfit),
+                    Text(
+                      'Your Personalized Day',
+                      style: TextStyleHelper.instance.title20BoldOutfit,
+                    ),
                   ],
                 ),
               ),
@@ -601,13 +842,19 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: Text(
                     itinerary,
-                    style: TextStyleHelper.instance.body16MediumInter.copyWith(height: 1.6, color: const Color(0xFF4D6353)),
+                    style: TextStyleHelper.instance.body16MediumInter.copyWith(
+                      height: 1.6,
+                      color: const Color(0xFF4D6353),
+                    ),
                   ),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: CustomButton(text: 'Save Itinerary', onPressed: () => Navigator.pop(context)),
+                child: CustomButton(
+                  text: 'Save Itinerary',
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
             ],
           ),
@@ -616,14 +863,16 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     } catch (e) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('AI Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('AI Error: $e')));
     }
   }
 
   void _onSurpriseMe(BuildContext context) {
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
     final approvedGems = gemsProvider.approvedGems;
     if (approvedGems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -636,10 +885,14 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     HiddenGem? selectedGem;
 
     if (userVibes.isNotEmpty) {
-      final matches = approvedGems.where((gem) => 
-        userVibes.any((vibe) => gem.vibe.toLowerCase().contains(vibe.toLowerCase()))
-      ).toList();
-      
+      final matches = approvedGems
+          .where(
+            (gem) => userVibes.any(
+              (vibe) => gem.vibe.toLowerCase().contains(vibe.toLowerCase()),
+            ),
+          )
+          .toList();
+
       if (matches.isNotEmpty) {
         selectedGem = (matches..shuffle()).first;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -678,11 +931,14 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
     final userLoc = gemsProvider.userLocation;
     final isLocalLegend = gem.contributorIsSuperUser;
-    
+
     String distanceText = '--- km away';
     if (userLoc != null) {
       double dist = LocationService.calculateDistance(
-        userLoc.latitude, userLoc.longitude, gem.latitude, gem.longitude
+        userLoc.latitude,
+        userLoc.longitude,
+        gem.latitude,
+        gem.longitude,
       );
       distanceText = '${dist.toStringAsFixed(1)} km away';
     }
@@ -691,9 +947,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => PlaceDetailsScreen(gem: gem),
-          ),
+          MaterialPageRoute(builder: (context) => PlaceDetailsScreen(gem: gem)),
         );
       },
       child: Container(
@@ -733,29 +987,36 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                     ),
                     child: Text(
                       distanceText,
-                      style: TextStyle(color: Color(0xFF1B3022), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Color(0xFF1B3022),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
                 if (gem.isTrending)
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: _buildTrendingBadge(),
-                  ),
+                  Positioned(top: 12, left: 12, child: _buildTrendingBadge()),
                 if (isLocalLegend)
                   Positioned(
                     top: gem.isTrending ? 52 : 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFD700),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'LOCAL LEGEND',
-                        style: TextStyle(color: Color(0xFF1B3022), fontSize: 9, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Color(0xFF1B3022),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -771,24 +1032,33 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                     children: [
                       Text(
                         gem.name,
-                        style: TextStyleHelper.instance.title20BoldOutfit.copyWith(
-                          color: Color(0xFF191C1A),
-                        ),
+                        style: TextStyleHelper.instance.title20BoldOutfit
+                            .copyWith(color: Color(0xFF191C1A)),
                       ),
                       Consumer2<UserProvider, GemsProvider>(
                         builder: (context, userProvider, gemsProvider, _) {
-                          final isSaved = userProvider.user?.savedGems.contains(gem.id) ?? false;
+                          final isSaved =
+                              userProvider.user?.savedGems.contains(gem.id) ??
+                              false;
                           return GestureDetector(
                             onTap: () async {
                               final user = userProvider.user;
                               if (user == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sign up to save your favourite places!')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Sign up to save your favourite places!',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
                               try {
-                                await gemsProvider.toggleSaveGem(user.id, gem.id, isSaved);
+                                await gemsProvider.toggleSaveGem(
+                                  user.id,
+                                  gem.id,
+                                  isSaved,
+                                );
                                 if (!context.mounted) return;
                               } catch (e) {
                                 if (!context.mounted) return;
@@ -841,7 +1111,14 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
         children: [
           Icon(Icons.whatshot, color: Color(0xFFFFD700), size: 12),
           SizedBox(width: 4),
-          Text('TRENDING', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+          Text(
+            'TRENDING',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );
@@ -851,7 +1128,9 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -861,21 +1140,30 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
+                  Text(
+                    'Advanced Discovery',
+                    style: TextStyleHelper.instance.title20BoldOutfit,
+                  ),
                   SizedBox(height: 24),
                   _buildFilterToggle(
-                    'Super User Recommendations', 
+                    'Super User Recommendations',
                     'Filter by Local Legends only (FR7-5)',
                     _superUserOnly,
                     (val) {
                       setModalState(() => _superUserOnly = val);
                       setState(() => _superUserOnly = val); // update parent
-                    }
+                    },
                   ),
                   SizedBox(height: 24),
-                  Text('Price vs. Vibe Intensity', style: TextStyleHelper.instance.body14BoldInter),
+                  Text(
+                    'Price vs. Vibe Intensity',
+                    style: TextStyleHelper.instance.body14BoldInter,
+                  ),
                   SizedBox(height: 8),
-                  Text('Balance your budget against the experience depth (FR2-9)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    'Balance your budget against the experience depth (FR2-9)',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                   Slider(
                     value: 0.5,
                     onChanged: (_) {},
@@ -884,23 +1172,43 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Budget', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                      Text('Deep Experience', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Budget',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Deep Experience',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 32),
-                  CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
+                  CustomButton(
+                    text: 'Apply Filters',
+                    onPressed: () => Navigator.pop(context),
+                  ),
                   SizedBox(height: 16),
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
   }
 
-  Widget _buildFilterToggle(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildFilterToggle(
+    String title,
+    String subtitle,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -908,11 +1216,18 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: TextStyleHelper.instance.body14BoldInter),
-              Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
         ),
-        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFF1B3022)),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: const Color(0xFF1B3022),
+        ),
       ],
     );
   }
@@ -923,7 +1238,8 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: userProvider.getActiveNotifications(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data!.isEmpty)
+          return const SizedBox.shrink();
         final notif = snapshot.data!.first;
         final notifId = notif['id'] as String? ?? '';
         // Respect user dismiss
@@ -945,12 +1261,16 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                 color: const Color(0xFF1B3022).withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
-              )
+              ),
             ],
           ),
           child: Row(
             children: [
-              const Icon(Icons.campaign_outlined, color: Color(0xFFFFD700), size: 22),
+              const Icon(
+                Icons.campaign_outlined,
+                color: Color(0xFFFFD700),
+                size: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -967,7 +1287,11 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                     const SizedBox(height: 2),
                     Text(
                       notif['message'] as String? ?? '',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -986,6 +1310,3 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
     );
   }
 }
-
-
-

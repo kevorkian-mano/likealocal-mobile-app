@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_export.dart';
 import '../../widgets/custom_button.dart';
 import '../../core/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class ManualPaymentScreen extends StatefulWidget {
-  const ManualPaymentScreen({Key? key}) : super(key: key);
+  const ManualPaymentScreen({super.key});
 
   @override
   _ManualPaymentScreenState createState() => _ManualPaymentScreenState();
@@ -20,7 +21,10 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
     return Scaffold(
       backgroundColor: appTheme.gray_50,
       appBar: AppBar(
-        title: Text('Manual Payment', style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans),
+        title: Text(
+          'Manual Payment',
+          style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans,
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -40,7 +44,9 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
             SizedBox(height: 8.h),
             Text(
               'Transfer EGP 150 using one of the methods below and provide the transaction reference for verification.',
-              style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.grey),
+              style: TextStyleHelper.instance.body12RegularInter.copyWith(
+                color: Colors.grey,
+              ),
             ),
             SizedBox(height: 32.h),
             _buildPaymentMethod(
@@ -55,7 +61,10 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
               Icons.phone_android_outlined,
             ),
             SizedBox(height: 40.h),
-            Text('Transaction Reference', style: TextStyleHelper.instance.body14BoldInter),
+            Text(
+              'Transaction Reference',
+              style: TextStyleHelper.instance.body14BoldInter,
+            ),
             SizedBox(height: 8.h),
             TextField(
               controller: _referenceController,
@@ -78,7 +87,9 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
             Center(
               child: Text(
                 'Approvals typically take 1-2 hours.',
-                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.grey),
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(
+                  color: Colors.grey,
+                ),
               ),
             ),
           ],
@@ -95,7 +106,9 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
         duration: Duration(milliseconds: 200),
         padding: EdgeInsets.all(20.h),
         decoration: BoxDecoration(
-          color: isSelected ? appTheme.midnightPine.withOpacity(0.05) : Colors.white,
+          color: isSelected
+              ? appTheme.midnightPine.withOpacity(0.05)
+              : Colors.white,
           borderRadius: BorderRadius.circular(16.h),
           border: Border.all(
             color: isSelected ? appTheme.midnightPine : Colors.grey.shade200,
@@ -104,19 +117,32 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? appTheme.midnightPine : Colors.grey, size: 28.h),
+            Icon(
+              icon,
+              color: isSelected ? appTheme.midnightPine : Colors.grey,
+              size: 28.h,
+            ),
             SizedBox(width: 16.h),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: TextStyleHelper.instance.body14BoldInter),
-                  Text(subtitle, style: TextStyleHelper.instance.body12RegularInter.copyWith(color: Colors.grey)),
+                  Text(
+                    subtitle,
+                    style: TextStyleHelper.instance.body12RegularInter.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: appTheme.midnightPine, size: 20.h),
+              Icon(
+                Icons.check_circle,
+                color: appTheme.midnightPine,
+                size: 20.h,
+              ),
           ],
         ),
       ),
@@ -126,9 +152,9 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
   void _submitReference(BuildContext context) async {
     final refId = _referenceController.text.trim();
     if (refId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a reference ID')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please enter a reference ID')));
       return;
     }
 
@@ -154,9 +180,9 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
       );
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error submitting reference: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error submitting reference: $e')));
     }
   }
 }

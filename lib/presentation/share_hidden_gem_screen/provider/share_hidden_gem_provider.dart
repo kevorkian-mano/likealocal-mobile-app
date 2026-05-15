@@ -13,7 +13,8 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/services/media_service.dart';
 import '../map_picker_page.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as ll;
+
 
 class ShareHiddenGemProvider extends ChangeNotifier {
   ShareHiddenGemModel shareHiddenGemModel = ShareHiddenGemModel();
@@ -23,14 +24,12 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   double selectedLng = 31.2357;
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  // ... controllers ...
 
   void adjustPin(BuildContext context) async {
-    final LatLng? result = await Navigator.push<LatLng>(
+    final ll.LatLng? result = await Navigator.push<ll.LatLng>(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            MapPickerPage(initialPosition: LatLng(selectedLat, selectedLng)),
+        builder: (context) => MapPickerPage(initialPosition: ll.LatLng(selectedLat, selectedLng)),
       ),
     );
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../../core/app_export.dart';
 
 class MapPickerPage extends StatefulWidget {
   final LatLng initialPosition;
@@ -15,7 +17,8 @@ class MapPickerPage extends StatefulWidget {
 
 class _MapPickerPageState extends State<MapPickerPage> {
   late LatLng _selectedLocation;
-
+  final MapController _mapController = MapController();
+  
   @override
   void initState() {
     super.initState();
@@ -45,20 +48,29 @@ class _MapPickerPageState extends State<MapPickerPage> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _selectedLocation,
-              zoom: 15,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _selectedLocation,
+              initialZoom: 15,
+              onTap: (tapPosition, point) => setState(() => _selectedLocation = point),
             ),
-            onTap: (location) => setState(() => _selectedLocation = location),
-            markers: {
-              Marker(
-                markerId: const MarkerId('selected'),
-                position: _selectedLocation,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.likelocal.app',
               ),
-            },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _selectedLocation,
+                    width: 40,
+                    height: 40,
+                    child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                  ),
+                ],
+              ),
+            ],
           ),
           Positioned(
             bottom: 40,
@@ -69,7 +81,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 10)],
               ),
               child: const Text(
                 'Tap on the map to pin the exact location of your hidden gem.',

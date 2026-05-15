@@ -213,51 +213,93 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     BuildContext context,
     ShareHiddenGemProvider provider,
   ) {
-    return GestureDetector(
-      onTap: () => _showImageSourceDialog(context, provider),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 68.h),
-        decoration: BoxDecoration(
-          color: appTheme.gray_100,
-          border: Border.all(color: appTheme.colorC54CC4, width: 2),
-          borderRadius: BorderRadius.circular(16.h),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _showImageSourceDialog(context, provider),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 40.h),
+            decoration: BoxDecoration(
+              color: appTheme.gray_100,
+              border: Border.all(color: appTheme.colorC54CC4, width: 2),
+              borderRadius: BorderRadius.circular(16.h),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CustomImageView(
+                  imagePath: ImageConstant.imgMargin,
+                  height: 32.h,
+                  width: 26.h,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Add Media (Photos/Videos)',
+                  style: TextStyleHelper.instance.body12SemiBoldInter.copyWith(
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (provider.shareHiddenGemModel.selectedMediaPath != null)
-              Container(
-                height: 120.h,
-                width: 120.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.h),
-                ),
-                child: CustomImageView(
-                  imagePath: provider.shareHiddenGemModel.selectedMediaPath!,
-                  height: 120.h,
-                  width: 120.h,
-                  fit: BoxFit.cover,
-                  radius: BorderRadius.circular(12.h),
-                ),
-              )
-            else ...[
-              CustomImageView(
-                imagePath: ImageConstant.imgMargin,
-                height: 32.h,
-                width: 26.h,
-              ),
-              SizedBox(height: 1.h),
-              Text(
-                'Add Media',
-                style: TextStyleHelper.instance.body12SemiBoldInter.copyWith(
-                  height: 1.25,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+        if (provider.shareHiddenGemModel.selectedMediaPaths.isNotEmpty) ...[
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 100.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: provider.shareHiddenGemModel.selectedMediaPaths.length,
+              separatorBuilder: (context, index) => SizedBox(width: 12.h),
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    Container(
+                      height: 100.h,
+                      width: 100.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.h),
+                      ),
+                      child: CustomImageView(
+                        imagePath: provider
+                            .shareHiddenGemModel
+                            .selectedMediaPaths[index],
+                        height: 100.h,
+                        width: 100.h,
+                        fit: BoxFit.cover,
+                        radius: BorderRadius.circular(12.h),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          provider.removeMedia(index);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -592,7 +634,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPublishButton(
+  /* Widget _buildPublishButton(
     BuildContext context,
     ShareHiddenGemProvider provider,
   ) {
@@ -613,7 +655,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
       ],
       onPressed: () => provider.publishToommunity(context),
     );
-  }
+  } */
 
   Widget _buildGuidelinesText(BuildContext context) {
     return RichText(

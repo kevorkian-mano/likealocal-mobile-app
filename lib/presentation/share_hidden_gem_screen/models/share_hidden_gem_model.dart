@@ -5,18 +5,18 @@ library;
 class ShareHiddenGemModel {
   ShareHiddenGemModel({
     this.selectedCategory,
-    this.selectedMediaPath,
+    List<String>? selectedMediaPaths,
     this.isPinAdjusted,
     this.id,
   }) {
+    this.selectedMediaPaths = selectedMediaPaths ?? [];
     selectedCategory = selectedCategory ?? 'Hidden Dining';
-    selectedMediaPath = selectedMediaPath;
     isPinAdjusted = isPinAdjusted ?? false;
     id = id ?? '';
   }
 
   String? selectedCategory;
-  String? selectedMediaPath;
+  List<String> selectedMediaPaths = [];
   bool? isPinAdjusted;
   String? id;
 }

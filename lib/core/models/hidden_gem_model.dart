@@ -10,6 +10,7 @@ class HiddenGem {
   final String vibe;
   final double rating;
   final String imageUrl;
+  final List<String> mediaUrls; // FR3-1: Support multiple images/videos
   final double latitude;
   final double longitude;
   final String localsTip;
@@ -36,6 +37,7 @@ class HiddenGem {
     required this.vibe,
     required this.rating,
     required this.imageUrl,
+    this.mediaUrls = const [],
     required this.latitude,
     required this.longitude,
     required this.localsTip,
@@ -64,6 +66,7 @@ class HiddenGem {
       vibe: map['vibe'] ?? '',
       rating: (map['rating'] ?? 0.0).toDouble(),
       imageUrl: map['imageUrl'] ?? '',
+      mediaUrls: List<String>.from(map['mediaUrls'] ?? []),
       latitude: (map['latitude'] ?? 0.0).toDouble(),
       longitude: (map['longitude'] ?? 0.0).toDouble(),
       localsTip: map['localsTip'] ?? '',
@@ -99,6 +102,7 @@ class HiddenGem {
       'vibe': vibe,
       'rating': rating,
       'imageUrl': imageUrl,
+      'mediaUrls': mediaUrls,
       'latitude': latitude,
       'longitude': longitude,
       'localsTip': localsTip,
@@ -131,6 +135,7 @@ class HiddenGem {
     String? vibe,
     double? rating,
     String? imageUrl,
+    List<String>? mediaUrls,
     double? latitude,
     double? longitude,
     String? localsTip,
@@ -157,6 +162,7 @@ class HiddenGem {
       vibe: vibe ?? this.vibe,
       rating: rating ?? this.rating,
       imageUrl: imageUrl ?? this.imageUrl,
+      mediaUrls: mediaUrls ?? this.mediaUrls,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       localsTip: localsTip ?? this.localsTip,

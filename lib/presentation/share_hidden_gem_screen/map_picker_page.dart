@@ -18,7 +18,7 @@ class MapPickerPage extends StatefulWidget {
 class _MapPickerPageState extends State<MapPickerPage> {
   late LatLng _selectedLocation;
   final MapController _mapController = MapController();
-  
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +53,8 @@ class _MapPickerPageState extends State<MapPickerPage> {
             options: MapOptions(
               initialCenter: _selectedLocation,
               initialZoom: 15,
-              onTap: (tapPosition, point) => setState(() => _selectedLocation = point),
+              onTap: (tapPosition, point) =>
+                  setState(() => _selectedLocation = point),
             ),
             children: [
               TileLayer(
@@ -66,7 +67,11 @@ class _MapPickerPageState extends State<MapPickerPage> {
                     point: _selectedLocation,
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40,
+                    ),
                   ),
                 ],
               ),
@@ -81,7 +86,9 @@ class _MapPickerPageState extends State<MapPickerPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 10)],
+                boxShadow: [
+                  const BoxShadow(color: Colors.black12, blurRadius: 10),
+                ],
               ),
               child: const Text(
                 'Tap on the map to pin the exact location of your hidden gem.',

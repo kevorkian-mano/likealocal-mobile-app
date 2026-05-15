@@ -1,6 +1,7 @@
 import '../../widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../core/providers/user_provider.dart';
 
 class PreferenceSummaryScreen extends StatelessWidget {
   const PreferenceSummaryScreen({super.key});
@@ -11,11 +12,13 @@ class PreferenceSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vibes = [
-      'Gastronomy Enthusiast',
-      'Historical Soul',
-      'Nightlife Seeker',
-    ];
+    final userProvider = Provider.of<UserProvider>(context);
+    final selectedVibes = userProvider.user?.selectedVibes ?? [];
+
+    // Inferred types based on selected vibes for a more "AI-feeling" summary
+    final vibes = selectedVibes.isNotEmpty
+        ? selectedVibes.map((v) => '${v} Explorer').toList()
+        : ['Gastronomy Enthusiast', 'Historical Soul', 'Nightlife Seeker'];
 
     return Scaffold(
       backgroundColor: Color(0xFF1B3022), // Midnight Pine

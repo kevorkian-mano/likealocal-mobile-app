@@ -395,6 +395,20 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                   hintText: 'Ask a local...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(fontSize: 14, color: Color(0xFF4D6353)),
+                  suffixIcon: GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Listening... (Speech to Text hook)'),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.mic_none,
+                      color: Color(0xFF1B3022),
+                      size: 20,
+                    ),
+                  ),
                 ),
                 onSubmitted: _sendMessage,
                 textInputAction: TextInputAction.send,

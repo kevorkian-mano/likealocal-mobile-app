@@ -1,10 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
     app: Firebase.app(),
     databaseId: 'default',
@@ -73,6 +75,14 @@ class AuthService {
         email: email.trim().toLowerCase(),
         password: password,
       );
+
+      // FR1-2: Force email verification
+      if (!credential.user!.emailVerified) {
+        await credential.user!.sendEmailVerification();
+        await _auth.signOut();
+        throw 'VERIFICATION_REQUIRED';
+      }
+
       // FR11-6: Check if user is banned
       final userDoc = await _firestore
           .collection('users')
@@ -88,6 +98,60 @@ class AuthService {
     } catch (e) {
       if (e is String) rethrow;
       throw 'An unexpected error occurred. Please try again.';
+    }
+  }
+
+  // Google Sign-In (FR1-2)
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (!doc.exists) {
+          // Initialize new Google user
+          await _firestore.collection('users').doc(user.uid).set({
+            'fullName': user.displayName ?? 'Explorer',
+            'email': user.email ?? '',
+            'avatarUrl': user.photoURL ?? '',
+            'bio': '',
+            'createdAt': FieldValue.serverTimestamp(),
+            'selectedVibes': [],
+            'karmaPoints': 10, // Bonus for Google sign up
+            'isSuperUser': false,
+            'isAdmin': false,
+            'isPro': false,
+            'contributionStreak': 0,
+            'badges': [],
+            'savedGems': [],
+            'chatsStartedToday': 0,
+            'lastChatResetDate': null,
+            'lastContributionTime': null,
+            'acceptsMessages': true,
+            'isDndEnabled': false,
+            'dndStartHour': 22,
+            'dndEndHour': 8,
+            'blockedUsers': [],
+            'isBanned': false,
+          });
+        }
+      }
+      return userCredential;
+    } catch (e) {
+      throw 'Google Sign-In failed: $e';
     }
   }
 

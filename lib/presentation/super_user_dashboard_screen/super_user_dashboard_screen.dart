@@ -94,6 +94,8 @@ class SuperUserDashboardScreen extends StatelessWidget {
                       const SizedBox(height: 32),
                       _buildImpactChart(totalViews, totalSaves),
                       const SizedBox(height: 32),
+                      _buildCommunityEngagement(context),
+                      const SizedBox(height: 32),
                       _buildBadgesSection(insights),
                       const SizedBox(height: 40),
                     ],
@@ -221,10 +223,23 @@ class SuperUserDashboardScreen extends StatelessWidget {
                         style: TextStyleHelper.instance.title20BoldOutfit
                             .copyWith(color: Colors.white),
                       ),
-                      Text(
-                        'Reputation Score: ${reputationScore.toStringAsFixed(0)}',
-                        style: TextStyleHelper.instance.label10MediumInter
-                            .copyWith(color: Colors.white70),
+                      Row(
+                        children: [
+                          Text(
+                            'Reputation Score: ${reputationScore.toStringAsFixed(0)}',
+                            style: TextStyleHelper.instance.label10MediumInter
+                                .copyWith(color: Colors.white70),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () => _showReputationInfo(context),
+                            child: const Icon(
+                              Icons.info_outline,
+                              color: Colors.white70,
+                              size: 10,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -733,6 +748,127 @@ class SuperUserDashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildCommunityEngagement(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Traveler Questions',
+              style: TextStyleHelper.instance.title18SemiBoldInter,
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Urgent',
+                style: TextStyle(
+                  color: Colors.red[900],
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildQuestionCard(
+          context,
+          'Sarah M.',
+          'Is the Art Garden open on Fridays? I heard there might be a private event.',
+          'Art Garden Zamalek',
+          '5m ago',
+        ),
+        const SizedBox(height: 12),
+        _buildQuestionCard(
+          context,
+          'Ahmed K.',
+          'Best time to visit for a quiet sunset view?',
+          'Sunset Peak',
+          '2h ago',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionCard(
+    BuildContext context,
+    String name,
+    String question,
+    String gemName,
+    String time,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Color(0x33C1C9C1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Color(0xFFE8F2E9),
+                child: Text(
+                  name[0],
+                  style: TextStyle(color: Color(0xFF1B3022)),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: TextStyleHelper.instance.body14BoldInter),
+                    Text(
+                      'Regarding $gemName',
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Text(time, style: TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
+          ),
+          SizedBox(height: 12),
+          Text(
+            question,
+            style: TextStyleHelper.instance.body14MediumInter.copyWith(
+              color: Color(0xFF4D6353),
+              height: 1.4,
+            ),
+          ),
+          SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.chatListScreen),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF1B3022),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Answer Question',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBadgesSection(SuperUserInsight insights) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,7 +891,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
 
   Widget _buildBadgeItem(Badge badge) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -764,12 +900,87 @@ class SuperUserDashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(badge.icon, style: TextStyle(fontSize: 18)),
-          SizedBox(width: 8),
+          Text(badge.icon, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
           Text(
             badge.name,
             style: TextStyleHelper.instance.body14BoldInter.copyWith(
               fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReputationInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: Color(0xFFFFD700)),
+            const SizedBox(width: 12),
+            Text(
+              'Score Breakdown',
+              style: TextStyleHelper.instance.title18SemiBoldInter,
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildRepRow('Karma Points', '0.45 pts/each'),
+            _buildRepRow('Approved Gems', '18 pts/each'),
+            _buildRepRow('Gem Views', '0.02 pts/each'),
+            _buildRepRow('Gem Saves', '0.25 pts/each'),
+            _buildRepRow('Trending Gems', '12 pts/each'),
+            const SizedBox(height: 16),
+            const Text(
+              'Your reputation reflects your standing as a trusted local guardian.',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Got it',
+              style: TextStyle(
+                color: Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRepRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF4D6353)),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1B3022),
             ),
           ),
         ],

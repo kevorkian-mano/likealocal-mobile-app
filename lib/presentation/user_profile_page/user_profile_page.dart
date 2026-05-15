@@ -6,6 +6,9 @@ import '../../core/providers/gems_provider.dart';
 import '../../core/models/hidden_gem_model.dart';
 import 'package:flutter/material.dart';
 
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../core/services/media_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 
@@ -18,6 +21,37 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _bioController = TextEditingController();
+
+  Future<void> _updateAvatar(
+    BuildContext context,
+    UserProvider userProvider,
+    String userId,
+  ) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+
+    if (image != null) {
+      try {
+        final String downloadUrl = await MediaService().uploadProfilePicture(
+          File(image.path),
+          userId,
+        );
+        await userProvider.updateProfile(avatarUrl: downloadUrl);
+        if (context.mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated!')),
+          );
+      } catch (e) {
+        if (context.mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      }
+    }
+  }
 
   Future<void> _editBio(BuildContext context, UserProvider userProvider) async {
     _bioController.text = userProvider.user?.bio ?? '';
@@ -44,6 +78,53 @@ class _UserProfilePageState extends State<UserProfilePage> {
           TextButton(
             onPressed: () async {
               await userProvider.updateProfile(bio: _bioController.text);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Save',
+              style: TextStyle(
+                color: Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editName(
+    BuildContext context,
+    UserProvider userProvider,
+  ) async {
+    final TextEditingController nameController = TextEditingController(
+      text: userProvider.user?.fullName ?? '',
+    );
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Edit Name',
+          style: TextStyleHelper.instance.title18SemiBold,
+        ),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            hintText: 'Enter your full name',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) return;
+              await userProvider.updateProfile(
+                fullName: nameController.text.trim(),
+              );
               Navigator.pop(context);
             },
             child: const Text(
@@ -90,16 +171,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 16),
                   _buildStatsRow(user),
                   const SizedBox(height: 16),
+                  _buildBadgeGallery(user),
+                  const SizedBox(height: 16),
                   _buildProCard(user),
                   const SizedBox(height: 24),
-                  _buildSectionHeader('MY EXPLORATION', 'New Map'),
+                  _buildSectionHeader('MY SAVED PINS', 'View Map', onTap: () => Navigator.pushNamed(context, AppRoutes.mapsPage)),
+                  _buildSavedPinsList(context, user),
+                  const SizedBox(height: 8),
                   _buildListRow(
-                    title: 'Personalized Maps',
-                    subtitle: '${user.karmaPoints ~/ 50} curated collections',
+                    title: 'Saved Places',
+                    subtitle: user.savedGems.isEmpty
+                        ? 'No places saved yet'
+                        : '${user.savedGems.length} place${user.savedGems.length == 1 ? '' : 's'} saved',
                     leadingColor: const Color(0x7FD3E8DB),
-                    icon: Icons.layers_outlined,
-                    onTap: () {},
+                    icon: Icons.push_pin_outlined,
+                    onTap: () => _showSavedGemsSheet(context, user),
                   ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('MY EXPLORATION', 'Explore'),
                   _buildListRow(
                     title: 'Nomad Premium',
                     subtitle: user.isPro
@@ -136,8 +225,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   _buildToggleRow(
                     title: 'Direct Messaging',
                     subtitle: 'Allow travelers to chat with you',
-                    value: true,
+                    value: user.acceptsMessages,
+                    onChanged: (val) =>
+                        userProvider.updateProfile(acceptsMessages: val),
                   ),
+                  _buildToggleRow(
+                    title: 'Do Not Disturb',
+                    subtitle: 'Auto-decline messages during rest hours',
+                    value: user.isDndEnabled,
+                    onChanged: (val) =>
+                        userProvider.updateProfile(isDndEnabled: val),
+                  ),
+                  if (user.isDndEnabled)
+                    _buildDndHoursRow(context, userProvider, user),
                   const SizedBox(height: 24),
                   _buildSectionHeader('MY CONTRIBUTIONS', 'Manage'),
                   _buildMyContributionsList(context),
@@ -238,9 +338,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ),
             GestureDetector(
-              onTap: () {
-                // Implementation for FR1-11 Avatar Update would go here
-              },
+              onTap: () => _updateAvatar(context, userProvider, user.id),
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
@@ -257,9 +355,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ],
         ),
         const SizedBox(height: 12),
-        Text(
-          user.fullName,
-          style: TextStyleHelper.instance.title20BoldPlusJakartaSans,
+        GestureDetector(
+          onTap: () => _editName(context, userProvider),
+          child: Text(
+            user.fullName,
+            style: TextStyleHelper.instance.title20BoldPlusJakartaSans,
+          ),
         ),
         if (user.isSuperUser) ...[
           const SizedBox(height: 10),
@@ -475,7 +576,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title, String action) {
+  Widget _buildSectionHeader(String title, String action, {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -488,10 +589,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
               letterSpacing: 1.2,
             ),
           ),
-          Text(
-            action,
-            style: TextStyleHelper.instance.body12MediumInter.copyWith(
-              color: const Color(0xFF1B3022),
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              action,
+              style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                color: const Color(0xFF1B3022),
+                decoration: onTap != null ? TextDecoration.underline : null,
+                decorationColor: const Color(0xFF1B3022),
+              ),
             ),
           ),
         ],
@@ -548,6 +654,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     required String title,
     required String subtitle,
     required bool value,
+    required ValueChanged<bool> onChanged,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -584,15 +691,327 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
           Switch(
             value: value,
-            onChanged: (_) {},
-            activeThumbColor: const Color(0xFF1B3022),
+            onChanged: onChanged,
+            activeColor: const Color(0xFF1B3022),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildDndHoursRow(
+    BuildContext context,
+    UserProvider userProvider,
+    UserModel user,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.schedule, size: 16, color: Colors.grey),
+          const SizedBox(width: 8),
+          Text(
+            'Rest Hours: ',
+            style: TextStyleHelper.instance.body12MediumInter.copyWith(
+              color: Colors.grey,
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay(hour: user.dndStartHour, minute: 0),
+              );
+              if (time != null)
+                userProvider.updateProfile(dndStartHour: time.hour);
+            },
+            child: Text(
+              '${user.dndStartHour}:00',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Text(' to '),
+          TextButton(
+            onPressed: () async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay(hour: user.dndEndHour, minute: 0),
+              );
+              if (time != null)
+                userProvider.updateProfile(dndEndHour: time.hour);
+            },
+            child: Text(
+              '${user.dndEndHour}:00',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // FR3-5: Real saved gems list from Firestore
+  Widget _buildSavedPinsList(BuildContext context, UserModel user) {
+    if (user.savedGems.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Text(
+          'No saved places yet. Explore and pin your favorites!',
+          style: TextStyleHelper.instance.body14MediumInter.copyWith(
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+
+    return Consumer<GemsProvider>(
+      builder: (context, gemsProvider, _) {
+        final savedGems = gemsProvider.gems
+            .where((g) => user.savedGems.contains(g.id))
+            .toList();
+
+        if (savedGems.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Loading saved places...',
+              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                color: Colors.grey,
+              ),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 110,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: savedGems.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final gem = savedGems[index];
+              return GestureDetector(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.placeDetailsScreen,
+                  arguments: gem,
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: const Color(0xFFD7E8DE),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: gem.imageUrl.isNotEmpty
+                            ? Image.network(
+                                gem.imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.image_not_supported,
+                                  color: Color(0xFF1B3022),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.place,
+                                color: Color(0xFF1B3022),
+                                size: 32,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        gem.name,
+                        style: TextStyleHelper.instance.label10BoldInter,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSavedGemsSheet(BuildContext context, UserModel user) {
+    final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+    final savedGems = gemsProvider.gems
+        .where((g) => user.savedGems.contains(g.id))
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'My Saved Places',
+                    style: TextStyleHelper.instance.title18SemiBold,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7E8DE),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${savedGems.length} saved',
+                      style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                        color: const Color(0xFF1B3022),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: savedGems.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.push_pin_outlined,
+                            size: 64,
+                            color: Color(0xFF1B3022),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No saved places yet',
+                            style: TextStyleHelper.instance.title18SemiBold,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap the pin icon on any hidden gem to save it here',
+                            style: TextStyleHelper.instance.body14MediumInter
+                                .copyWith(color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: savedGems.length,
+                      itemBuilder: (context, index) {
+                        final gem = savedGems[index];
+                        return ListTile(
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.placeDetailsScreen,
+                              arguments: gem,
+                            );
+                          },
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: gem.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    gem.imageUrl,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 56,
+                                      height: 56,
+                                      color: const Color(0xFFD7E8DE),
+                                      child: const Icon(
+                                        Icons.place,
+                                        color: Color(0xFF1B3022),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 56,
+                                    height: 56,
+                                    color: const Color(0xFFD7E8DE),
+                                    child: const Icon(
+                                      Icons.place,
+                                      color: Color(0xFF1B3022),
+                                    ),
+                                  ),
+                          ),
+                          title: Text(
+                            gem.name,
+                            style: TextStyleHelper.instance.body14BoldInter,
+                          ),
+                          subtitle: Text(
+                            gem.category,
+                            style: TextStyleHelper.instance.body12MediumInter
+                                .copyWith(color: Colors.grey[600]),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                color: Color(0xFFFFD700),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                gem.rating.toStringAsFixed(1),
+                                style: TextStyleHelper.instance.body12MediumInter,
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLogoutSection(BuildContext context, UserProvider userProvider) {
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
@@ -889,3 +1308,4 @@ class _BadgeIcon extends StatelessWidget {
     );
   }
 }
+

@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../core/models/gem_review_model.dart';
 import '../../core/models/reminder_model.dart';
+import '../../core/models/user_model.dart';
+import '../../core/providers/chat_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import '../../core/models/chat_model.dart';
 import '../../routes/app_routes.dart';
 import '../../core/providers/user_provider.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final HiddenGem? gem;
@@ -37,6 +40,8 @@ class PlaceDetailsScreen extends StatefulWidget {
 }
 
 class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _isSpeaking = false;
   @override
   void initState() {
     super.initState();
@@ -74,15 +79,20 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           children: [
             Stack(
               children: [
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 380,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(displayGem.imageUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  child: displayGem.mediaUrls.isEmpty
+                      ? Image.network(displayGem.imageUrl, fit: BoxFit.cover)
+                      : PageView.builder(
+                          itemCount: displayGem.mediaUrls.length,
+                          itemBuilder: (context, index) {
+                            return Image.network(
+                              displayGem.mediaUrls[index],
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                 ),
                 Positioned(
                   left: 20,
@@ -233,36 +243,44 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                             );
                             return;
                           }
-                          try {
-                            await Provider.of<GemsProvider>(
-                              context,
-                              listen: false,
-                            ).toggleSaveGem(
-                              currentUser.id,
-                              displayGem.id,
-                              isSaved,
-                            );
+                            // OPTIMISTIC UPDATE: Update UI instantly
+                            Provider.of<UserProvider>(context, listen: false)
+                                .updateSavedGemsLocally(displayGem.id, isSaved);
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isSaved
-                                      ? 'Removed from favorites'
-                                      : 'Saved to favorites',
-                                ),
-                              ),
-                            );
-                          } catch (e) {
-                            if (e.toString().contains('LIMIT_REACHED')) {
-                              PremiumUpgradeSheet.show(context);
-                            } else {
+                            try {
+                              await Provider.of<GemsProvider>(
+                                context,
+                                listen: false,
+                              ).toggleSaveGem(
+                                currentUser.id,
+                                displayGem.id,
+                                isSaved,
+                              );
+
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Failed to update favorites'),
+                                SnackBar(
+                                  content: Text(
+                                    isSaved
+                                        ? 'Removed from favorites'
+                                        : 'Saved to favorites',
+                                  ),
                                 ),
                               );
+                            } catch (e) {
+                              // REVERT OPTIMISTIC UPDATE ON FAILURE
+                              Provider.of<UserProvider>(context, listen: false)
+                                  .updateSavedGemsLocally(displayGem.id, !isSaved);
+                                  
+                              if (e.toString().contains('LIMIT_REACHED')) {
+                                PremiumUpgradeSheet.show(context);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to update favorites'),
+                                  ),
+                                );
+                              }
                             }
-                          }
                         },
                         child: Icon(
                           isSaved ? Icons.bookmark : Icons.bookmark_outline,
@@ -284,7 +302,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Zamalek, Cairo',
+                        'Locally Verified Area',
                         style: TextStyleHelper.instance.body14MediumInter
                             .copyWith(color: const Color(0xFF4D6353)),
                       ),
@@ -292,6 +310,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   ),
                   if (isOwner) _buildStatusBadge(displayGem.status),
                   const SizedBox(height: 24),
+                  _buildTTSButton(displayGem.description),
+                  const SizedBox(height: 12),
                   Text(
                     displayGem.description,
                     style: TextStyleHelper.instance.body14MediumInter.copyWith(
@@ -333,6 +353,24 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                               style: TextStyleHelper.instance.body14BoldInter
                                   .copyWith(color: const Color(0xFF191C1A)),
                             ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Reading tip aloud... (TTS feature hook)',
+                                    ),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: const Icon(
+                                Icons.volume_up_outlined,
+                                color: Color(0xFF1B3022),
+                                size: 18,
+                              ),
+                            ),
                             if (displayGem.contributorIsSuperUser) ...[
                               const Spacer(),
                               Container(
@@ -373,13 +411,22 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          displayGem.localsTip,
-                          style: TextStyleHelper.instance.body14MediumInter
-                              .copyWith(
-                                color: const Color(0xFF4D6353),
-                                height: 1.5,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                displayGem.localsTip,
+                                style: TextStyleHelper
+                                    .instance
+                                    .body14MediumInter
+                                    .copyWith(
+                                      color: const Color(0xFF4D6353),
+                                      height: 1.5,
+                                    ),
                               ),
+                            ),
+                            _buildTTSButton(displayGem.localsTip),
+                          ],
                         ),
                       ],
                     ),
@@ -425,7 +472,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         child: _buildActionButton(
                           icon: Icons.map_outlined,
                           label: 'Show Map',
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.mapsPage,
+                              arguments: displayGem,
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -459,34 +512,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.chat_bubble_outline,
-                          label: 'Chat',
-                          onPressed: () {
-                            if (currentUser == null) {
-                              _showGuestSignUpPrompt(
-                                context,
-                                'You need an account to chat with the post owner.',
-                              );
-                              return;
-                            }
-                            final chatPreview = ChatPreview(
-                              id: 'new_${displayGem.name}',
-                              userName: 'Local Contributor',
-                              userAvatar:
-                                  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150',
-                              lastMessage:
-                                  'Ask me anything about ${displayGem.name}!',
-                              lastMessageTime: DateTime.now(),
-                              relatedGemName: displayGem.name,
-                            );
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.chatDetailsScreen,
-                              arguments: chatPreview,
-                            );
-                          },
-                          isPrimary: true,
+                        child: _buildChatActionButton(
+                          context,
+                          displayGem,
+                          currentUser,
                         ),
                       ),
                     ],
@@ -706,6 +735,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: List.generate(12, (index) {
+            final now = DateTime.now().hour;
+            final isCurrentHour = (index * 2) <= now && now < ((index + 1) * 2);
             final height = [
               10,
               15,
@@ -724,7 +755,9 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               width: 20,
               height: height.toDouble(),
               decoration: BoxDecoration(
-                color: index == 4 ? Color(0xFF1B3022) : Color(0xFFD7E8DE),
+                color: isCurrentHour
+                    ? const Color(0xFF1B3022)
+                    : const Color(0xFFD7E8DE),
                 borderRadius: BorderRadius.circular(4),
               ),
             );
@@ -890,12 +923,24 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           height: 100,
           child: Consumer<GemsProvider>(
             builder: (context, provider, child) {
+              final similarGems = provider.approvedGems
+                  .where(
+                    (g) =>
+                        g.id != widget.gem!.id &&
+                        (g.vibe == widget.gem!.vibe ||
+                            g.category == widget.gem!.category),
+                  )
+                  .toList();
+
+              if (similarGems.isEmpty)
+                return const Text('No similar vibes found yet.');
+
               return ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: provider.gems.length,
-                separatorBuilder: (context, index) => SizedBox(width: 12),
+                itemCount: similarGems.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
-                  final gem = provider.gems[index];
+                  final gem = similarGems[index];
                   return GestureDetector(
                     onTap: () {
                       Navigator.pushReplacementNamed(
@@ -1659,9 +1704,40 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Manage Your Contribution',
-          style: TextStyleHelper.instance.body14BoldInter,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Manage Your Contribution',
+              style: TextStyleHelper.instance.body14BoldInter,
+            ),
+            // FR3-16: Engagement metrics
+            Row(
+              children: [
+                const Icon(
+                  Icons.visibility_outlined,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${gem.views}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.bookmark_outline,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${gem.saves}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Row(
@@ -1742,6 +1818,169 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTTSButton(String text) {
+    return GestureDetector(
+      onTap: () async {
+        if (_isSpeaking) {
+          await _flutterTts.stop();
+          setState(() => _isSpeaking = false);
+        } else {
+          setState(() => _isSpeaking = true);
+          await _flutterTts.setLanguage("en-US");
+          await _flutterTts.setPitch(1.0);
+          await _flutterTts.speak(text);
+          _flutterTts.setCompletionHandler(() {
+            setState(() => _isSpeaking = false);
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F2E9),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0xFF1B3022).withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isSpeaking
+                  ? Icons.stop_circle_outlined
+                  : Icons.volume_up_outlined,
+              color: const Color(0xFF1B3022),
+              size: 16,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _isSpeaking ? 'Stop Reading' : 'Listen to Description',
+              style: TextStyleHelper.instance.label10BoldInter.copyWith(
+                color: const Color(0xFF1B3022),
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatActionButton(
+    BuildContext context,
+    HiddenGem gem,
+    UserModel? currentUser,
+  ) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(gem.contributorId)
+          .get(),
+      builder: (context, snapshot) {
+        bool isAvailable = true;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final acceptsMessages = data['acceptsMessages'] ?? true;
+          final isDndEnabled = data['isDndEnabled'] ?? false;
+          final start = data['dndStartHour'] ?? 22;
+          final end = data['dndEndHour'] ?? 8;
+
+          if (!acceptsMessages) isAvailable = false;
+          if (isDndEnabled) {
+            final now = DateTime.now().hour;
+            if (start > end) {
+              if (now >= start || now < end) isAvailable = false;
+            } else {
+              if (now >= start && now < end) isAvailable = false;
+            }
+          }
+        }
+
+        return Stack(
+          alignment: Alignment.topRight,
+          children: [
+            _buildActionButton(
+              icon: Icons.chat_bubble_outline,
+              label: 'Chat',
+              onPressed: () async {
+                if (currentUser == null) {
+                  _showGuestSignUpPrompt(
+                    context,
+                    'You need an account to chat with the post owner.',
+                  );
+                  return;
+                }
+
+                if (!isAvailable) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Contributor is currently offline or has disabled chats.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  final chatProvider = Provider.of<ChatProvider>(
+                    context,
+                    listen: false,
+                  );
+                  await chatProvider.startNewChat(
+                    currentUser,
+                    gem.contributorId,
+                    gem.name,
+                  );
+
+                  final chatId = currentUser.id.compareTo(gem.contributorId) < 0
+                      ? '${currentUser.id}_${gem.contributorId}'
+                      : '${gem.contributorId}_${currentUser.id}';
+
+                  final chatPreview = ChatPreview(
+                    id: chatId,
+                    userName: 'Local Contributor',
+                    userAvatar:
+                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150',
+                    lastMessage: 'Ask me anything about ${gem.name}!',
+                    lastMessageTime: DateTime.now(),
+                    relatedGemName: gem.name,
+                    targetUserId: gem.contributorId,
+                  );
+
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.chatDetailsScreen,
+                    arguments: chatPreview,
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                    ),
+                  );
+                }
+              },
+              isPrimary: true,
+            ),
+            if (!isAvailable)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.grey,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -80,8 +80,6 @@ class AdminModerationQueueScreen extends StatelessWidget {
   ) {
     return StatefulBuilder(
       builder: (context, setState) {
-        bool isExpanded =
-            false; // Note: Simple state for demo, ideally part of a list state
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,

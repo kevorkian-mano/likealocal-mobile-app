@@ -28,14 +28,36 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: 'Personal Information',
                   subtitle: 'Update your details and avatar',
-                  onTap: () {},
+                  onTap: () => _showPersonalInformationDialog(context),
                 ),
                 _buildDivider(),
                 _buildRowItem(
                   icon: Icons.verified_user_outlined,
                   title: 'Trust & Verification',
                   subtitle: 'Manage identity documents',
-                  onTap: () {},
+                  onTap: () => _showTrustVerificationDialog(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildSectionTitle('PREFERENCES'),
+            _buildCard(
+              children: [
+                _buildRowItem(
+                  icon: Icons.language_outlined,
+                  title: 'Language',
+                  subtitle: 'English (United Kingdom)',
+                  onTap: () => _showLanguageDialog(context),
+                ),
+                _buildDivider(),
+                _buildRowItem(
+                  icon: Icons.notifications_none,
+                  title: 'Push Notifications',
+                  subtitle: 'Configure your alerts',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.notificationSettingsScreen,
+                  ),
                 ),
               ],
             ),
@@ -106,14 +128,14 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.help_outline,
                   title: 'Help Center',
                   subtitle: null,
-                  onTap: () {},
+                  onTap: () => _showHelpCenterDialog(context),
                 ),
                 _buildDivider(),
                 _buildRowItem(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Terms & Privacy Policy',
                   subtitle: null,
-                  onTap: () {},
+                  onTap: () => _showTermsDialog(context),
                 ),
               ],
             ),
@@ -313,6 +335,302 @@ class SettingsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(9999),
       ),
       child: Icon(icon, color: const Color(0xFF1B3022), size: 20),
+    );
+  }
+
+  void _showPersonalInformationDialog(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    if (user == null) return;
+
+    final nameController = TextEditingController(text: user.fullName);
+    final bioController = TextEditingController(text: user.bio);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Personal Information',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: bioController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Bio',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await userProvider.updateProfile(
+                fullName: nameController.text.trim(),
+                bio: bioController.text.trim(),
+              );
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1B3022),
+            ),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTrustVerificationDialog(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Trust & Verification'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.email_outlined,
+                color: user?.email != null ? Colors.green : Colors.grey,
+              ),
+              title: const Text('Email Verification'),
+              trailing: Text(user?.email != null ? 'Verified' : 'Pending'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.badge_outlined, color: Colors.grey),
+              title: const Text('Identity Document'),
+              trailing: const Text('Not Submitted'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('ID verification feature coming soon!'),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Select Language'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('English (United Kingdom)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Arabic (Egypt)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('French (France)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpCenterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline, color: Color(0xFF1B3022)),
+            SizedBox(width: 12),
+            Text(
+              'Help Center',
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1B3022),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHelpItem(Icons.map_outlined, 'How to discover hidden gems',
+                'Use the Explore or Map tab to find curated secret spots near you.'),
+            const SizedBox(height: 12),
+            _buildHelpItem(Icons.add_location_outlined, 'How to share a gem',
+                'Tap the + button and fill in the place details, photos, and a local tip.'),
+            const SizedBox(height: 12),
+            _buildHelpItem(Icons.push_pin_outlined, 'How to save places',
+                'Tap the pin icon on any gem to save it to your profile.'),
+            const SizedBox(height: 12),
+            _buildHelpItem(Icons.star_outline, 'How to go Premium',
+                'Tap Nomad Premium in your profile to unlock unlimited pins and AI features.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(
+                color: Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpItem(IconData icon, String title, String body) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF1B3022)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'Inter',
+                  color: Color(0xFF424941),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showTermsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.privacy_tip_outlined, color: Color(0xFF1B3022)),
+            SizedBox(width: 12),
+            Text(
+              'Terms & Privacy',
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1B3022),
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Terms of Service',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'By using LikeALocal, you agree to share content that is accurate, respectful, and not misleading. Contributions are subject to community review and moderation.',
+                style: TextStyle(fontSize: 12, fontFamily: 'Inter', color: Color(0xFF424941), height: 1.5),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Privacy Policy',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'We collect your location, profile data, and contribution history to provide personalized recommendations. Your data is stored securely in Firebase and never sold to third parties.',
+                style: TextStyle(fontSize: 12, fontFamily: 'Inter', color: Color(0xFF424941), height: 1.5),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Data Deletion',
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'You can delete your account and all associated data at any time from your Profile page.',
+                style: TextStyle(fontSize: 12, fontFamily: 'Inter', color: Color(0xFF424941), height: 1.5),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(
+                color: Color(0xFF1B3022),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

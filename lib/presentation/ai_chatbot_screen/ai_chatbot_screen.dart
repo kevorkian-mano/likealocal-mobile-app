@@ -4,6 +4,7 @@ import '../../core/providers/user_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
 import '../../core/models/hidden_gem_model.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class AIChatbotScreen extends StatefulWidget {
   const AIChatbotScreen({super.key});
@@ -22,6 +23,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
     },
   ];
   bool _isTyping = false;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
   Widget build(BuildContext context) {
@@ -248,12 +251,38 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
             ),
           ),
           IconButton(
+            onPressed: _listen,
+            icon: Icon(
+              _isListening ? Icons.mic : Icons.mic_none,
+              color: _isListening ? Colors.red : appTheme.midnightPine,
+            ),
+          ),
+          IconButton(
             onPressed: () => _sendMessage(_controller.text),
             icon: Icon(Icons.send, color: appTheme.midnightPine),
           ),
         ],
       ),
     );
+  }
+
+  void _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) {
+            setState(() {
+              _controller.text = val.recognizedWords;
+            });
+          },
+        );
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
   }
 
   void _sendMessage(String text) async {

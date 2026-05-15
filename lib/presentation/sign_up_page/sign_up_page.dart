@@ -80,13 +80,32 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  void _handleSocialSignUp(String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$provider sign-up coming soon'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  void _handleSocialSignUp(String provider) async {
+    if (provider == 'Google') {
+      setState(() => _isLoading = true);
+      try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.signInWithGoogle();
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.explorePageWithNotifScreen,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google Sign-In failed: $e')));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$provider sign-up coming soon'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _navigateToSignIn() {

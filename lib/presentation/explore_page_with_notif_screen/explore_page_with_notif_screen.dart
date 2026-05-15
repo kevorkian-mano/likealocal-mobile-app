@@ -187,24 +187,35 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                   );
                                 },
                               ),
+                              _buildBackgroundRadar(),
                             ],
                           ),
                         ),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              _buildChip('Food', appTheme.midnightPine, Colors.white),
-                              const SizedBox(width: 8),
-                              _buildChip('Adventure', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
-                              const SizedBox(width: 8),
-                              _buildChip('Culture', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
-                              const SizedBox(width: 8),
-                              _buildChip('Chill', const Color(0xFFD7E8DE), const Color(0xFF4D6353)),
-                            ],
-                          ),
+                        Consumer<GemsProvider>(
+                          builder: (context, gemsProvider, _) {
+                            final categories = gemsProvider.uniqueCategories;
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: categories.map((cat) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _searchQuery = cat),
+                                    child: _buildChip(
+                                      cat,
+                                      _searchQuery == cat ? appTheme.midnightPine : const Color(0xFFD7E8DE),
+                                      _searchQuery == cat ? Colors.white : const Color(0xFF4D6353),
+                                    ),
+                                  ),
+                                )).toList(),
+                              ),
+                            );
+                          },
                         ),
+                        const SizedBox(height: 16),
+                        _buildAIItinerarySection(),
+                        const SizedBox(height: 16),
                         SizedBox(height: 24),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -307,7 +318,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                                   if (!isPremium) {
                                     PremiumUpgradeSheet.show(context);
                                   } else {
-                                    _generateAiItinerary(context);
+                                    _generateNewItinerary(context);
                                   }
                                 },
                                 child: Container(
@@ -643,7 +654,7 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       if (matches.isNotEmpty) {
         selectedGem = (matches..shuffle()).first;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✨ Found a gem matching your vibe!')),
+          const SnackBar(content: Text('âœ¨ Found a gem matching your vibe!')),
         );
       }
     }
@@ -782,8 +793,9 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
                             onTap: () async {
                               final user = userProvider.user;
                               if (user == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Sign up to save your favourite places!')),
+                                _showGuestSignUpPrompt(
+                                  context, 
+                                  'Sign up to save your favourite local gems and build your personal collection.'
                                 );
                                 return;
                               }
@@ -985,7 +997,314 @@ class _ExplorePageWithNotifScreenState extends State<ExplorePageWithNotifScreen>
       },
     );
   }
+  void _showGuestSignUpPrompt(BuildContext context, String message) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_outline, size: 64, color: Color(0xFF1B3022)),
+            const SizedBox(height: 16),
+            Text(
+              'Sign Up Required',
+              style: TextStyleHelper.instance.title20BoldOutfit,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1B3022),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.signUpPage);
+                },
+                child: const Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, AppRoutes.signInPage);
+              },
+              child: const Text('Already have an account? Log In', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Advanced Filter', style: TextStyleHelper.instance.title20BoldOutfit),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Legends Only (Super Users)', style: TextStyleHelper.instance.body14BoldInter),
+                  Switch(
+                    value: _superUserOnly,
+                    onChanged: (val) {
+                      setModalState(() => _superUserOnly = val);
+                      setState(() => _superUserOnly = val);
+                    },
+                    activeColor: const Color(0xFF1B3022),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAIItinerarySection() {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) {
+        if (!userProvider.isAuthenticated) return const SizedBox.shrink();
+        
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [appTheme.midnightPine, const Color(0xFF3E5641)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: appTheme.midnightPine.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'AI Daily Itinerary',
+                    style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Personalized based on your vibes and recent interests.',
+                style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: 24),
+              _buildItineraryStep('Morning', 'Sunrise coffee at Sunset Peak', Icons.wb_sunny_outlined),
+              _buildItineraryStep('Afternoon', 'Local art walk in Zamalek', Icons.palette_outlined),
+              _buildItineraryStep('Evening', 'Hidden jazz bar discovery', Icons.nightlife_outlined),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _generateNewItinerary(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: appTheme.midnightPine,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  ),
+                  child: const Text('Refresh Itinerary', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildItineraryStep(String time, String activity, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFFFFD700), size: 18),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(time, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(activity, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _generateNewItinerary(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+    
+    // FR10-4: Restricted to Premium users
+    if (userProvider.user == null || (!userProvider.user!.isPro && !userProvider.user!.isSuperUser)) {
+      PremiumUpgradeSheet.show(context);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700))),
+    );
+
+    try {
+      final result = await AIService.generateItinerary(
+        userProvider.user?.selectedVibes ?? [],
+        gemsProvider.approvedGems.map((g) => g.name).toList(),
+      );
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 48),
+              const SizedBox(height: 16),
+              Text('Your AI Journey', style: TextStyleHelper.instance.title20BoldOutfit),
+              const SizedBox(height: 16),
+              Text(
+                result,
+                style: TextStyleHelper.instance.body14MediumInter.copyWith(height: 1.6),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: CustomButton(
+                  text: 'Sounds Perfect!',
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to sync with Localie AI.')));
+    }
+  }
+
+  Widget _buildBackgroundRadar() {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) {
+        if (!userProvider.isAuthenticated) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.only(left: 12),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const _RadarPulse(),
+              const Icon(Icons.radar, color: Color(0xFF1B3022), size: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
+class _RadarPulse extends StatefulWidget {
+  const _RadarPulse();
+  @override
+  __RadarPulseState createState() => __RadarPulseState();
+}
 
+class __RadarPulseState extends State<_RadarPulse> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFF1B3022).withOpacity(1 - _controller.value),
+              width: 2,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 

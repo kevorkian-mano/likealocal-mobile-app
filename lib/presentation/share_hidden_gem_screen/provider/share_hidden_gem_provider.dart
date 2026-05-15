@@ -57,10 +57,16 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
   bool isLoading = false;
   bool isAiAnalyzing = false;
-  File? selectedImageFile;
+  List<File> selectedImageFiles = [];
 
   ShareHiddenGemProvider() {
     _loadDraft();
+    // FR4-13: Auto-save listeners
+    placeTitleController.addListener(saveDraft);
+    locationController.addListener(saveDraft);
+    descriptionController.addListener(saveDraft);
+    localTipsController.addListener(saveDraft);
+    recommendedDishesController.addListener(saveDraft);
   }
 
   void handleExistingGem(HiddenGem? gem) {
@@ -116,12 +122,22 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
-      if (image != null) {
-        selectedImageFile = File(image.path);
-        shareHiddenGemModel.selectedMediaPath = image.path;
-        notifyListeners();
-        _runAiAnalysis();
+      if (source == ImageSource.gallery) {
+        final List<XFile> images = await _picker.pickMultiImage(imageQuality: 70);
+        if (images.isNotEmpty) {
+          selectedImageFiles.addAll(images.map((img) => File(img.path)));
+          shareHiddenGemModel.selectedMediaPaths.addAll(images.map((img) => img.path));
+          notifyListeners();
+          _runAiAnalysis();
+        }
+      } else {
+        final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
+        if (image != null) {
+          selectedImageFiles.add(File(image.path));
+          shareHiddenGemModel.selectedMediaPaths.add(image.path);
+          notifyListeners();
+          _runAiAnalysis();
+        }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
@@ -129,11 +145,11 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   }
 
   Future<void> _runAiAnalysis() async {
-    if (selectedImageFile == null) return;
+    if (selectedImageFiles.isEmpty) return;
     isAiAnalyzing = true;
     notifyListeners();
 
-    final suggestions = await AIService.suggestTagsAndCategory(selectedImageFile!);
+    final suggestions = await AIService.suggestTagsAndCategory(selectedImageFiles.first);
     
     if (suggestions['category'] != null) {
       shareHiddenGemModel.selectedCategory = suggestions['category'];
@@ -153,8 +169,8 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   Future<void> publishToommunity(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
-    if (selectedImageFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add a photo of the place')));
+    if (selectedImageFiles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one photo of the place')));
       return;
     }
 
@@ -168,8 +184,12 @@ class ShareHiddenGemProvider extends ChangeNotifier {
       if (user == null) throw Exception('Auth Error: Please sign in again.');
 
       // 1. Upload Media (Real Storage)
-      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-      final imageUrl = await _mediaService.uploadGemImage(selectedImageFile!, tempId);
+      final List<String> imageUrls = [];
+      for (int i = 0; i < selectedImageFiles.length; i++) {
+        final tempId = '${DateTime.now().millisecondsSinceEpoch}_$i';
+        final url = await _mediaService.uploadGemImage(selectedImageFiles[i], tempId);
+        imageUrls.add(url);
+      }
 
       // 2. Build Advanced Model
       final newGem = HiddenGem(
@@ -179,7 +199,8 @@ class ShareHiddenGemProvider extends ChangeNotifier {
         category: shareHiddenGemModel.selectedCategory ?? 'Other',
         vibe: 'Verified Local',
         rating: 5.0,
-        imageUrl: imageUrl,
+        imageUrl: imageUrls.first,
+        mediaUrls: imageUrls,
         latitude: selectedLat,
         longitude: selectedLng,
         localsTip: localTipsController.text.trim(),
@@ -189,7 +210,6 @@ class ShareHiddenGemProvider extends ChangeNotifier {
         status: user.isSuperUser ? GemStatus.approved : GemStatus.pending,
         uniqueCode: _generateGemCode(),
         createdAt: DateTime.now(),
-
       );
 
       // 3. Save & Award Gamification (FR4-1, FR4-14, FR4-15)
@@ -218,7 +238,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     descriptionController.clear();
     localTipsController.clear();
     recommendedDishesController.clear();
-    selectedImageFile = null;
+    selectedImageFiles.clear();
     shareHiddenGemModel = ShareHiddenGemModel();
     
     final prefs = await SharedPreferences.getInstance();

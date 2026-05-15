@@ -4,18 +4,17 @@
 class ShareHiddenGemModel {
   ShareHiddenGemModel({
     this.selectedCategory,
-    this.selectedMediaPath,
+    this.selectedMediaPaths = const [],
     this.isPinAdjusted,
     this.id,
   }) {
     selectedCategory = selectedCategory ?? 'Hidden Dining';
-    selectedMediaPath = selectedMediaPath;
     isPinAdjusted = isPinAdjusted ?? false;
     id = id ?? '';
   }
 
   String? selectedCategory;
-  String? selectedMediaPath;
+  List<String> selectedMediaPaths;
   bool? isPinAdjusted;
   String? id;
 }

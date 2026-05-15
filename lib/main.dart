@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/app_export.dart';
 
@@ -22,6 +23,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  await dotenv.load(fileName: ".env");
 
   // Enable Firestore offline persistence (works in low-connectivity areas)
   FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default').settings = const Settings(

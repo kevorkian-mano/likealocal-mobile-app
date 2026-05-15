@@ -6,6 +6,9 @@ import '../../core/providers/gems_provider.dart';
 import '../../core/models/hidden_gem_model.dart';
 import 'package:flutter/material.dart';
 
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../core/services/media_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 
@@ -18,6 +21,21 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _bioController = TextEditingController();
+
+  Future<void> _updateAvatar(BuildContext context, UserProvider userProvider, String userId) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    
+    if (image != null) {
+      try {
+        final String downloadUrl = await MediaService().uploadProfilePicture(File(image.path), userId);
+        await userProvider.updateProfile(avatarUrl: downloadUrl);
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile picture updated!')));
+      } catch (e) {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      }
+    }
+  }
 
   Future<void> _editBio(BuildContext context, UserProvider userProvider) async {
     _bioController.text = userProvider.user?.bio ?? '';
@@ -38,6 +56,34 @@ class _UserProfilePageState extends State<UserProfilePage> {
           TextButton(
             onPressed: () async {
               await userProvider.updateProfile(bio: _bioController.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editName(BuildContext context, UserProvider userProvider) async {
+    final TextEditingController nameController = TextEditingController(text: userProvider.user?.fullName ?? '');
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Name', style: TextStyleHelper.instance.title18SemiBold),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            hintText: 'Enter your full name',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) return;
+              await userProvider.updateProfile(fullName: nameController.text.trim());
               Navigator.pop(context);
             },
             child: const Text('Save', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold)),
@@ -74,6 +120,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 16),
                   _buildStatsRow(user),
                   const SizedBox(height: 16),
+                  _buildBadgeGallery(user),
+                  const SizedBox(height: 16),
                   _buildProCard(user),
                   const SizedBox(height: 24),
                   _buildSectionHeader('MY EXPLORATION', 'New Map'),
@@ -109,8 +157,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   _buildToggleRow(
                     title: 'Direct Messaging',
                     subtitle: 'Allow travelers to chat with you',
-                    value: true,
+                    value: user.acceptsMessages,
+                    onChanged: (val) => userProvider.updateProfile(acceptsMessages: val),
                   ),
+                  _buildToggleRow(
+                    title: 'Do Not Disturb',
+                    subtitle: 'Auto-decline messages during rest hours',
+                    value: user.isDndEnabled,
+                    onChanged: (val) => userProvider.updateProfile(isDndEnabled: val),
+                  ),
+                  if (user.isDndEnabled)
+                    _buildDndHoursRow(context, userProvider, user),
                   const SizedBox(height: 24),
                   _buildSectionHeader('MY CONTRIBUTIONS', 'Manage'),
                   _buildMyContributionsList(context),
@@ -200,9 +257,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 							),
 						),
 						GestureDetector(
-              onTap: () {
-                // Implementation for FR1-11 Avatar Update would go here
-              },
+              onTap: () => _updateAvatar(context, userProvider, user.id),
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
@@ -215,10 +270,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
 					],
 				),
 				const SizedBox(height: 12),
-				Text(
-					user.fullName,
-					style: TextStyleHelper.instance.title20BoldPlusJakartaSans,
-				),
+				GestureDetector(
+          onTap: () => _editName(context, userProvider),
+          child: Text(
+            user.fullName,
+            style: TextStyleHelper.instance.title20BoldPlusJakartaSans,
+          ),
+        ),
 				if (user.isSuperUser) ...[
 					const SizedBox(height: 10),
 					Container(
@@ -479,6 +537,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 		required String title,
 		required String subtitle,
 		required bool value,
+    required ValueChanged<bool> onChanged,
 	}) {
 		return Container(
 			padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -512,13 +571,50 @@ class _UserProfilePageState extends State<UserProfilePage> {
 					),
 					Switch(
 						value: value,
-						onChanged: (_) {},
+						onChanged: onChanged,
 						activeColor: const Color(0xFF1B3022),
 					),
 				],
 			),
 		);
 	}
+
+  Widget _buildDndHoursRow(BuildContext context, UserProvider userProvider, UserModel user) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.schedule, size: 16, color: Colors.grey),
+          const SizedBox(width: 8),
+          Text(
+            'Rest Hours: ',
+            style: TextStyleHelper.instance.body12MediumInter.copyWith(color: Colors.grey),
+          ),
+          TextButton(
+            onPressed: () async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay(hour: user.dndStartHour, minute: 0),
+              );
+              if (time != null) userProvider.updateProfile(dndStartHour: time.hour);
+            },
+            child: Text('${user.dndStartHour}:00', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          const Text(' to '),
+          TextButton(
+            onPressed: () async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay(hour: user.dndEndHour, minute: 0),
+              );
+              if (time != null) userProvider.updateProfile(dndEndHour: time.hour);
+            },
+            child: Text('${user.dndEndHour}:00', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
 	Widget _buildLogoutSection(BuildContext context, UserProvider userProvider) {
 		return Padding(

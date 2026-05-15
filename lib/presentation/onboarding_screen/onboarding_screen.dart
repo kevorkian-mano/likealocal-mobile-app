@@ -153,6 +153,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 16),
+                              TextButton(
+                                onPressed: () => Navigator.pushNamed(context, AppRoutes.pricingPage),
+                                child: Text(
+                                  'See Premium Nomad Benefits ',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
                             ],
                           );
                         },

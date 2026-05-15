@@ -206,6 +206,7 @@ class GemsProvider extends ChangeNotifier {
       vibe: gem.vibe,
       rating: gem.rating,
       imageUrl: gem.imageUrl,
+      mediaUrls: gem.mediaUrls,
       latitude: gem.latitude,
       longitude: gem.longitude,
       localsTip: gem.localsTip,
@@ -215,6 +216,7 @@ class GemsProvider extends ChangeNotifier {
       isVerified: gem.isVerified,
       contributorId: user.id,
       status: finalStatus,
+      uniqueCode: gem.uniqueCode,
       contributorIsSuperUser: user.isSuperUser,
     );
 
@@ -505,6 +507,12 @@ class GemsProvider extends ChangeNotifier {
     for (var doc in boosted.docs) {
       await doc.reference.update({'isBoosted': false, 'boostedUntil': null});
     }
+  }
+
+  List<String> get uniqueCategories {
+    final categories = _gems.map((g) => g.category).where((c) => c.isNotEmpty).toSet().toList();
+    if (categories.isEmpty) return ['Food', 'Culture', 'Adventure', 'Nature'];
+    return categories;
   }
 }
 

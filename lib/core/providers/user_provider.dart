@@ -56,6 +56,18 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authService.signInWithGoogle();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   Future<void> signUp(String email, String password, String fullName) async {
     _isLoading = true;
     notifyListeners();
@@ -78,6 +90,7 @@ class UserProvider extends ChangeNotifier {
 
   /// Updates any subset of the user's profile fields in Firestore.
   Future<void> updateProfile({
+    String? fullName,
     String? bio,
     String? avatarUrl,
     List<String>? selectedVibes,
@@ -89,6 +102,7 @@ class UserProvider extends ChangeNotifier {
     if (_user == null) return;
 
     final Map<String, dynamic> updates = {};
+    if (fullName != null) updates['fullName'] = fullName;
     if (bio != null) updates['bio'] = bio;
     if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
     if (selectedVibes != null) updates['selectedVibes'] = selectedVibes;
@@ -107,6 +121,7 @@ class UserProvider extends ChangeNotifier {
 
       // Refresh local state immediately using copyWith
       _user = _user!.copyWith(
+        fullName: fullName,
         avatarUrl: avatarUrl,
         bio: bio,
         selectedVibes: selectedVibes,
@@ -240,6 +255,8 @@ class UserProvider extends ChangeNotifier {
   // FR11-7: Broadcast notification (admin only)
   Future<void> broadcastNotification(String title, String message) async {
     if (_user == null || !_user!.isAdmin) return;
+    
+    // 1. Persist in Firestore for in-app banner
     await FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'default')
         .collection('notifications')
         .add({
@@ -249,6 +266,9 @@ class UserProvider extends ChangeNotifier {
       'isActive': true,
       'createdBy': _user!.id,
     });
+
+    // 2. Send via FCM Topic (simulation for real backend connection)
+    await NotificationService().sendBroadcast(title, message);
   }
 
   // FR11-7: Stream of active admin notifications

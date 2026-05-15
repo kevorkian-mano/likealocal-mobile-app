@@ -28,13 +28,32 @@ class SettingsPage extends StatelessWidget {
 									icon: Icons.person_outline,
 									title: 'Personal Information',
 									subtitle: 'Update your details and avatar',
-									onTap: () {},
+									onTap: () => _showPersonalInformationDialog(context),
 								),
 								_buildDivider(),
 								_buildRowItem(
 									icon: Icons.verified_user_outlined,
 									title: 'Trust & Verification',
 									subtitle: 'Manage identity documents',
+									onTap: () => _showTrustVerificationDialog(context),
+								),
+							],
+						),
+						const SizedBox(height: 24),
+						_buildSectionTitle('PREFERENCES'),
+						_buildCard(
+							children: [
+								_buildRowItem(
+									icon: Icons.language_outlined,
+									title: 'Language',
+									subtitle: 'English (United Kingdom)',
+									onTap: () => _showLanguageDialog(context),
+								),
+								_buildDivider(),
+								_buildRowItem(
+									icon: Icons.notifications_none,
+									title: 'Push Notifications',
+									subtitle: 'Configure your alerts',
 									onTap: () {},
 								),
 							],
@@ -314,4 +333,97 @@ class SettingsPage extends StatelessWidget {
 			child: Icon(icon, color: const Color(0xFF1B3022), size: 20),
 		);
 	}
+
+  void _showPersonalInformationDialog(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    if (user == null) return;
+
+    final nameController = TextEditingController(text: user.fullName);
+    final bioController = TextEditingController(text: user.bio);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Personal Information', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: bioController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Bio', border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              await userProvider.updateProfile(
+                fullName: nameController.text.trim(),
+                bio: bioController.text.trim(),
+              );
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3022)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTrustVerificationDialog(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Trust & Verification'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.email_outlined, color: user?.isEmailVerified == true ? Colors.green : Colors.grey),
+              title: const Text('Email Verification'),
+              trailing: Text(user?.isEmailVerified == true ? 'Verified' : 'Pending'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.badge_outlined, color: Colors.grey),
+              title: const Text('Identity Document'),
+              trailing: const Text('Not Submitted'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID verification feature coming soon!')));
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Select Language'),
+        children: [
+          SimpleDialogOption(onPressed: () => Navigator.pop(context), child: const Text('English (United Kingdom)')),
+          SimpleDialogOption(onPressed: () => Navigator.pop(context), child: const Text('Arabic (Egypt)')),
+          SimpleDialogOption(onPressed: () => Navigator.pop(context), child: const Text('French (France)')),
+        ],
+      ),
+    );
+  }
 }

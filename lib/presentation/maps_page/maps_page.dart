@@ -3,17 +3,21 @@ import 'package:latlong2/latlong2.dart' as ll;
 import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/services/location_service.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
+import '../../widgets/premium_upgrade_sheet.dart';
 
 class MapsPage extends StatefulWidget {
-  const MapsPage({Key? key}) : super(key: key);
+  final HiddenGem? initialGem;
+  const MapsPage({Key? key, this.initialGem}) : super(key: key);
 
   static Widget builder(BuildContext context) {
-    return const MapsPage();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    return MapsPage(initialGem: args is HiddenGem ? args : null);
   }
 
   @override
@@ -24,6 +28,21 @@ class _MapsPageState extends State<MapsPage> {
   final MapController _mapController = MapController();
   String _selectedCategory = 'All';
   bool _superUserOnly = false;
+  RangeValues _priceRange = const RangeValues(0, 1000);
+  ll.LatLng? _mapCenter;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialGem != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(
+          ll.LatLng(widget.initialGem!.latitude, widget.initialGem!.longitude),
+          16,
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +64,15 @@ class _MapsPageState extends State<MapsPage> {
               approvedGems = approvedGems.where((g) => g.contributorIsSuperUser).toList();
             }
 
+            // FR2-3: Filter by map center if moved
+            if (_mapCenter != null) {
+              approvedGems.sort((a, b) {
+                final distA = LocationService.calculateDistance(_mapCenter!.latitude, _mapCenter!.longitude, a.latitude, a.longitude);
+                final distB = LocationService.calculateDistance(_mapCenter!.latitude, _mapCenter!.longitude, b.latitude, b.longitude);
+                return distA.compareTo(distB);
+              });
+            }
+
             final center = userLoc != null 
                 ? ll.LatLng(userLoc.latitude, userLoc.longitude) 
                 : const ll.LatLng(30.0444, 31.2357);
@@ -60,20 +88,23 @@ class _MapsPageState extends State<MapsPage> {
                         options: MapOptions(
                           initialCenter: center,
                           initialZoom: 14,
+                          onPositionChanged: (pos, hasGesture) {
+                            if (hasGesture) {
+                              setState(() => _mapCenter = pos.center);
+                            }
+                          },
                         ),
                         children: [
                           TileLayer(
                             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.likelocal.app',
                           ),
+                          // FR0-8: Visual Density Indicator
+                          CircleLayer(
+                            circles: _calculateDensityPulses(approvedGems),
+                          ),
                           CircleLayer(
                             circles: [
-                              ...approvedGems.map((gem) => CircleMarker(
-                                point: ll.LatLng(gem.latitude, gem.longitude),
-                                radius: 50 * (gem.rating / 5),
-                                color: const Color(0xFFFFD700).withOpacity(0.15),
-                                useRadiusInMeter: true,
-                              )),
                               if (userLoc != null)
                                 CircleMarker(
                                   point: ll.LatLng(userLoc.latitude, userLoc.longitude),
@@ -243,11 +274,25 @@ class _MapsPageState extends State<MapsPage> {
                         child: const Icon(Icons.person, color: Colors.white, size: 20),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _showAdvancedFilter(context),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1B3022),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.tune, color: Colors.white, size: 18),
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               _buildCategoryBar(),
+              _buildOfflineDownloadPrompt(context),
             ],
           ),
         ),
@@ -418,6 +463,137 @@ class _MapsPageState extends State<MapsPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineDownloadPrompt(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) {
+        final user = userProvider.user;
+        if (user == null) return const SizedBox.shrink();
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B3022).withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF1B3022).withOpacity(0.1)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.download_for_offline_outlined, color: Color(0xFF1B3022), size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Download this area for offline use',
+                  style: TextStyleHelper.instance.body12MediumInter.copyWith(color: const Color(0xFF1B3022)),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  if (user.isPro || user.isSuperUser) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Downloading neighborhood map tiles... (FR9-4)'),
+                        backgroundColor: Color(0xFF1B3022),
+                      ),
+                    );
+                  } else {
+                    PremiumUpgradeSheet.show(context);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B3022),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Download',
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<CircleMarker> _calculateDensityPulses(List<HiddenGem> gems) {
+    if (gems.isEmpty) return [];
+
+    final Map<String, List<HiddenGem>> grid = {};
+    const double gridSize = 0.005;
+
+    for (final gem in gems) {
+      final int latIndex = (gem.latitude / gridSize).floor();
+      final int lngIndex = (gem.longitude / gridSize).floor();
+      final String key = '${latIndex}_$lngIndex';
+      grid.putIfAbsent(key, () => []).add(gem);
+    }
+
+    return grid.entries.map((entry) {
+      final List<HiddenGem> cluster = entry.value;
+      double avgLat = 0, avgLng = 0;
+      for (final g in cluster) {
+        avgLat += g.latitude;
+        avgLng += g.longitude;
+      }
+      avgLat /= cluster.length;
+      avgLng /= cluster.length;
+
+      final double density = cluster.length.toDouble();
+      return CircleMarker(
+        point: ll.LatLng(avgLat, avgLng),
+        radius: 100 + (density * 50),
+        color: const Color(0xFFFFD700).withOpacity(density > 3 ? 0.25 : 0.1),
+        useRadiusInMeter: true,
+      );
+    }).toList();
+  }
+
+  void _showAdvancedFilter(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Advanced Discovery', style: TextStyleHelper.instance.title20BoldOutfit),
+              const SizedBox(height: 24),
+              Text('Price Range (EGP)', style: TextStyleHelper.instance.body14BoldInter),
+              RangeSlider(
+                values: _priceRange,
+                max: 5000,
+                divisions: 50,
+                activeColor: const Color(0xFF1B3022),
+                labels: RangeLabels('EGP ${_priceRange.start.round()}', 'EGP ${_priceRange.end.round()}'),
+                onChanged: (val) {
+                  setModalState(() => _priceRange = val);
+                  setState(() => _priceRange = val);
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Trending Only', style: TextStyleHelper.instance.body14BoldInter),
+                  Switch(value: false, onChanged: (v) {}, activeColor: const Color(0xFF1B3022)),
+                ],
+              ),
+              const SizedBox(height: 32),
+              CustomButton(text: 'Apply Filters', onPressed: () => Navigator.pop(context)),
+            ],
+          ),
         ),
       ),
     );

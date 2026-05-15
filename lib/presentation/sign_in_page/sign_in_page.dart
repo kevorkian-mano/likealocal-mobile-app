@@ -42,24 +42,35 @@ class _SignInPageState extends State<SignInPage> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // FR1-2: Check email verification status
-        final firebaseUser = FirebaseAuth.instance.currentUser;
-        if (firebaseUser != null && !firebaseUser.emailVerified) {
-          await userProvider.signOut();
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          _showVerificationBanner();
-          return;
-        }
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, AppRoutes.explorePageWithNotifScreen);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign In Failed: ${e.toString()}')),
-        );
+        if (e.toString().contains('VERIFICATION_REQUIRED')) {
+          _showVerificationBanner();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sign In Failed: ${e.toString()}')),
+          );
+        }
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
+    }
+  }
+
+  void _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.signInWithGoogle();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.explorePageWithNotifScreen);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -472,7 +483,7 @@ class _SignInPageState extends State<SignInPage> {
                                   const SizedBox(height: 32),
                                   // Google Button
                                   GestureDetector(
-                                    onTap: () => _handleSocialSignIn('Google'),
+                                    onTap: _handleGoogleSignIn,
                                     child: Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(vertical: 12),

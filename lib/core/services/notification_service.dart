@@ -117,4 +117,28 @@ class NotificationService {
   Future<String?> getDeviceToken() async {
     return await _fcm.getToken();
   }
+
+  // FR11-7: Send broadcast notification to all users (using FCM topic)
+  Future<void> sendBroadcast(String title, String message) async {
+    // In a real production environment, you would call a Cloud Function.
+    // For this demonstration, we'll use the FCM topic 'all_users'.
+    // Every user should be subscribed to this topic on initialize.
+    try {
+      await _fcm.subscribeToTopic('all_users');
+      
+      // Since we don't have a server-side key or service account here,
+      // we'll simulate the "backend" by sending a message to Firestore 'broadcasts' collection.
+      // A Cloud Function would then trigger on this document to send the real FCM.
+      await FirebaseFirestore.instance.collection('broadcasts').add({
+        'title': title,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+        'target': 'all_users',
+      });
+      print('Broadcast document created in Firestore for Cloud Function trigger.');
+    } catch (e) {
+      print('Error sending broadcast: $e');
+      rethrow;
+    }
+  }
 }

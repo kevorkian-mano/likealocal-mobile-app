@@ -50,11 +50,13 @@ class AdminDashboardScreen extends StatelessWidget {
                 SizedBox(height: 32),
                 _buildDiscoveryVelocity(insights, velocity),
                 SizedBox(height: 32),
+                _buildUserGrowthSection(),
+                SizedBox(height: 32),
                 _buildMaintenanceSuggestions(insights),
                 const SizedBox(height: 32),
                 _buildPendingPayments(context),
                 const SizedBox(height: 32),
-                _buildMaintenanceSuggestions(context, insights),
+                _buildSafetyEnforcement(context, gemsProvider),
                 const SizedBox(height: 100), // Spacing for fab
               ],
             ),
@@ -169,6 +171,140 @@ class AdminDashboardScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSafetyEnforcement(BuildContext context, GemsProvider gemsProvider) {
+    final reportedGems = gemsProvider.gems.where((g) => g.reportCount > 0).toList();
+    reportedGems.sort((a, b) => b.reportCount.compareTo(a.reportCount));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Safety Enforcement', style: TextStyleHelper.instance.title18SemiBoldInter),
+              Icon(Icons.security, color: Colors.red[900], size: 20),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (reportedGems.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Color(0x191B3022)),
+            ),
+            child: Center(
+              child: Text('All gems are safe!', style: TextStyle(color: Colors.grey)),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: reportedGems.length,
+            separatorBuilder: (context, index) => SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final gem = reportedGems[index];
+              return _buildReportCard(context, gem, gemsProvider);
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildReportCard(BuildContext context, HiddenGem gem, GemsProvider gemsProvider) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.red.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.warning_amber_rounded, color: Colors.red[900], size: 20),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(gem.name, style: TextStyleHelper.instance.body14BoldInter),
+                    Text('${gem.reportCount} reports received', style: TextStyle(fontSize: 12, color: Colors.red[700], fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.open_in_new, size: 20),
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.placeDetailsScreen, arguments: gem),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await FirebaseFirestore.instance.collection('gems').doc(gem.id).update({'reportCount': 0});
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Color(0xFF1B3022),
+                    side: BorderSide(color: Color(0xFF1B3022).withOpacity(0.3)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Dismiss'),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _confirmAction(context, 'Take Down', () => gemsProvider.rejectGem(gem.id)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Take Down'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmAction(BuildContext context, String action, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$action Gem?'),
+        content: Text('This will remove the gem from the public map immediately.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              onConfirm();
+              Navigator.pop(ctx);
+            },
+            child: Text(action, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -818,6 +954,79 @@ class AdminDashboardScreen extends StatelessWidget {
             ],
           ),
         )).toList(),
+      ],
+    );
+  }
+
+  Widget _buildUserGrowthSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: const Color(0x33C1C9C1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('User Growth (Monthly)', style: TextStyleHelper.instance.title18SemiBoldInter),
+          const SizedBox(height: 24),
+          AspectRatio(
+            aspectRatio: 1.7,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: 100,
+                barTouchData: BarTouchData(enabled: true),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const titles = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                        return Text(titles[value.toInt() % 6], style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                barGroups: [
+                  _makeGroupData(0, 45, Colors.green),
+                  _makeGroupData(1, 60, Colors.green),
+                  _makeGroupData(2, 55, Colors.green),
+                  _makeGroupData(3, 85, Colors.orange),
+                  _makeGroupData(4, 70, Colors.green),
+                  _makeGroupData(5, 95, Colors.deepOrange),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BarChartGroupData _makeGroupData(int x, double y, Color color) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          color: color,
+          width: 16,
+          borderRadius: BorderRadius.circular(4),
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: 100,
+            color: const Color(0xFFF1F4EF),
+          ),
+        ),
       ],
     );
   }

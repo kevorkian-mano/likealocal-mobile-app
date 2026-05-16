@@ -15,6 +15,7 @@ import '../../routes/app_routes.dart';
 import '../../core/providers/user_provider.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../share_hidden_gem_screen/share_hidden_gem_initial_page.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final HiddenGem? gem;
@@ -127,6 +128,30 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     children: [
                       _buildCodeTag(displayGem.uniqueCode),
                       const SizedBox(width: 8),
+                      if (isOwner || (currentUser?.isAdmin ?? false))
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(
+                                builder: (context) => ShareHiddenGemInitialPage.builder(context, gemToEdit: displayGem),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       GestureDetector(
                         onTap: () => _showReportDialog(context, displayGem),
                         child: Container(

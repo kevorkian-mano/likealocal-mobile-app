@@ -12,8 +12,8 @@ import './provider/share_hidden_gem_provider.dart';
 class ShareHiddenGemInitialPage extends StatelessWidget {
   const ShareHiddenGemInitialPage({super.key});
 
-  static Widget builder(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as HiddenGem?;
+  static Widget builder(BuildContext context, {HiddenGem? gemToEdit}) {
+    final args = gemToEdit ?? ModalRoute.of(context)?.settings.arguments as HiddenGem?;
     return ChangeNotifierProvider(
       create: (context) {
         final provider = ShareHiddenGemProvider();
@@ -54,7 +54,9 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                 ),
               ),
               Text(
-                'Add Hidden Gem',
+                context.watch<ShareHiddenGemProvider>().isEditing
+                    ? 'Edit Hidden Gem'
+                    : 'Add Hidden Gem',
                 style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans
                     .copyWith(height: 1.3),
               ),
@@ -80,7 +82,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeroSection(),
+                        _buildHeroSection(context),
                         SizedBox(height: 32.h),
                         _buildMediaUploadSection(context, provider),
                         if (provider.isAiAnalyzing) _buildAiAnalysisIndicator(),
@@ -108,12 +110,13 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroSection() {
+  Widget _buildHeroSection(BuildContext context) {
+    final isEditing = context.watch<ShareHiddenGemProvider>().isEditing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Share a Hidden\nGem',
+          isEditing ? 'Edit Hidden\nGem' : 'Share a Hidden\nGem',
           style: TextStyleHelper.instance.display36ExtraBoldPlusJakartaSans
               .copyWith(height: 1.1, color: appTheme.gray_900_01),
         ),
@@ -166,7 +169,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
     return Column(
       children: [
         CustomButton(
-          text: 'Publish to Community',
+          text: provider.isEditing ? 'Save Changes' : 'Publish to Community',
           onPressed: () => provider.publishToommunity(context),
           backgroundColor: appTheme.gray_900_01,
           textColor: Colors.white,

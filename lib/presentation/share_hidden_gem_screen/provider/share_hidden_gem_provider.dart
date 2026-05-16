@@ -63,6 +63,11 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   bool isAiAnalyzing = false;
   List<File> selectedImageFiles = [];
 
+  bool isEditing = false;
+  String? editingGemId;
+  List<String> existingMediaUrls = [];
+  String? existingImageUrl;
+
   ShareHiddenGemProvider() {
     _loadDraft();
     // FR4-13: Auto-save listeners
@@ -74,14 +79,29 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   }
 
   void handleExistingGem(HiddenGem? gem) {
-    if (gem == null) return;
+    if (gem == null) {
+      isEditing = false;
+      editingGemId = null;
+      existingMediaUrls = [];
+      existingImageUrl = null;
+      return;
+    }
+    isEditing = true;
+    editingGemId = gem.id;
+    existingMediaUrls = List.from(gem.mediaUrls);
+    existingImageUrl = gem.imageUrl;
+    
     placeTitleController.text = gem.name;
+    selectedLat = gem.latitude;
+    selectedLng = gem.longitude;
     locationController.text = '${gem.latitude}, ${gem.longitude}';
     descriptionController.text = gem.description;
     localTipsController.text = gem.localsTip;
     recommendedDishesController.text = gem.recommendedDishes.join(', ');
     shareHiddenGemModel.selectedCategory = gem.category;
-    // Note: Image editing would require more logic, for now we keep existing URL
+    
+    // For local mock display of existing images if needed
+    shareHiddenGemModel.selectedMediaPaths = List.from(gem.mediaUrls);
     notifyListeners();
   }
 
@@ -201,7 +221,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   Future<void> publishToommunity(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
-    if (selectedImageFiles.isEmpty) {
+    if (selectedImageFiles.isEmpty && !isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please add at least one photo of the place'),
@@ -219,55 +239,90 @@ class ShareHiddenGemProvider extends ChangeNotifier {
       final user = userProvider.user;
       if (user == null) throw Exception('Auth Error: Please sign in again.');
 
-      // 1. Upload Media (Real Storage)
+      // 1. Upload Media (Real Storage or Base64)
       final List<String> imageUrls = [];
-      for (int i = 0; i < selectedImageFiles.length; i++) {
-        final tempId = '${DateTime.now().millisecondsSinceEpoch}_$i';
-        final url = await _mediaService.uploadGemImage(
-          selectedImageFiles[i],
-          tempId,
-        );
-        imageUrls.add(url);
+      if (selectedImageFiles.isNotEmpty) {
+        for (int i = 0; i < selectedImageFiles.length; i++) {
+          final tempId = '${DateTime.now().millisecondsSinceEpoch}_$i';
+          final url = await _mediaService.uploadGemImage(
+            selectedImageFiles[i],
+            tempId,
+          );
+          imageUrls.add(url);
+        }
+      } else if (isEditing) {
+        imageUrls.addAll(existingMediaUrls);
+        if (imageUrls.isEmpty && existingImageUrl != null) {
+          imageUrls.add(existingImageUrl!);
+        }
       }
 
-      // 2. Build Advanced Model
-      final newGem = HiddenGem(
-        id: '', // Firestore will set this
-        name: placeTitleController.text.trim(),
-        description: descriptionController.text.trim(),
-        category: shareHiddenGemModel.selectedCategory ?? 'Other',
-        vibe: 'Verified Local',
-        rating: 5.0,
-        imageUrl: imageUrls.first,
-        mediaUrls: imageUrls,
-        latitude: selectedLat,
-        longitude: selectedLng,
-        localsTip: localTipsController.text.trim(),
-        recommendedDishes: recommendedDishesController.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
-        contributorId: user.id,
-        isVerified: user.isSuperUser,
-        status: user.isSuperUser ? GemStatus.approved : GemStatus.pending,
-        uniqueCode: _generateGemCode(),
-        createdAt: DateTime.now(),
-      );
+      if (isEditing && editingGemId != null) {
+        // UPDATE EXISTING GEM
+        final updates = {
+          'name': placeTitleController.text.trim(),
+          'description': descriptionController.text.trim(),
+          'category': shareHiddenGemModel.selectedCategory ?? 'Other',
+          'imageUrl': imageUrls.isNotEmpty ? imageUrls.first : existingImageUrl,
+          'mediaUrls': imageUrls,
+          'latitude': selectedLat,
+          'longitude': selectedLng,
+          'localsTip': localTipsController.text.trim(),
+          'recommendedDishes': recommendedDishesController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+        };
+        await gemsProvider.updateGem(editingGemId!, updates);
+        
+        await _clearFormAndDraft();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gem updated successfully!'), backgroundColor: Color(0xFF1B3022)),
+        );
+      } else {
+        // CREATE NEW GEM
+        final newGem = HiddenGem(
+          id: '', // Firestore will set this
+          name: placeTitleController.text.trim(),
+          description: descriptionController.text.trim(),
+          category: shareHiddenGemModel.selectedCategory ?? 'Other',
+          vibe: 'Verified Local',
+          rating: 5.0,
+          imageUrl: imageUrls.first,
+          mediaUrls: imageUrls,
+          latitude: selectedLat,
+          longitude: selectedLng,
+          localsTip: localTipsController.text.trim(),
+          recommendedDishes: recommendedDishesController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          isPremium: false,
+          isTrending: false,
+          isVerified: user.isSuperUser,
+          contributorId: user.id,
+          status: user.isSuperUser ? GemStatus.approved : GemStatus.pending,
+          uniqueCode: _generateGemCode(),
+          contributorIsSuperUser: user.isSuperUser,
+        );
 
-      // 3. Save & Award Gamification (FR4-1, FR4-14, FR4-15)
-      await gemsProvider.addGem(newGem, user);
+        // 3. Save & Award Gamification (FR4-1, FR4-14, FR4-15)
+        await gemsProvider.addGem(newGem, user);
+        await _clearFormAndDraft();
 
-      await _clearFormAndDraft();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'WOW! ${newGem.name} shared! Code: ${newGem.uniqueCode}',
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              user.isSuperUser
+                  ? 'Gem published instantly! (Super User)'
+                  : 'Gem submitted! Waiting for moderation.',
+            ),
           ),
-          backgroundColor: const Color(0xFF1B3022),
-        ),
-      );
+        );
+      }
+
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

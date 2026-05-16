@@ -33,12 +33,12 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
-  try {
-    await DatabaseSeeder.seed();
-  } catch (e) {
-    debugPrint('Database seeding failed (likely due to no network): $e');
-  }
+  // Auto-seeding disabled. Your database will no longer be wiped on startup!
+  // try {
+  //   await DatabaseSeeder.seed();
+  // } catch (e) {
+  //   debugPrint('Database seeding failed: $e');
+  // }
 
   // 🔔 Initialize Notifications
   await NotificationService().initialize();

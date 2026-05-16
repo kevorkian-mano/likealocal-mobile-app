@@ -631,8 +631,19 @@ class _ExplorePageWithNotifScreenState
                                     )
                                     .toList();
 
+                                final nonMatchingGems = displayGems
+                                    .where(
+                                      (gem) => !userVibes.any(
+                                        (vibe) => gem.vibe
+                                            .toLowerCase()
+                                            .contains(vibe.toLowerCase()),
+                                      ),
+                                    )
+                                    .toList();
+
                                 if (matchingGems.isNotEmpty) {
-                                  displayGems = matchingGems;
+                                  // Show matches at the top, but append the rest so they aren't hidden!
+                                  displayGems = [...matchingGems, ...nonMatchingGems];
                                   showingVibeMatches = true;
                                 }
                               }

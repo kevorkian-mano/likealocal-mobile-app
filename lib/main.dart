@@ -34,7 +34,11 @@ void main() async {
   );
 
   // 🌱 Auto-seed with demo data on first run (debug only, skips if already seeded)
-  await DatabaseSeeder.seed();
+  try {
+    await DatabaseSeeder.seed();
+  } catch (e) {
+    debugPrint('Database seeding failed (likely due to no network): $e');
+  }
 
   // 🔔 Initialize Notifications
   await NotificationService().initialize();

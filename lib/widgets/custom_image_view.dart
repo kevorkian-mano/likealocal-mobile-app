@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,8 @@ extension ImageTypeExtension on String {
       return ImageType.network;
     } else if (endsWith('.svg')) {
       return ImageType.svg;
+    } else if (startsWith('data:image')) {
+      return ImageType.base64;
     } else if (startsWith('file://') || startsWith('/') || startsWith(RegExp(r'^[a-zA-Z]:'))) {
       return ImageType.file;
     } else {
@@ -23,7 +26,7 @@ extension ImageTypeExtension on String {
   }
 }
 
-enum ImageType { svg, png, network, networkSvg, file, unknown }
+enum ImageType { svg, png, network, networkSvg, file, base64, unknown }
 
 class CustomImageView extends StatelessWidget {
   CustomImageView({
@@ -126,6 +129,15 @@ class CustomImageView extends StatelessWidget {
       case ImageType.file:
         return Image.file(
           File(imagePath!),
+          height: height,
+          width: width,
+          fit: fit ?? BoxFit.cover,
+          color: color,
+        );
+      case ImageType.base64:
+        final base64Str = imagePath!.split(',').last;
+        return Image.memory(
+          base64Decode(base64Str),
           height: height,
           width: width,
           fit: fit ?? BoxFit.cover,

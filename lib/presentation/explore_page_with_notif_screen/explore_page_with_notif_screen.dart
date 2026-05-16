@@ -11,6 +11,7 @@ import '../../core/models/hidden_gem_model.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
+import '../../widgets/custom_image_view.dart';
 
 class ExplorePageWithNotifScreen extends StatefulWidget {
   const ExplorePageWithNotifScreen({super.key});

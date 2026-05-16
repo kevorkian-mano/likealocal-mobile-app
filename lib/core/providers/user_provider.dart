@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../models/user_model.dart';
+import '../models/hidden_gem_model.dart';
 
 class UserProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -337,5 +338,25 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // FR7-2: Calculate Reputation Score dynamically based on live user gems
+  double calculateReputationScore(List<HiddenGem> userGems) {
+    if (_user == null) return 0.0;
+    
+    int approvedGemsCount = 0;
+    int totalViews = 0;
+    int totalSaves = 0;
+
+    for (final gem in userGems) {
+      if (gem.status == GemStatus.approved) {
+        approvedGemsCount += 1;
+        totalViews += gem.views;
+        totalSaves += gem.saves;
+      }
+    }
+
+    // Reputation Score = (Approved Gems * 50) + (Total Views * 1) + (Total Saves * 5)
+    return (approvedGemsCount * 50.0) + (totalViews * 1.0) + (totalSaves * 5.0);
   }
 }

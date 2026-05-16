@@ -2,8 +2,10 @@ import 'package:workmanager/workmanager.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'notification_service.dart';
 import '../models/hidden_gem_model.dart';
+import '../models/user_model.dart';
 
 const String taskProximityCheck = "proximityCheckTask";
 const String taskWeeklySummary = "weeklySummaryTask";
@@ -32,36 +34,52 @@ void callbackDispatcher() {
 
 Future<bool> _handleProximityCheck() async {
   try {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return true;
+
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    if (!userDoc.exists) return true;
+    final user = UserModel.fromMap(userDoc.data()!, userDoc.id);
+
+    if (user.savedGems.isEmpty) return true;
+
     // 1. Get current location
     Position position = await Geolocator.getCurrentPosition();
 
-    // 2. Fetch some approved gems (in a real app, use geofencing or specific user saved gems)
-    // For demo, we'll fetch all approved gems and check distance
-    final gemsSnapshot = await FirebaseFirestore.instance
-        .collection('gems')
-        .where('status', isEqualTo: 'approved')
-        .get();
+    // 2. Fetch specific user saved gems
+    final chunks = <List<String>>[];
+    final savedGems = List<String>.from(user.savedGems);
+    for (var i = 0; i < savedGems.length; i += 10) {
+      chunks.add(savedGems.sublist(i, i + 10 > savedGems.length ? savedGems.length : i + 10));
+    }
 
-    for (var doc in gemsSnapshot.docs) {
-      final gem = HiddenGem.fromMap(doc.data(), doc.id);
+    for (var chunk in chunks) {
+      final gemsSnapshot = await FirebaseFirestore.instance
+          .collection('gems')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
 
-      double distance = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
-        gem.latitude,
-        gem.longitude,
-      );
+      for (var doc in gemsSnapshot.docs) {
+        final gem = HiddenGem.fromMap(doc.data(), doc.id);
 
-      // If within 500 meters
-      if (distance < 500) {
-        await NotificationService().showLocalNotification(
-          id: gem.id.hashCode,
-          title: "Gem Nearby! 💎",
-          body: "You are near ${gem.name}. Why not check it out?",
-          payload: gem.id,
+        double distance = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          gem.latitude,
+          gem.longitude,
         );
-        // Only notify for one gem to avoid spamming in background task
-        break;
+
+        // If within 500 meters
+        if (distance < 500) {
+          await NotificationService().showLocalNotification(
+            id: gem.id.hashCode,
+            title: "Saved Gem Nearby! 💎",
+            body: "You are near ${gem.name}. Why not check it out?",
+            payload: gem.id,
+          );
+          // Only notify for one gem to avoid spamming in background task
+          return true;
+        }
       }
     }
     return true;
@@ -73,12 +91,29 @@ Future<bool> _handleProximityCheck() async {
 
 Future<bool> _handleWeeklySummary() async {
   try {
-    // Mocking a weekly summary for Super Users
-    // In a real app, you'd calculate stats from Firestore
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return true;
+
+    // Calculate sum of views and saves from the user's gems
+    final gemsSnapshot = await FirebaseFirestore.instance
+        .collection('gems')
+        .where('contributorId', isEqualTo: userId)
+        .where('status', isEqualTo: 'approved')
+        .get();
+
+    int totalViews = 0;
+    int totalSaves = 0;
+
+    for (var doc in gemsSnapshot.docs) {
+      final gem = HiddenGem.fromMap(doc.data(), doc.id);
+      totalViews += gem.views;
+      totalSaves += gem.saves;
+    }
+
     await NotificationService().showLocalNotification(
       id: 999,
       title: "Your Weekly Impact! 🌟",
-      body: "Your gems were viewed 150 times this week. Keep exploring!",
+      body: "Your gems were viewed $totalViews times and saved $totalSaves times. Keep exploring!",
     );
     return true;
   } catch (e) {

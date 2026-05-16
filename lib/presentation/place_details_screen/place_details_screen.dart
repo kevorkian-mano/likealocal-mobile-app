@@ -9,6 +9,7 @@ import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../routes/app_routes.dart';
@@ -349,7 +350,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   const SizedBox(height: 32),
                   _buildEmojiSentimentBar(),
                   const SizedBox(height: 32),
-                  _buildBusyTimesSection(),
+                  _buildBusyTimesSection(displayGem.category),
                   const SizedBox(height: 32),
                   _buildNearbySimilarVibes(),
                   const SizedBox(height: 32),
@@ -513,26 +514,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         label: 'Share',
                         onPressed: () {
                           final shareText =
-                              '🗺️ Discover "${displayGem.name}" on LikeALocal!\nCode: ${displayGem.uniqueCode}\n${displayGem.description}';
-                          Clipboard.setData(ClipboardData(text: shareText));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  Icon(
-                                    Icons.copy,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text('Link copied to clipboard!'),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: Color(0xFF1B3022),
-                            ),
-                          );
+                              '🗺️ Discover "${displayGem.name}" on LikeALocal!\n${displayGem.description}\n\nLocal tip: ${displayGem.localsTip}\n\nSearch for code: ${displayGem.uniqueCode} in the app!';
+                          Share.share(shareText, subject: 'Check out ${displayGem.name}!');
                         },
                       ),
                       const SizedBox(width: 12),
@@ -719,7 +702,36 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     );
   }
 
-  Widget _buildBusyTimesSection() {
+  Widget _buildBusyTimesSection(String category) {
+    final now = DateTime.now().hour;
+    final currentIndex = now ~/ 2;
+    int currentHeight = 20;
+    List<int> baseHeights = [10, 15, 30, 45, 60, 55, 40, 25, 20, 35, 50, 20];
+    if (category == 'Food & Drink' || category == 'Hidden Dining') {
+      baseHeights = [5, 10, 15, 20, 30, 60, 70, 50, 40, 65, 80, 50];
+    } else if (category == 'Nightlife' || category == 'Secret Bars') {
+      baseHeights = [10, 5, 5, 10, 15, 20, 25, 30, 50, 70, 90, 80];
+    } else if (category == 'Nature' || category == 'Quiet Spots') {
+      baseHeights = [20, 30, 50, 70, 80, 75, 60, 40, 20, 10, 5, 5];
+    }
+    if (currentIndex >= 0 && currentIndex < 12) {
+      currentHeight = baseHeights[currentIndex];
+    }
+    
+    String crowdLevel = 'Quiet';
+    Color crowdColor = const Color(0xFF3E5641);
+    Color crowdBgColor = const Color(0xFFE8F2E9);
+    
+    if (currentHeight > 60) {
+      crowdLevel = 'Busy';
+      crowdColor = Colors.red[800]!;
+      crowdBgColor = Colors.red[100]!;
+    } else if (currentHeight > 35) {
+      crowdLevel = 'Moderate';
+      crowdColor = Colors.orange[800]!;
+      crowdBgColor = Colors.orange[100]!;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -741,13 +753,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Color(0xFFE8F2E9),
+                color: crowdBgColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Quiet',
+                crowdLevel,
                 style: TextStyle(
-                  color: Color(0xFF3E5641),
+                  color: crowdColor,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -760,22 +772,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: List.generate(12, (index) {
-            final now = DateTime.now().hour;
             final isCurrentHour = (index * 2) <= now && now < ((index + 1) * 2);
-            final height = [
-              10,
-              15,
-              30,
-              45,
-              60,
-              55,
-              40,
-              25,
-              20,
-              35,
-              50,
-              20,
-            ][index];
+            final height = baseHeights[index];
             return Container(
               width: 20,
               height: height.toDouble(),
@@ -793,15 +791,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
+              '12 AM',
+              style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
+            ),
+            Text(
               '12 PM',
               style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
             ),
             Text(
-              '6 PM',
-              style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
-            ),
-            Text(
-              '12 AM',
+              '11 PM',
               style: TextStyle(fontSize: 10, color: Color(0xFF4D6353)),
             ),
           ],

@@ -218,6 +218,7 @@ class GemsProvider extends ChangeNotifier {
 
       await userDoc.update({
         'karmaPoints': FieldValue.increment(points),
+        'lastContributionTime': FieldValue.serverTimestamp(),
         'contributionStreak': gamification['streak'],
         'badges': gamification['badges'],
         'isSuperUser': (user.karmaPoints + points) >= 500,
@@ -269,19 +270,25 @@ class GemsProvider extends ChangeNotifier {
 
     batch.set(gemRef, finalGem.toMap());
 
-    // Update User Stats (FR4-14)
-    final gamification = GamificationHelper.updateStreakAndBadges(user);
-    batch.update(_firestore.collection('users').doc(user.id), {
-      'lastContributionTime': FieldValue.serverTimestamp(),
-      'contributionStreak': gamification['streak'],
-      'badges': gamification['badges'],
-      'karmaPoints': FieldValue.increment(10),
-    });
+    // Ensure update to badges and karma if purely submitting
+    if (finalStatus == GemStatus.approved) {
+      batch.update(_firestore.collection('users').doc(user.id), {
+        'lastContributionTime': FieldValue.serverTimestamp(),
+      });
+      // the actual streak update will be handled after the batch
+    } else {
+      batch.update(_firestore.collection('users').doc(user.id), {
+        'karmaPoints': FieldValue.increment(10), // Point for submission
+      });
+    }
 
     _isSyncing = true;
     notifyListeners();
     try {
       await batch.commit();
+      if (finalStatus == GemStatus.approved) {
+        await _awardKarmaAndCheckBadges(user.id, 50);
+      }
     } finally {
       _isSyncing = false;
       notifyListeners();

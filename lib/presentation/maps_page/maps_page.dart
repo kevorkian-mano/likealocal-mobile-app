@@ -1,4 +1,5 @@
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
@@ -9,6 +10,7 @@ import '../../core/models/hidden_gem_model.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
+import '../../widgets/safe_image.dart';
 
 class MapsPage extends StatefulWidget {
   final HiddenGem? initialGem;
@@ -468,7 +470,7 @@ class _MapsPageState extends State<MapsPage> {
 
         final int pinLimit = user.isSuperUser
             ? 999
-            : (user.isPro ? 100 : 10);
+            : (user.isPro ? 100 : 3);
         final int usedPins = user.savedGems.length;
         final double progress = pinLimit >= 999 ? 1.0 : (usedPins / pinLimit).clamp(0.0, 1.0);
         final bool atLimit = usedPins >= pinLimit && pinLimit < 999;
@@ -605,8 +607,8 @@ class _MapsPageState extends State<MapsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              gem.imageUrl,
+            SafeImage(
+              imageUrl: gem.imageUrl,
               width: double.infinity,
               height: 200,
               fit: BoxFit.cover,
@@ -626,14 +628,41 @@ class _MapsPageState extends State<MapsPage> {
                     children: [
                       const Icon(
                         Icons.location_on,
-                        color: Color(0xFF3E5641),
+                        color: Color(0xFF2E7D32),
                         size: 14,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        'Zamalek, Cairo',
-                        style: TextStyleHelper.instance.body14MediumInter
-                            .copyWith(color: const Color(0xFF4D6353)),
+                      Expanded(
+                        child: FutureBuilder<List<Placemark>>(
+                          future: placemarkFromCoordinates(
+                              gem.latitude, gem.longitude),
+                          builder: (context, snapshot) {
+                            String locationText;
+                            if (snapshot.hasData &&
+                                snapshot.data!.isNotEmpty) {
+                              final p = snapshot.data!.first;
+                              final parts = [
+                                p.subLocality,
+                                p.locality,
+                                p.administrativeArea,
+                              ].where((s) => s != null && s.isNotEmpty).toList();
+                              locationText = parts.isNotEmpty
+                                  ? parts.take(2).join(', ')
+                                  : '${gem.latitude.toStringAsFixed(3)}°, ${gem.longitude.toStringAsFixed(3)}°';
+                            } else {
+                              locationText = gem.category.isNotEmpty
+                                  ? '${gem.category} · ${gem.latitude.toStringAsFixed(3)}°'
+                                  : '${gem.latitude.toStringAsFixed(3)}°, ${gem.longitude.toStringAsFixed(3)}°';
+                            }
+                            return Text(
+                              locationText,
+                              style: TextStyleHelper.instance.body14MediumInter
+                                  .copyWith(color: const Color(0xFF4D6353)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),

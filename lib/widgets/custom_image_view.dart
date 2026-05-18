@@ -18,7 +18,7 @@ extension ImageTypeExtension on String {
       return ImageType.svg;
     } else if (startsWith('data:image')) {
       return ImageType.base64;
-    } else if (startsWith('file://') || startsWith('/') || startsWith(RegExp(r'^[a-zA-Z]:'))) {
+    } else if (startsWith('file://') || startsWith('/') || (length > 2 && this[1] == ':')) {
       return ImageType.file;
     } else {
       return ImageType.png;

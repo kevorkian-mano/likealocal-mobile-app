@@ -23,6 +23,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   bool _loadingAi = false;
   late ChatPreview _chat;
   late String _currentUserId;
+  late ChatProvider _chatProvider;
 
   @override
   void didChangeDependencies() {
@@ -30,10 +31,13 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
     _chat = ModalRoute.of(context)!.settings.arguments as ChatPreview;
     _currentUserId =
         Provider.of<UserProvider>(context, listen: false).user?.id ?? '';
+    _chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    _chatProvider.activeChatId = _chat.id;
   }
 
   @override
   void dispose() {
+    _chatProvider.activeChatId = null;
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();

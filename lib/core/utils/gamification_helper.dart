@@ -10,7 +10,9 @@ class GamificationHelper {
 
     // 1. Update Streak
     if (lastContrib != null) {
-      final difference = now.difference(lastContrib).inDays;
+      final lastDate = DateTime(lastContrib.year, lastContrib.month, lastContrib.day);
+      final nowDate = DateTime(now.year, now.month, now.day);
+      final difference = nowDate.difference(lastDate).inDays;
       if (difference == 1) {
         currentStreak++;
       } else if (difference > 1) {

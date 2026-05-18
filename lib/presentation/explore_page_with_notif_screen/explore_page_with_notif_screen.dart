@@ -12,6 +12,7 @@ import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/premium_upgrade_sheet.dart';
 import '../../widgets/custom_image_view.dart';
+import '../../widgets/safe_image.dart';
 
 class ExplorePageWithNotifScreen extends StatefulWidget {
   const ExplorePageWithNotifScreen({super.key});
@@ -325,16 +326,53 @@ class _ExplorePageWithNotifScreenState
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Consumer<GemsProvider>(
                             builder: (context, gemsProvider, _) {
-                              final nearest = gemsProvider.getNearestGem();
-                              if (nearest == null ||
-                                  gemsProvider.userLocation == null) {
+                              final userProvider = Provider.of<UserProvider>(context, listen: false);
+                              final currentUser = userProvider.user;
+                              final nearest = gemsProvider.getNearestGem(currentUser);
+                              if (nearest == null) {
                                 return const SizedBox.shrink();
+                              }
+
+                              double currentLat = 38.7223;
+                              double currentLng = -9.1393;
+
+                              if (gemsProvider.userLocation != null) {
+                                currentLat = gemsProvider.userLocation!.latitude;
+                                currentLng = gemsProvider.userLocation!.longitude;
+                              } else if (currentUser != null) {
+                                if (currentUser.savedGems.isNotEmpty) {
+                                  final savedGem = gemsProvider.gems.firstWhere(
+                                    (g) => g.id == currentUser.savedGems.last,
+                                    orElse: () => null as dynamic,
+                                  );
+                                  if (savedGem != null) {
+                                    currentLat = savedGem.latitude;
+                                    currentLng = savedGem.longitude;
+                                  }
+                                } else {
+                                  final contributed = gemsProvider.gems.where((g) => g.contributorId == currentUser.id).toList();
+                                  if (contributed.isNotEmpty) {
+                                    currentLat = contributed.last.latitude;
+                                    currentLng = contributed.last.longitude;
+                                  } else {
+                                    double totalLat = 0;
+                                    double totalLng = 0;
+                                    for (final g in gemsProvider.approvedGems) {
+                                      totalLat += g.latitude;
+                                      totalLng += g.longitude;
+                                    }
+                                    if (gemsProvider.approvedGems.isNotEmpty) {
+                                      currentLat = totalLat / gemsProvider.approvedGems.length;
+                                      currentLng = totalLng / gemsProvider.approvedGems.length;
+                                    }
+                                  }
+                                }
                               }
 
                               final distance =
                                   LocationService.calculateDistance(
-                                    gemsProvider.userLocation!.latitude,
-                                    gemsProvider.userLocation!.longitude,
+                                    currentLat,
+                                    currentLng,
                                     nearest.latitude,
                                     nearest.longitude,
                                   );
@@ -995,14 +1033,14 @@ class _ExplorePageWithNotifScreenState
           children: [
             Stack(
               children: [
-                ClipRRect(
+                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  child: Image.network(
-                    gem.imageUrl,
+                  child: SafeImage(
+                    imageUrl: gem.imageUrl,
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
+                    placeholder: Container(
                       width: double.infinity,
                       height: 200,
                       color: const Color(0xFFE8F2E9),

@@ -80,7 +80,7 @@ class CustomEditText extends StatelessWidget {
             (isMultiline ? TextInputType.multiline : TextInputType.text),
         maxLines: _getMaxLines(),
         style: TextStyleHelper.instance.title16RegularInter.copyWith(
-          color: appTheme.colorFF0000,
+          color: const Color(0xFF191C1A),
           height: isMultiline ? 1.5 : 1.25,
         ),
         decoration: InputDecoration(

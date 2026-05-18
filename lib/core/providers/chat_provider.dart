@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,6 +12,9 @@ class ChatProvider extends ChangeNotifier {
     app: Firebase.app(),
     databaseId: 'default',
   );
+
+  StreamSubscription? _messagesSubscription;
+  String? activeChatId;
 
   Future<void> startNewChat(
     UserModel sender,
@@ -137,6 +142,32 @@ class ChatProvider extends ChangeNotifier {
       'lastMessageTime': FieldValue.serverTimestamp(),
     });
 
+    // Save notification to database notifications collection so the user sees it in Firebase
+    final participants = chatId.split('_');
+    final targetUserId = participants.firstWhere((id) => id != senderId, orElse: () => '');
+
+    String senderName = 'Someone';
+    try {
+      final senderDoc = await _firestore.collection('users').doc(senderId).get();
+      if (senderDoc.exists) {
+        senderName = senderDoc.data()?['fullName'] ?? 'Someone';
+      }
+    } catch (e) {
+      // Fail silently for seeder or fallback
+    }
+
+    final notifRef = _firestore.collection('notifications').doc();
+    batch.set(notifRef, {
+      'title': 'New Message from $senderName',
+      'message': text,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isActive': true,
+      'createdBy': senderId,
+      'recipientId': targetUserId,
+      'type': 'chat',
+      'chatId': chatId,
+    });
+
     await batch.commit();
   }
 
@@ -171,28 +202,41 @@ class ChatProvider extends ChangeNotifier {
 
   // FR8-3: Listen for new messages across all chats to show notifications
   void startListeningForNewMessages(String userId) {
-    _firestore
+    _messagesSubscription?.cancel();
+    _messagesSubscription = _firestore
         .collectionGroup('messages')
         .where('timestamp', isGreaterThan: Timestamp.now())
         .snapshots()
         .listen((snapshot) {
+          final currentUid = FirebaseAuth.instance.currentUser?.uid;
+          if (currentUid == null) return;
+
           for (var change in snapshot.docChanges) {
             if (change.type == DocumentChangeType.added) {
-              final data = change.doc.data()!;
+              final data = change.doc.data();
+              if (data == null) continue;
               final senderId = data['senderId'];
+              final chatId = change.doc.reference.parent.parent?.id;
 
-              if (senderId != userId) {
-                // Check if this message belongs to a chat the user is part of
-                // For simplicity in demo, we'll just check if the message is new
+              if (senderId != currentUid &&
+                  chatId != null &&
+                  chatId.contains(currentUid) &&
+                  chatId != activeChatId) {
                 NotificationService().showLocalNotification(
                   id: change.doc.id.hashCode,
                   title: "New Message 💬",
                   body: data['text'] ?? "You have a new message",
-                  payload: change.doc.reference.parent.parent?.id, // chatId
+                  payload: chatId,
                 );
               }
             }
           }
         });
+  }
+
+  @override
+  void dispose() {
+    _messagesSubscription?.cancel();
+    super.dispose();
   }
 }

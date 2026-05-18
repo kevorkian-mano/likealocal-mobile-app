@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_export.dart';
 import '../../widgets/custom_button.dart';
 import '../../core/providers/user_provider.dart';
-import 'package:provider/provider.dart';
 
 class ManualPaymentScreen extends StatefulWidget {
   const ManualPaymentScreen({super.key});

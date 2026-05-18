@@ -309,8 +309,8 @@ class UserProvider extends ChangeNotifier {
     final isRemoving = _user!.reminders.contains(gemId);
 
     if (!isRemoving) {
-      // Enforce limit: 1 reminder for Free users
-      if (!_user!.isPro && !_user!.isSuperUser && _user!.reminders.isNotEmpty) {
+      // Enforce limit: 2 reminders for Free users
+      if (!_user!.isPro && !_user!.isSuperUser && _user!.reminders.length >= 2) {
         throw Exception('LIMIT_REACHED');
       }
     }

@@ -117,7 +117,9 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   // --- Draft Management (FR4-13) ---
   Future<void> _loadDraft() async {
+    if (isEditing) return;
     final prefs = await SharedPreferences.getInstance();
+    if (isEditing) return;
     placeTitleController.text = prefs.getString('draft_title') ?? '';
     locationController.text = prefs.getString('draft_location') ?? '';
     descriptionController.text = prefs.getString('draft_description') ?? '';
@@ -128,6 +130,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
   }
 
   Future<void> saveDraft() async {
+    if (isEditing) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('draft_title', placeTitleController.text);
     await prefs.setString('draft_location', locationController.text);
@@ -187,11 +190,16 @@ class ShareHiddenGemProvider extends ChangeNotifier {
 
   // FR4-2: Remove a selected media file from the upload list
   void removeMedia(int index) {
-    if (index >= 0 && index < selectedImageFiles.length) {
-      selectedImageFiles.removeAt(index);
-      shareHiddenGemModel.selectedMediaPaths.removeAt(index);
-      notifyListeners();
+    if (index < 0 || index >= shareHiddenGemModel.selectedMediaPaths.length) return;
+    
+    final removedPath = shareHiddenGemModel.selectedMediaPaths[index];
+    shareHiddenGemModel.selectedMediaPaths.removeAt(index);
+    
+    // Also remove from selectedImageFiles if it's a file path (not an existing URL)
+    if (!removedPath.startsWith('http') && !removedPath.startsWith('data:')) {
+      selectedImageFiles.removeWhere((f) => f.path == removedPath);
     }
+    notifyListeners();
   }
 
   Future<void> _runAiAnalysis() async {

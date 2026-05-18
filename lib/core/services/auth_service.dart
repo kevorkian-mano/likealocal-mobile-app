@@ -2,11 +2,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // scopes: email is requested so we can identify the user
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
   final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
     app: Firebase.app(),
     databaseId: 'default',
@@ -104,11 +108,23 @@ class AuthService {
   // Google Sign-In (FR1-2)
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      // Trigger the Google sign-in flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      // User cancelled the sign-in
       if (googleUser == null) return null;
 
+      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+      
+      // Check that we have the required tokens
+      if (googleAuth.idToken == null) {
+        throw 'Google Sign-In failed: Could not obtain authentication token. '
+            'Please ensure Google Sign-In is enabled in your Firebase console '
+            'and that the SHA-1 fingerprint of your app is registered.';
+      }
+
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -122,7 +138,7 @@ class AuthService {
       if (user != null) {
         final doc = await _firestore.collection('users').doc(user.uid).get();
         if (!doc.exists) {
-          // Initialize new Google user
+          // Initialize new Google user in Firestore
           await _firestore.collection('users').doc(user.uid).set({
             'fullName': user.displayName ?? 'Explorer',
             'email': user.email ?? '',
@@ -137,6 +153,8 @@ class AuthService {
             'contributionStreak': 0,
             'badges': [],
             'savedGems': [],
+            'reminders': [],
+            'interactionHistory': [],
             'chatsStartedToday': 0,
             'lastChatResetDate': null,
             'lastContributionTime': null,
@@ -147,11 +165,29 @@ class AuthService {
             'blockedUsers': [],
             'isBanned': false,
           });
+        } else {
+          // Check if user is banned
+          final data = doc.data()!;
+          if (data['isBanned'] == true) {
+            await _auth.signOut();
+            await _googleSignIn.signOut();
+            throw 'Your account has been suspended. Please contact support.';
+          }
         }
       }
       return userCredential;
+    } on PlatformException catch (e) {
+      if (e.code == 'sign_in_failed') {
+        throw 'Google Sign-In is not configured. Please enable Google Sign-In '
+            'in Firebase Console → Authentication → Sign-in method, '
+            'add your app\'s SHA-1 fingerprint, and re-download google-services.json.';
+      }
+      throw 'Google Sign-In failed: ${e.message}';
+    } on FirebaseAuthException catch (e) {
+      throw _mapError(e.code);
     } catch (e) {
-      throw 'Google Sign-In failed: $e';
+      if (e is String) rethrow;
+      throw 'Google Sign-In failed. Please try again.';
     }
   }
 

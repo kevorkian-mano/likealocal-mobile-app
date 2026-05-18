@@ -1,11 +1,11 @@
-import 'package:provider/provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../core/models/user_model.dart';
-import '../../theme/text_style_helper.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../../core/app_export.dart';
 import '../../core/models/super_user_insight_model.dart';
 
@@ -40,14 +40,12 @@ class SuperUserDashboardScreen extends StatelessWidget {
             .length;
         final trendingCount = userGems.where((g) => g.isTrending).length;
         final karma = user.karmaPoints;
-        final reputationScore =
-            (karma * 0.45) +
-            (approvedCount * 18) +
-            (totalViews * 0.02) +
-            (totalSaves * 0.25) +
-            (trendingCount * 12);
-        final level = (reputationScore / 100).floor() + 1;
-        final progress = (reputationScore % 100) / 100.0;
+        
+        // Calculate the score from the formula implemented in UserProvider (FR7-2)
+        final reputationScore = userProvider.calculateReputationScore(userGems);
+        
+        final level = (reputationScore / 500).floor() + 1; // Assuming every 500 is a level, or stick to 100
+        final progress = (reputationScore % 500) / 500.0;
 
         // Influence logic: 1km per 2 approved gems
         final influenceRadius = (approvedCount / 2).clamp(1.0, 5.0);
@@ -227,17 +225,12 @@ class SuperUserDashboardScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Reputation Score: ${reputationScore.toStringAsFixed(0)}',
-                            style: TextStyleHelper.instance.label10MediumInter
-                                .copyWith(color: Colors.white70),
+                            style: TextStyleHelper.instance.label10MediumInter.copyWith(color: Colors.white70),
                           ),
                           const SizedBox(width: 4),
                           GestureDetector(
                             onTap: () => _showReputationInfo(context),
-                            child: const Icon(
-                              Icons.info_outline,
-                              color: Colors.white70,
-                              size: 10,
-                            ),
+                            child: const Icon(Icons.info_outline, color: Colors.white70, size: 10),
                           ),
                         ],
                       ),
@@ -364,6 +357,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
           title: 'Growth Strategy',
           subtitle: 'Tips to increase your local reach',
           color: const Color(0xFF4D6353),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.growthStrategy),
         ),
         const SizedBox(height: 12),
         // FR12-4: View pending chat requests
@@ -749,119 +743,159 @@ class SuperUserDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildCommunityEngagement(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Traveler Questions',
-              style: TextStyleHelper.instance.title18SemiBoldInter,
-            ),
+            Text('Traveler Questions', style: TextStyleHelper.instance.title18SemiBoldInter),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Urgent',
-                style: TextStyle(
-                  color: Colors.red[900],
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)),
+              child: Text('Urgent', style: TextStyle(color: Colors.red[900], fontSize: 10, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildQuestionCard(
-          context,
-          'Sarah M.',
-          'Is the Art Garden open on Fridays? I heard there might be a private event.',
-          'Art Garden Zamalek',
-          '5m ago',
-        ),
-        const SizedBox(height: 12),
-        _buildQuestionCard(
-          context,
-          'Ahmed K.',
-          'Best time to visit for a quiet sunset view?',
-          'Sunset Peak',
-          '2h ago',
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instanceFor(
+            app: Firebase.app(),
+            databaseId: 'default',
+          )
+          .collection('chats')
+          .where('participants', arrayContains: user.id)
+          .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(color: Color(0xFF1B3022)),
+                ),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return _buildEmptyQuestionsPlaceholder();
+            }
+
+            // Filter chats that have relatedGemName
+            final inquiryChats = snapshot.data!.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final relatedGem = data['relatedGemName'] as String?;
+              return relatedGem != null && relatedGem.isNotEmpty;
+            }).toList();
+
+            if (inquiryChats.isEmpty) {
+              return _buildEmptyQuestionsPlaceholder();
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: inquiryChats.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final doc = inquiryChats[index];
+                final data = doc.data() as Map<String, dynamic>;
+                final participants = List<String>.from(data['participants'] ?? []);
+                final travelerId = participants.firstWhere((id) => id != user.id, orElse: () => '');
+                
+                final travelerName = (data['participantNames'] as Map<String, dynamic>?)?[travelerId] ?? 'Traveler';
+                final questionText = data['lastMessage'] ?? 'No messages yet';
+                final gemName = data['relatedGemName'] ?? 'Hidden Gem';
+                
+                final lastTime = data['lastMessageTime'] as Timestamp?;
+                String timeStr = 'Just now';
+                if (lastTime != null) {
+                  final diff = DateTime.now().difference(lastTime.toDate());
+                  if (diff.inMinutes < 60) {
+                    timeStr = '${diff.inMinutes}m ago';
+                  } else if (diff.inHours < 24) {
+                    timeStr = '${diff.inHours}h ago';
+                  } else {
+                    timeStr = '${diff.inDays}d ago';
+                  }
+                }
+
+                return _buildQuestionCard(
+                  context,
+                  travelerName,
+                  questionText,
+                  gemName,
+                  timeStr,
+                );
+              },
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildQuestionCard(
-    BuildContext context,
-    String name,
-    String question,
-    String gemName,
-    String time,
-  ) {
+  Widget _buildEmptyQuestionsPlaceholder() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(Icons.forum_outlined, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              'No traveler questions yet.',
+              style: TextStyleHelper.instance.body14BoldInter.copyWith(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(BuildContext context, String name, String question, String gemName, String time) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Color(0x33C1C9C1)),
+        border: Border.all(color: const Color(0x33C1C9C1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                backgroundColor: Color(0xFFE8F2E9),
-                child: Text(
-                  name[0],
-                  style: TextStyle(color: Color(0xFF1B3022)),
-                ),
-              ),
-              SizedBox(width: 12),
+              CircleAvatar(backgroundColor: const Color(0xFFE8F2E9), child: Text(name[0], style: const TextStyle(color: Color(0xFF1B3022)))),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name, style: TextStyleHelper.instance.body14BoldInter),
-                    Text(
-                      'Regarding $gemName',
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
+                    Text('Regarding $gemName', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
               ),
-              Text(time, style: TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(time, style: const TextStyle(fontSize: 10, color: Colors.grey)),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
             question,
-            style: TextStyleHelper.instance.body14MediumInter.copyWith(
-              color: Color(0xFF4D6353),
-              height: 1.4,
-            ),
+            style: TextStyleHelper.instance.body14MediumInter.copyWith(color: const Color(0xFF4D6353), height: 1.4),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, AppRoutes.chatListScreen),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.chatListScreen),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF1B3022),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                backgroundColor: const Color(0xFF1B3022),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text(
-                'Answer Question',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Answer Question', style: TextStyle(color: Colors.white)),
             ),
           ),
         ],
@@ -923,10 +957,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
           children: [
             const Icon(Icons.auto_awesome, color: Color(0xFFFFD700)),
             const SizedBox(width: 12),
-            Text(
-              'Score Breakdown',
-              style: TextStyleHelper.instance.title18SemiBoldInter,
-            ),
+            Text('Score Breakdown', style: TextStyleHelper.instance.title18SemiBoldInter),
           ],
         ),
         content: Column(
@@ -941,25 +972,12 @@ class SuperUserDashboardScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(
               'Your reputation reflects your standing as a trusted local guardian.',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
-              ),
+              style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Got it',
-              style: TextStyle(
-                color: Color(0xFF1B3022),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Got it', style: TextStyle(color: Color(0xFF1B3022), fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -971,18 +989,8 @@ class SuperUserDashboardScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF4D6353)),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B3022),
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF4D6353))),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1B3022))),
         ],
       ),
     );

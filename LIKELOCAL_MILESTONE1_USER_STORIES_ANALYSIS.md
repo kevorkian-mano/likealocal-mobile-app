@@ -1,4 +1,4 @@
-# LikeALocal Milestone 1 User Stories Analysis
+# LikeALocal User Stories Analysis
 
 <div align="center">
 

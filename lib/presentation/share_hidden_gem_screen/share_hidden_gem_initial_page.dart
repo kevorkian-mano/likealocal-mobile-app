@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../core/app_export.dart';
@@ -33,12 +35,12 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.fromLTRB(24.h, 17.h, 24.h, 8.h),
           decoration: BoxDecoration(
-            color: appTheme.colorCCFBFD,
+            color: const Color(0xFF1B3022),
             boxShadow: [
               BoxShadow(
-                color: appTheme.color220F1B.withOpacity(0.1),
-                blurRadius: 32,
-                offset: Offset(0, 8),
+                color: const Color(0xFF1B3022).withOpacity(0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -47,10 +49,10 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: CustomImageView(
-                  imagePath: ImageConstant.imgButton,
-                  height: 30.h,
-                  width: 30.h,
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
               Text(
@@ -58,13 +60,20 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                     ? 'Edit Hidden Gem'
                     : 'Add Hidden Gem',
                 style: TextStyleHelper.instance.title20ExtraBoldPlusJakartaSans
-                    .copyWith(height: 1.3),
+                    .copyWith(height: 1.3, color: Colors.white),
               ),
-              CustomImageView(
-                imagePath: ImageConstant.imgImage1,
-                height: 46.h,
-                width: 46.h,
-                radius: BorderRadius.circular(23.h),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.eco,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -171,7 +180,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
         CustomButton(
           text: provider.isEditing ? 'Save Changes' : 'Publish to Community',
           onPressed: () => provider.publishToommunity(context),
-          backgroundColor: appTheme.gray_900_01,
+          backgroundColor: const Color(0xFF1B3022),
           textColor: Colors.white,
         ),
         SizedBox(height: 12.h),
@@ -179,7 +188,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
           onPressed: () => provider.saveDraft(),
           style: OutlinedButton.styleFrom(
             minimumSize: Size(double.infinity, 56.h),
-            side: BorderSide(color: appTheme.gray_400),
+            side: const BorderSide(color: Color(0xFF1B3022)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28.h),
             ),
@@ -188,7 +197,7 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
             'Save as Draft',
             style: TextStyleHelper.instance.body14BoldInter.copyWith(
               fontSize: 16,
-              color: appTheme.gray_800_01,
+              color: const Color(0xFF1B3022),
             ),
           ),
         ),
@@ -225,27 +234,37 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 40.h),
             decoration: BoxDecoration(
-              color: appTheme.gray_100,
-              border: Border.all(color: appTheme.colorC54CC4, width: 2),
+              color: const Color(0xFFECEFE8),
+              border: Border.all(color: const Color(0xFFC1C8C0), width: 2),
               borderRadius: BorderRadius.circular(16.h),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CustomImageView(
-                  imagePath: ImageConstant.imgMargin,
-                  height: 32.h,
-                  width: 26.h,
+                Icon(
+                  Icons.add_a_photo_outlined,
+                  size: 36.h,
+                  color: const Color(0xFF1B3022),
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'Add Media (Photos/Videos)',
+                  'Tap to Add Photos',
                   style: TextStyleHelper.instance.body12SemiBoldInter.copyWith(
                     height: 1.25,
+                    color: const Color(0xFF1B3022),
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Images are stored securely in the cloud',
+                  style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                    color: const Color(0xFF4D6353),
+                    fontSize: 10,
                   ),
                 ),
               ],
             ),
+
           ),
         ),
         if (provider.shareHiddenGemModel.selectedMediaPaths.isNotEmpty) ...[
@@ -257,6 +276,21 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
               itemCount: provider.shareHiddenGemModel.selectedMediaPaths.length,
               separatorBuilder: (context, index) => SizedBox(width: 12.h),
               itemBuilder: (context, index) {
+                final path = provider.shareHiddenGemModel.selectedMediaPaths[index];
+                Widget imageWidget;
+                if (path.startsWith('data:image')) {
+                  // Base64 stored image
+                  final bytes = base64Decode(path.split(',').last);
+                  imageWidget = Image.memory(bytes, fit: BoxFit.cover);
+                } else if (path.startsWith('http') || path.startsWith('https')) {
+                  // Remote URL
+                  imageWidget = Image.network(path, fit: BoxFit.cover,
+                    errorBuilder: (ctx, e, st) => const Icon(Icons.broken_image));
+                } else {
+                  // Local file path (from image_picker)
+                  imageWidget = Image.file(File(path), fit: BoxFit.cover,
+                    errorBuilder: (ctx, e, st) => const Icon(Icons.broken_image));
+                }
                 return Stack(
                   children: [
                     Container(
@@ -264,15 +298,11 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                       width: 100.h,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12.h),
+                        color: appTheme.gray_100,
                       ),
-                      child: CustomImageView(
-                        imagePath: provider
-                            .shareHiddenGemModel
-                            .selectedMediaPaths[index],
-                        height: 100.h,
-                        width: 100.h,
-                        fit: BoxFit.cover,
-                        radius: BorderRadius.circular(12.h),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.h),
+                        child: imageWidget,
                       ),
                     ),
                     Positioned(
@@ -283,12 +313,12 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                           provider.removeMedia(index);
                         },
                         child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
                             color: Colors.black54,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.close,
                             size: 12,
                             color: Colors.white,

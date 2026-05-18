@@ -40,6 +40,32 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final user = userProvider.user;
+                if (user?.isAdmin != true) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle('ADMINISTRATION'),
+                    _buildCard(
+                      children: [
+                        _buildRowItem(
+                          icon: Icons.admin_panel_settings_outlined,
+                          title: 'Admin Control Center',
+                          subtitle: 'Manage users, posts, and seed data',
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.adminUserManagement,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
             _buildSectionTitle('PREFERENCES'),
             _buildCard(
               children: [

@@ -11,6 +11,8 @@ import 'dart:io';
 import '../../core/services/media_service.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
+import '../edit_gem_page/edit_gem_page.dart';
+import '../../widgets/safe_image.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -169,7 +171,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 24),
                   _buildProfileHeader(context, userProvider, user),
                   const SizedBox(height: 16),
-                  _buildStatsRow(user),
+                  _buildStatsRow(context, user),
                   const SizedBox(height: 16),
                   _buildBadgeGallery(user),
                   const SizedBox(height: 16),
@@ -186,6 +188,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     leadingColor: const Color(0x7FD3E8DB),
                     icon: Icons.push_pin_outlined,
                     onTap: () => _showSavedGemsSheet(context, user),
+                  ),
+                  _buildListRow(
+                    title: 'My Contributions',
+                    subtitle: 'Places you have shared with the community',
+                    leadingColor: const Color(0x7FD3E8DB),
+                    icon: Icons.add_location_alt_outlined,
+                    onTap: () => _showContributionsSheet(context),
                   ),
                   const SizedBox(height: 24),
                   _buildSectionHeader('MY EXPLORATION', 'Explore'),
@@ -238,9 +247,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                   if (user.isDndEnabled)
                     _buildDndHoursRow(context, userProvider, user),
-                  const SizedBox(height: 24),
-                  _buildSectionHeader('MY CONTRIBUTIONS', 'Manage'),
-                  _buildMyContributionsList(context),
                   const SizedBox(height: 32),
                   _buildLogoutSection(context, userProvider),
                 ],
@@ -320,21 +326,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 borderRadius: BorderRadius.circular(9999),
               ),
               child: Center(
-                child: user.avatarUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(9999),
-                        child: Image.network(
-                          user.avatarUrl,
-                          fit: BoxFit.cover,
-                          width: 102,
-                          height: 102,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.person,
-                        color: Color(0xFF1B3022),
-                        size: 64,
-                      ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9999),
+                  child: SafeImage(
+                    imageUrl: user.avatarUrl,
+                    width: 102,
+                    height: 102,
+                    fit: BoxFit.cover,
+                    placeholder: const Icon(
+                      Icons.person,
+                      color: Color(0xFF1B3022),
+                      size: 64,
+                    ),
+                  ),
+                ),
               ),
             ),
             GestureDetector(
@@ -517,7 +522,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  Widget _buildStatsRow(UserModel user) {
+  Widget _buildStatsRow(BuildContext context, UserModel user) {
+    final gemsProvider = Provider.of<GemsProvider>(context);
+    final myGemsCount = gemsProvider.gems
+        .where((g) => g.contributorId == user.id)
+        .length;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
@@ -529,7 +539,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _StatItem(label: 'GEMS SHARED', value: '${user.karmaPoints ~/ 10}'),
+          _StatItem(label: 'GEMS SHARED', value: '$myGemsCount'),
           _StatItem(
             label: 'STREAK',
             value: '${user.contributionStreak}D',
@@ -1098,7 +1108,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  Widget _buildMyContributionsList(BuildContext context) {
+  Widget _buildMyContributionsList(BuildContext context, {ScrollController? scrollController}) {
     return Consumer<GemsProvider>(
       builder: (context, gemsProvider, child) {
         final userId = Provider.of<UserProvider>(
@@ -1112,71 +1122,311 @@ class _UserProfilePageState extends State<UserProfilePage> {
         if (myGems.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Text(
-              'No contributions yet. Share a hidden gem to earn karma!',
-              style: TextStyleHelper.instance.body14MediumInter,
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_location_alt_outlined,
+                    size: 48, color: Color(0xFF1B3022)),
+                const SizedBox(height: 12),
+                Text(
+                  'No contributions yet.',
+                  style: TextStyleHelper.instance.title18SemiBold.copyWith(
+                    color: const Color(0xFF1B3022),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Share a hidden gem to earn karma!',
+                  style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           );
         }
 
-        return SizedBox(
-          height: 120,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            scrollDirection: Axis.horizontal,
-            itemCount: myGems.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final gem = myGems[index];
-              return GestureDetector(
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.placeDetailsScreen,
-                  arguments: gem,
-                ),
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            image: DecorationImage(
-                              image: NetworkImage(gem.imageUrl),
-                              fit: BoxFit.cover,
+        return ListView.builder(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: myGems.length,
+          itemBuilder: (context, index) {
+            final gem = myGems[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0x191B3022)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Gem thumbnail
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                    ),
+                    child: gem.imageUrl.isNotEmpty
+                        ? Image.network(
+                            gem.imageUrl,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 80,
+                              height: 80,
+                              color: const Color(0xFFD7E8DE),
+                              child: const Icon(
+                                Icons.place,
+                                color: Color(0xFF1B3022),
+                                size: 32,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: 80,
+                            height: 80,
+                            color: const Color(0xFFD7E8DE),
+                            child: const Icon(
+                              Icons.place,
+                              color: Color(0xFF1B3022),
+                              size: 32,
                             ),
                           ),
-                        ),
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: _buildStatusIcon(gem.status),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 80,
-                      child: Text(
-                        gem.name,
-                        style: TextStyleHelper.instance.label10BoldInter,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
+                  ),
+                  // Gem info
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  gem.name,
+                                  style: TextStyleHelper
+                                      .instance.body14BoldInter,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              _buildStatusIcon(gem.status),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            gem.category,
+                            style: TextStyleHelper.instance.body12MediumInter
+                                .copyWith(color: Colors.grey[600]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          // Edit & Delete buttons
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            EditGemPage(gem: gem),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1B3022),
+                                      borderRadius:
+                                          BorderRadius.circular(20),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.edit,
+                                            color: Colors.white, size: 12),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Edit',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete Gem?'),
+                                        content: Text(
+                                            'Are you sure you want to delete "${gem.name}"? This cannot be undone.'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, true),
+                                            child: const Text('Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true && context.mounted) {
+                                      await gemsProvider.deleteGem(gem.id);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Gem deleted.'),
+                                          backgroundColor:
+                                              Color(0xFF1B3022),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[50],
+                                      borderRadius:
+                                          BorderRadius.circular(20),
+                                      border: Border.all(
+                                          color: Colors.red.withOpacity(0.3)),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.delete_outline,
+                                            color: Colors.red, size: 12),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
+
+  void _showContributionsSheet(BuildContext context) {
+    final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
+    final userId = Provider.of<UserProvider>(context, listen: false).user?.id;
+    final myGems = gemsProvider.gems
+        .where((g) => g.contributorId == userId)
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'My Contributions',
+                    style: TextStyleHelper.instance.title18SemiBold,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7E8DE),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${myGems.length} shared',
+                      style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                        color: const Color(0xFF1B3022),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: _buildMyContributionsList(context, scrollController: scrollController),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildStatusIcon(GemStatus status) {
     IconData icon;

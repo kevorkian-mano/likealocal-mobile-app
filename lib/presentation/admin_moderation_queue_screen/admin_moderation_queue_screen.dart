@@ -1,4 +1,6 @@
 import '../../core/providers/gems_provider.dart';
+import '../../core/providers/user_provider.dart';
+import '../../widgets/safe_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
@@ -102,14 +104,18 @@ class AdminModerationQueueScreen extends StatelessWidget {
                   children: [
                     Hero(
                       tag: 'gem_${gem.id}',
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                            image: NetworkImage(gem.imageUrl),
-                            fit: BoxFit.cover,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: SafeImage(
+                          imageUrl: gem.imageUrl,
+                          width: 90,
+                          height: 90,
+                          fit: BoxFit.cover,
+                          placeholder: Container(
+                            width: 90,
+                            height: 90,
+                            color: const Color(0xFFE8F2E9),
+                            child: const Icon(Icons.image, color: Color(0xFF1B3022)),
                           ),
                         ),
                       ),
@@ -169,38 +175,72 @@ class AdminModerationQueueScreen extends StatelessWidget {
                   horizontal: 20,
                   vertical: 12,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionBtn(
-                        label: 'Reject',
-                        color: const Color(0xFFBEAFA7),
-                        icon: Icons.close,
-                        onPressed: () => _confirmAction(
-                          context,
-                          'Reject',
-                          () => gemsProvider.rejectGem(gem.id),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildActionBtn(
-                        label: 'Approve',
-                        color: const Color(0xFF1B3022),
-                        icon: Icons.check,
-                        onPressed: () => _confirmAction(
-                          context,
-                          'Approve',
-                          () => gemsProvider.approveGem(
-                            gem.id,
-                            gem.contributorId,
+                child: Consumer<UserProvider>(
+                  builder: (context, userProvider, _) {
+                    final isAdmin = userProvider.user?.isAdmin == true;
+                    if (isAdmin) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _buildActionBtn(
+                              label: 'Reject',
+                              color: const Color(0xFFBEAFA7),
+                              icon: Icons.close,
+                              onPressed: () => _confirmAction(
+                                context,
+                                'Reject',
+                                () => gemsProvider.rejectGem(gem.id),
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildActionBtn(
+                              label: 'Approve',
+                              color: const Color(0xFF1B3022),
+                              icon: Icons.check,
+                              onPressed: () => _confirmAction(
+                                context,
+                                'Approve',
+                                () => gemsProvider.approveGem(
+                                  gem.id,
+                                  gem.contributorId,
+                                ),
+                              ),
+                              isPrimary: true,
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0x111B3022),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        isPrimary: true,
-                      ),
-                    ),
-                  ],
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.hourglass_empty,
+                              size: 16,
+                              color: Color(0xFF1B3022),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Pending Moderation Review',
+                              style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                                color: const Color(0xFF1B3022),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -208,6 +248,7 @@ class AdminModerationQueueScreen extends StatelessWidget {
         );
       },
     );
+
   }
 
   void _confirmAction(

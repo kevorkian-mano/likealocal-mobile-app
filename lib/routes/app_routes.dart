@@ -25,6 +25,7 @@ import '../presentation/ai_chatbot_screen/ai_chatbot_screen.dart';
 import '../presentation/leaderboard_screen/leaderboard_screen.dart';
 import '../presentation/admin_user_management_screen/admin_user_management_screen.dart';
 import '../presentation/app_navigation_screen/app_navigation_screen.dart';
+import '../presentation/growth_strategy_screen/growth_strategy_screen.dart';
 import '../core/auth_wrapper.dart';
 import '../core/role_guard.dart';
 
@@ -49,6 +50,7 @@ class AppRoutes {
   static const String adminDashboard = '/admin_dashboard';
   static const String adminModerationQueue = '/admin_moderation_queue';
   static const String superUserDashboard = '/super_user_dashboard';
+  static const String growthStrategy = '/growth_strategy';
   static const String chatListScreen = '/chat_list_screen';
   static const String chatDetailsScreen = '/chat_details_screen';
   static const String notificationSettingsScreen =
@@ -92,13 +94,18 @@ class AppRoutes {
     ),
     adminModerationQueue: (context) => RoleGuard(
       requireAuth: true,
-      requireAdmin: true,
+      requireSuperUser: true,
       child: AdminModerationQueueScreen.builder(context),
     ),
     superUserDashboard: (context) => RoleGuard(
       requireAuth: true,
       requireSuperUser: true,
       child: SuperUserDashboardScreen.builder(context),
+    ),
+    growthStrategy: (context) => RoleGuard(
+      requireAuth: true,
+      requireSuperUser: true,
+      child: GrowthStrategyScreen.builder(context),
     ),
     chatListScreen: (context) =>
         RoleGuard(requireAuth: true, child: ChatListScreen.builder(context)),

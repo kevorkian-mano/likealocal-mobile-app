@@ -97,17 +97,57 @@ class GemsProvider extends ChangeNotifier {
     return approvedGems.where((gem) => gem.contributorIsSuperUser).toList();
   }
 
-  /// Get the nearest approved gem from current user location
-  HiddenGem? getNearestGem() {
-    if (approvedGems.isEmpty || _userLocation == null) return null;
+  /// Get the nearest approved gem from current user location or smart dynamic fallback reference
+  HiddenGem? getNearestGem(UserModel? currentUser) {
+    if (approvedGems.isEmpty) return null;
+
+    double currentLat = 38.7223; // Global base fallback (Lisbon Center)
+    double currentLng = -9.1393;
+
+    if (_userLocation != null) {
+      currentLat = _userLocation!.latitude;
+      currentLng = _userLocation!.longitude;
+    } else if (currentUser != null) {
+      // 1. Fallback to most recently saved gem if available
+      if (currentUser.savedGems.isNotEmpty) {
+        final savedGemId = currentUser.savedGems.last;
+        final savedGem = _gems.firstWhere(
+          (g) => g.id == savedGemId,
+          orElse: () => null as dynamic,
+        );
+        if (savedGem != null) {
+          currentLat = savedGem.latitude;
+          currentLng = savedGem.longitude;
+        }
+      }
+      // 2. Or fallback to their contributed gems if available
+      else {
+        final contributed = _gems.where((g) => g.contributorId == currentUser.id).toList();
+        if (contributed.isNotEmpty) {
+          currentLat = contributed.last.latitude;
+          currentLng = contributed.last.longitude;
+        }
+        // 3. Or fallback to collective center of all active platform gems in the DB
+        else {
+          double totalLat = 0;
+          double totalLng = 0;
+          for (final g in approvedGems) {
+            totalLat += g.latitude;
+            totalLng += g.longitude;
+          }
+          currentLat = totalLat / approvedGems.length;
+          currentLng = totalLng / approvedGems.length;
+        }
+      }
+    }
 
     HiddenGem? nearest;
     double minDistance = double.infinity;
 
     for (final gem in approvedGems) {
       final distance = LocationService.calculateDistance(
-        _userLocation!.latitude,
-        _userLocation!.longitude,
+        currentLat,
+        currentLng,
         gem.latitude,
         gem.longitude,
       );

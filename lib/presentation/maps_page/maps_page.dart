@@ -251,7 +251,7 @@ class _MapsPageState extends State<MapsPage> {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: const Text('🌟 Legends Only'),
+              label: const Text('🌟 Super Users Only'),
               selected: _superUserOnly,
               onSelected: (val) => setState(() => _superUserOnly = val),
               selectedColor: const Color(0xFFFFD700).withOpacity(0.3),

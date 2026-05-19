@@ -73,6 +73,30 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       _handleDeepLink(message.data);
     });
+
+    // 7. Real-time broadcast notification listener for active sessions
+    final startTime = Timestamp.now();
+    FirebaseFirestore.instance
+        .collection('notifications')
+        .where('createdAt', isGreaterThan: startTime)
+        .snapshots()
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data();
+          if (data != null) {
+            final title = data['title'] ?? 'Broadcast Alert';
+            final message = data['message'] ?? '';
+            showLocalNotification(
+              id: change.doc.id.hashCode,
+              title: title,
+              body: message,
+              payload: 'broadcast_tab',
+            );
+          }
+        }
+      }
+    });
   }
 
   Future<void> showLocalNotification({
@@ -114,6 +138,13 @@ class NotificationService {
     final gemId = data['gemId'];
     if (gemId != null && gemId.toString().isNotEmpty) {
       final idStr = gemId.toString();
+      if (idStr == 'broadcast_tab') {
+        NavigatorService.pushNamed(
+          AppRoutes.chatListScreen,
+          arguments: 'broadcast_tab',
+        );
+        return;
+      }
       if (idStr.contains('_')) {
         // This is a chat ID! Let's redirect to the chat details screen.
         try {

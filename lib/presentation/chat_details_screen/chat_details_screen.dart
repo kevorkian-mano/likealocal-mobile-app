@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../core/providers/user_provider.dart';
@@ -24,6 +25,27 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   late ChatPreview _chat;
   late String _currentUserId;
   late ChatProvider _chatProvider;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+
+  void _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) {
+            setState(() {
+              _messageController.text = val.recognizedWords;
+            });
+          },
+        );
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -37,6 +59,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
 
   @override
   void dispose() {
+    _speech.stop();
     _chatProvider.activeChatId = null;
     _messageController.dispose();
     _scrollController.dispose();
@@ -400,16 +423,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                   border: InputBorder.none,
                   hintStyle: TextStyle(fontSize: 14, color: Color(0xFF4D6353)),
                   suffixIcon: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Listening... (Speech to Text hook)'),
-                        ),
-                      );
-                    },
+                    onTap: _listen,
                     child: Icon(
-                      Icons.mic_none,
-                      color: Color(0xFF1B3022),
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? Colors.red : const Color(0xFF1B3022),
                       size: 20,
                     ),
                   ),

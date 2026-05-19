@@ -6,6 +6,7 @@ import '../../core/models/user_model.dart';
 import '../../core/providers/chat_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/utils/gem_ranking_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
@@ -71,6 +72,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     final bool isOwner = currentUser?.id == displayGem.contributorId;
     final bool isSaved =
         currentUser?.savedGems.contains(displayGem.id) ?? false;
+    
+    // Calculate match percentage based on user preferences
+    final userPreferences = currentUser?.selectedVibes ?? [];
+    final matchPercentage = GemRankingHelper.calculateMatchPercentage(
+      displayGem,
+      userPreferences,
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -143,11 +151,12 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     ],
                   ),
                 ),
-                Positioned(
-                  bottom: 48,
-                  left: 20,
-                  child: _buildAnimatedVibeMatch('98% Match'),
-                ),
+                if (userPreferences.isNotEmpty)
+                  Positioned(
+                    bottom: 48,
+                    left: 20,
+                    child: _buildAnimatedVibeMatch('$matchPercentage% Match'),
+                  ),
               ],
             ),
 

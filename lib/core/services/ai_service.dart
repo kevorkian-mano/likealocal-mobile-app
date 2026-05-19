@@ -4,51 +4,71 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AIService {
-  static String get _openaiKey => dotenv.get('OPENAI_API_KEY', fallback: '');
-  static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
+  static String get _googleApiKey => dotenv.get('GOOGLE_API_KEY', fallback: '');
+  static const String _googleBaseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
-  static Future<String> _callOpenAI(
-    String prompt, {
-    bool isJson = false,
-  }) async {
+  // ── Google Generative AI (Gemini) via REST API ────────────────────────────
+  static Future<String> _callGoogleAI(String prompt) async {
+    if (_googleApiKey.isEmpty) {
+      debugPrint('❌ Google API key is EMPTY - check .env file');
+      throw Exception('Google API key not configured in .env file');
+    }
+    
     final client = HttpClient();
     try {
-      final request = await client.postUrl(Uri.parse(_baseUrl));
+      debugPrint('🤖 Calling Google Gemini API...');
+      
+      final url = Uri.parse('$_googleBaseUrl?key=$_googleApiKey');
+      final request = await client.postUrl(url);
       request.headers.set('Content-Type', 'application/json');
-      request.headers.set('Authorization', 'Bearer $_openaiKey');
 
-      final body = {
-        'model': 'gpt-3.5-turbo',
-        'messages': [
+      // Build the request with system instruction embedded in the prompt
+      final enhancedPrompt = 'You are Localie, the smart AI assistant for LikeALocal. '
+          'Provide helpful, concise, and personalized recommendations for local experiences. '
+          'Be friendly and encouraging.\n\n$prompt';
+
+      final body = jsonEncode({
+        'contents': [
           {
-            'role': 'system',
-            'content':
-                'You are Localie, the smart AI assistant for the LikeALocal app. ${isJson ? "Respond only in valid JSON format." : ""}',
-          },
-          {'role': 'user', 'content': prompt},
+            'parts': [
+              {'text': enhancedPrompt}
+            ]
+          }
         ],
-        'temperature': 0.7,
-      };
+        'generationConfig': {
+          'temperature': 0.7,
+          'maxOutputTokens': 1024
+        }
+      });
 
-      if (isJson) {
-        body['response_format'] = {'type': 'json_object'};
-      }
-
-      request.write(jsonEncode(body));
+      request.write(body);
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
 
       if (response.statusCode != 200) {
-        debugPrint('OpenAI Error: $responseBody');
-        throw Exception('OpenAI API returned ${response.statusCode}');
+        debugPrint('❌ Google API Error (${response.statusCode}): $responseBody');
+        throw Exception('Google API error: $responseBody');
       }
 
       final data = jsonDecode(responseBody);
-      return data['choices'][0]['message']['content'];
+      final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+      
+      if (text == null || text.toString().isEmpty) {
+        debugPrint('❌ Empty response from Google AI');
+        throw Exception('Empty response from Google AI');
+      }
+      
+      debugPrint('✅ Received response from Google AI');
+      return text.toString();
+    } catch (e) {
+      debugPrint('❌ Google AI Error: $e');
+      rethrow;
     } finally {
       client.close();
     }
   }
+
+
 
   // FR4-3: Suggest category and tags from an uploaded image
   static Future<Map<String, dynamic>> suggestTagsAndCategory(
@@ -74,11 +94,11 @@ class AIService {
     try {
       final joined = reviewTexts.take(20).join('\n---\n');
       final prompt =
-          'Summarize these reviews for a local spot in 2-3 sentences. Highlighting the vibe and what locals love.\n\nReviews:\n$joined';
-      return await _callOpenAI(prompt);
+          'Summarize these reviews for a local spot in 2-3 sentences. Highlight the vibe and what locals love.\n\nReviews:\n$joined';
+      return await _callGoogleAI(prompt);
     } catch (e) {
-      debugPrint('AI Summary Error: $e');
-      return 'Failed to generate summary.';
+      debugPrint('❌ AI Summary Error: $e');
+      return 'Error summarizing reviews: ${e.toString()}';
     }
   }
 
@@ -89,12 +109,28 @@ class AIService {
   ) async {
     try {
       final prompt =
-          'A visitor asked about "$gemName": "$lastMessage". Suggest 3 short, friendly reply options (max 10 words each). Return as a JSON array of strings under the key "replies".';
-      final response = await _callOpenAI(prompt, isJson: true);
-      final data = jsonDecode(response);
-      return List<String>.from(data['replies'] ?? []);
+          'A visitor asked about "$gemName": "$lastMessage". Suggest 3 short, friendly reply options (max 10 words each). Format as a simple numbered list.';
+      final response = await _callGoogleAI(prompt);
+      
+      // Parse the response to extract the three suggestions
+      final lines = response.split('\n').where((line) => line.trim().isNotEmpty).toList();
+      final suggestions = <String>[];
+      
+      for (final line in lines) {
+        final cleaned = line.replaceAll(RegExp(r'^\d+\.\s*'), '').trim();
+        if (cleaned.isNotEmpty) {
+          suggestions.add(cleaned);
+        }
+      }
+      
+      // Ensure we return exactly 3 suggestions
+      while (suggestions.length < 3) {
+        suggestions.add('Great question!');
+      }
+      
+      return suggestions.take(3).toList();
     } catch (e) {
-      debugPrint('AI Reply Error: $e');
+      debugPrint('❌ AI Reply Error: $e');
       return [
         'Great question!',
         'I recommend visiting early.',
@@ -113,10 +149,10 @@ class AIService {
       final gemsStr = gemNames.join(', ');
       final prompt =
           'Create a personalized daily itinerary based on my vibes: $vibesStr. Use some of these nearby hidden gems: $gemsStr. Provide a title, morning, afternoon, and evening activity. Keep it concise and inspiring.';
-      return await _callOpenAI(prompt);
+      return await _callGoogleAI(prompt);
     } catch (e) {
-      debugPrint('AI Itinerary Error: $e');
-      return 'Failed to generate itinerary. Please try again later.';
+      debugPrint('❌ AI Itinerary Error: $e');
+      return 'Error generating itinerary: ${e.toString()}';
     }
   }
 
@@ -140,25 +176,37 @@ class AIService {
           .join(', ');
 
       final prompt =
-          '''
-        You are "Localie", the AI Smart Assistant for LikeALocal.
-        User Vibes: ${userVibes.join(', ')}
-        Recent User Interests: $interactionStr
-        Available Gems nearby:
-        $gemData
-        
-        User Message: "$userMessage"
-        
-        Instruction: Respond naturally. Recommend gems that match their past interests. 
-        Return your response in JSON format with keys "text" (your response) and "suggestedGemIds" (array of IDs).
-      ''';
+          '''You are "Localie", the AI Smart Assistant for LikeALocal.
+User Vibes: ${userVibes.join(', ')}
+Recent User Interests: $interactionStr
+Available Gems nearby:
+$gemData
 
-      final response = await _callOpenAI(prompt, isJson: true);
-      return jsonDecode(response);
-    } catch (e) {
-      debugPrint('AI Chat Error: $e');
+User Message: "$userMessage"
+
+Instruction: Respond naturally and conversationally. Recommend gems that match their past interests. 
+Be helpful, friendly, and concise. Keep responses under 150 words.
+When recommending gems, mention the gem names and IDs so we can track engagement.''';
+
+      final responseText = await _callGoogleAI(prompt);
+      
+      // Parse suggested gem IDs from the response
+      final suggestedGemIds = <String>[];
+      for (final gem in availableGems) {
+        if (responseText.contains(gem['id'] as String)) {
+          suggestedGemIds.add(gem['id'] as String);
+        }
+      }
+
       return {
-        'text': 'Sorry, I encountered an error connecting to my brain.',
+        'text': responseText,
+        'suggestedGemIds': suggestedGemIds,
+      };
+    } catch (e) {
+      debugPrint('❌ AI Chat Error: $e\n$e');
+      final errorMsg = 'Error: ${e.toString()}. Please check your internet connection and API key.';
+      return {
+        'text': errorMsg,
         'suggestedGemIds': [],
       };
     }

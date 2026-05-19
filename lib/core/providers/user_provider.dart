@@ -23,20 +23,26 @@ class UserProvider extends ChangeNotifier {
   Future<void> _init() async {
     _authService.authStateChanges.listen((User? firebaseUser) async {
       if (firebaseUser != null) {
-        _user = await _authService.getUserData(firebaseUser.uid);
+        final userData = await _authService.getUserData(firebaseUser.uid);
+        if (userData != null && userData.isBanned) {
+          await _authService.signOut();
+          _user = null;
+        } else {
+          _user = userData;
 
-        // FR11-7: Update FCM Token for notifications
-        try {
-          NotificationService().getDeviceToken().then((token) async {
-            if (token != null) {
-              await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(firebaseUser.uid)
-                  .update({'fcmToken': token});
-            }
-          });
-        } catch (e) {
-          debugPrint('Error updating FCM token: $e');
+          // FR11-7: Update FCM Token for notifications
+          try {
+            NotificationService().getDeviceToken().then((token) async {
+              if (token != null) {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(firebaseUser.uid)
+                    .update({'fcmToken': token});
+              }
+            });
+          } catch (e) {
+            debugPrint('Error updating FCM token: $e');
+          }
         }
       } else {
         _user = null;

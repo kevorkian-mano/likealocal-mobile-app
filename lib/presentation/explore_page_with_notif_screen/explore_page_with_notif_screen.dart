@@ -291,29 +291,55 @@ class _ExplorePageWithNotifScreenState
                                 horizontal: 16,
                               ),
                               child: Row(
-                                children: categories
-                                    .map(
-                                      (cat) => Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 8,
-                                        ),
-                                        child: GestureDetector(
-                                          onTap: () => setState(
-                                            () => _searchQuery = cat,
-                                          ),
-                                          child: _buildChip(
-                                            cat,
-                                            _searchQuery == cat
-                                                ? appTheme.midnightPine
-                                                : const Color(0xFFD7E8DE),
-                                            _searchQuery == cat
-                                                ? Colors.white
-                                                : const Color(0xFF4D6353),
-                                          ),
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: FilterChip(
+                                      label: const Text('🌟 Super Users Only'),
+                                      selected: _superUserOnly,
+                                      onSelected: (val) => setState(() => _superUserOnly = val),
+                                      selectedColor: const Color(0xFFFFD700).withOpacity(0.3),
+                                      checkmarkColor: const Color(0xFF1B3022),
+                                      labelStyle: const TextStyle(
+                                        color: Color(0xFF1B3022),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(999),
+                                        side: BorderSide(
+                                          color: _superUserOnly
+                                              ? const Color(0xFFFFD700)
+                                              : const Color(0xFF1B3022).withOpacity(0.2),
                                         ),
                                       ),
-                                    )
-                                    .toList(),
+                                    ),
+                                  ),
+                                  ...categories
+                                      .map(
+                                        (cat) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 8,
+                                          ),
+                                          child: GestureDetector(
+                                            onTap: () => setState(
+                                              () => _searchQuery = cat,
+                                            ),
+                                            child: _buildChip(
+                                              cat,
+                                              _searchQuery == cat
+                                                  ? appTheme.midnightPine
+                                                  : const Color(0xFFD7E8DE),
+                                              _searchQuery == cat
+                                                  ? Colors.white
+                                                  : const Color(0xFF4D6353),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ],
                               ),
                             );
                           },
@@ -1228,7 +1254,7 @@ class _ExplorePageWithNotifScreenState
                   SizedBox(height: 24),
                   _buildFilterToggle(
                     'Super User Recommendations',
-                    'Filter by Local Legends only (FR7-5)',
+                    'Filter by Super Users only (FR7-5)',
                     _superUserOnly,
                     (val) {
                       setModalState(() => _superUserOnly = val);
@@ -1411,7 +1437,7 @@ class _ExplorePageWithNotifScreenState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Legends Only (Super Users)',
+                    'Super Users Only',
                     style: TextStyleHelper.instance.body14BoldInter,
                   ),
                   Switch(

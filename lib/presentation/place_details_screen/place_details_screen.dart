@@ -297,6 +297,59 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     ],
                   ),
                   if (isOwner) _buildStatusBadge(displayGem.status),
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(displayGem.contributorId)
+                        .get(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        final acceptsMessages = data['acceptsMessages'] ?? true;
+                        if (!acceptsMessages) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline,
+                                      color: Colors.red.shade700,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "Doesn't Accept Direct Messages",
+                                      style: TextStyle(
+                                        color: Colors.red.shade800,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                   const SizedBox(height: 24),
                   _buildTTSButton(displayGem.description),
                   const SizedBox(height: 12),
@@ -426,28 +479,83 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   const SizedBox(height: 40),
                   _buildDynamicBusyTimes(displayGem.category),
                   const SizedBox(height: 24),
-                  if (true) // Simulated availability check for owner status
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.nightlight_round,
-                            color: Colors.orange,
-                            size: 14,
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(displayGem.contributorId)
+                        .get(),
+                    builder: (context, snapshot) {
+                      bool isAvailable = true;
+                      bool acceptsMessages = true;
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        acceptsMessages = data['acceptsMessages'] ?? true;
+                        final isDndEnabled = data['isDndEnabled'] ?? false;
+                        final start = data['dndStartHour'] ?? 22;
+                        final end = data['dndEndHour'] ?? 8;
+
+                        if (!acceptsMessages) isAvailable = false;
+                        if (isDndEnabled) {
+                          final now = DateTime.now().hour;
+                          if (start > end) {
+                            if (now >= start || now < end) isAvailable = false;
+                          } else {
+                            if (now >= start && now < end) isAvailable = false;
+                          }
+                        }
+                      }
+
+                      if (!acceptsMessages) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.chat_bubble_outline,
+                                color: Colors.red,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Owner currently doesn't accept direct messages",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Owner is currently away (FR5-4)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange[800],
-                              fontWeight: FontWeight.bold,
+                        );
+                      }
+
+                      if (isAvailable) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.nightlight_round,
+                              color: Colors.orange,
+                              size: 14,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Owner is currently away (FR5-4)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                   Row(
                     children: [
                       Expanded(

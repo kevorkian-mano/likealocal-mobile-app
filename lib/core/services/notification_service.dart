@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../app_export.dart';
+import '../models/chat_model.dart';
 
 // Top level background message handler
 @pragma('vm:entry-point')
@@ -108,9 +110,42 @@ class NotificationService {
     }
   }
 
-  void _handleDeepLink(Map<String, dynamic> data) {
+  void _handleDeepLink(Map<String, dynamic> data) async {
     final gemId = data['gemId'];
     if (gemId != null && gemId.toString().isNotEmpty) {
+      final idStr = gemId.toString();
+      if (idStr.contains('_')) {
+        // This is a chat ID! Let's redirect to the chat details screen.
+        try {
+          final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+          if (currentUserId != null) {
+            final doc = await FirebaseFirestore.instance
+                .collection('chats')
+                .doc(idStr)
+                .get();
+            if (doc.exists) {
+              final chatPreview = ChatPreview.fromMap(
+                doc.data()!,
+                doc.id,
+                currentUserId,
+              );
+              NavigatorService.pushNamed(
+                AppRoutes.chatDetailsScreen,
+                arguments: chatPreview,
+              );
+            } else {
+              NavigatorService.pushNamed(AppRoutes.chatListScreen);
+            }
+          } else {
+            NavigatorService.pushNamed(AppRoutes.chatListScreen);
+          }
+        } catch (e) {
+          print('Error handling chat deep link: $e');
+          NavigatorService.pushNamed(AppRoutes.chatListScreen);
+        }
+        return; // ALWAYS early return so a chat ID never falls through to the Gem Details page!
+      }
+
       NavigatorService.pushNamed(
         AppRoutes.placeDetailsScreen,
         arguments: gemId,

@@ -3,6 +3,7 @@ import '../../core/providers/user_provider.dart';
 import '../../core/providers/chat_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/utils/gem_ranking_helper.dart';
 import '../../widgets/custom_button.dart';
 import '../place_details_screen/place_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -681,34 +682,21 @@ class _ExplorePageWithNotifScreenState
                                     .toList();
                               }
 
-                              // 2. Personalization Filter (Existing Vibe Matching)
-                              bool showingVibeMatches = false;
-                              if (_searchQuery.isEmpty &&
-                                  userVibes.isNotEmpty) {
-                                final matchingGems = displayGems
-                                    .where(
-                                      (gem) => userVibes.any(
-                                        (vibe) => gem.vibe
-                                            .toLowerCase()
-                                            .contains(vibe.toLowerCase()),
-                                      ),
-                                    )
-                                    .toList();
-
-                                final nonMatchingGems = displayGems
-                                    .where(
-                                      (gem) => !userVibes.any(
-                                        (vibe) => gem.vibe
-                                            .toLowerCase()
-                                            .contains(vibe.toLowerCase()),
-                                      ),
-                                    )
-                                    .toList();
-
+                              // 2. Personalization: Direct Preference Matching
+                              bool showingMatches = false;
+                              if (_searchQuery.isEmpty && userVibes.isNotEmpty) {
+                                final separated = GemRankingHelper.separateByPreferences(
+                                  displayGems,
+                                  userVibes,
+                                );
+                                
+                                final matchingGems = separated['matching'] ?? [];
+                                final nonMatchingGems = separated['nonMatching'] ?? [];
+                                
                                 if (matchingGems.isNotEmpty) {
-                                  // Show matches at the top, but append the rest so they aren't hidden!
+                                  // Show matches first, then non-matches
                                   displayGems = [...matchingGems, ...nonMatchingGems];
-                                  showingVibeMatches = true;
+                                  showingMatches = true;
                                 }
                               }
 
@@ -732,7 +720,7 @@ class _ExplorePageWithNotifScreenState
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (showingVibeMatches)
+                                  if (showingMatches)
                                     Padding(
                                       padding: const EdgeInsets.only(
                                         bottom: 16,
@@ -746,7 +734,7 @@ class _ExplorePageWithNotifScreenState
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            'Matching your vibe',
+                                            'Matching your preferences',
                                             style: TextStyleHelper
                                                 .instance
                                                 .body14BoldInter

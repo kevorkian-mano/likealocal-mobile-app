@@ -227,6 +227,31 @@ class ShareHiddenGemProvider extends ChangeNotifier {
     return 'LAL-${List.generate(6, (i) => chars[rnd.nextInt(chars.length)]).join()}';
   }
 
+  String mapCategoryToVibe(String category) {
+    switch (category) {
+      case 'Hidden Dining':
+      case 'Food & Drinks':
+        return 'Hidden Cafes';
+      case 'Local Markets':
+      case 'Shopping':
+        return 'Street Food';
+      case 'Cultural Sites':
+      case 'Art & Culture':
+        return 'History';
+      case 'Nature Spots':
+      case 'Nature':
+        return 'Parks';
+      case 'Secret Spots':
+      case 'Relaxation':
+      case 'Sports & Adventure':
+        return 'Chill Vibes';
+      case 'Entertainment':
+        return 'Nightlife';
+      default:
+        return 'Chill Vibes';
+    }
+  }
+
   Future<void> publishToommunity(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
     if (selectedImageFiles.isEmpty && !isEditing) {
@@ -271,6 +296,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
           'name': placeTitleController.text.trim(),
           'description': descriptionController.text.trim(),
           'category': shareHiddenGemModel.selectedCategory ?? 'Other',
+          'vibe': mapCategoryToVibe(shareHiddenGemModel.selectedCategory ?? 'Other'),
           'imageUrl': imageUrls.isNotEmpty ? imageUrls.first : existingImageUrl,
           'mediaUrls': imageUrls,
           'latitude': selectedLat,
@@ -295,7 +321,7 @@ class ShareHiddenGemProvider extends ChangeNotifier {
           name: placeTitleController.text.trim(),
           description: descriptionController.text.trim(),
           category: shareHiddenGemModel.selectedCategory ?? 'Other',
-          vibe: 'Verified Local',
+          vibe: mapCategoryToVibe(shareHiddenGemModel.selectedCategory ?? 'Other'),
           rating: 5.0,
           imageUrl: imageUrls.first,
           mediaUrls: imageUrls,

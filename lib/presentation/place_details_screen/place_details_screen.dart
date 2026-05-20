@@ -1,5 +1,7 @@
 import '../edit_gem_page/edit_gem_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../../core/models/hidden_gem_model.dart';
 import '../../core/models/gem_review_model.dart';
 import '../../core/models/user_model.dart';
@@ -16,6 +18,7 @@ import '../../widgets/premium_upgrade_sheet.dart';
 import '../../widgets/safe_image.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final HiddenGem? gem;
@@ -297,17 +300,68 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                         size: 16,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        'Locally Verified Area',
-                        style: TextStyleHelper.instance.body14MediumInter.copyWith(
-                          color: const Color(0xFF4D6353),
+                      Expanded(
+                        child: FutureBuilder<List<Placemark>>(
+                          future: placemarkFromCoordinates(
+                              displayGem.latitude, displayGem.longitude),
+                          builder: (context, snapshot) {
+                            String locationText;
+                            if (snapshot.hasData &&
+                                snapshot.data!.isNotEmpty) {
+                              final p = snapshot.data!.first;
+                              final List<String> parts = [];
+                              void addPart(String? val) {
+                                if (val == null || val.trim().isEmpty) return;
+                                final trimmed = val.trim();
+                                final normalized = trimmed.toLowerCase();
+                                if (RegExp(r'^[\d\s\-\+,ºª\.]+$').hasMatch(normalized)) {
+                                  return;
+                                }
+                                for (var existing in parts) {
+                                  final extNorm = existing.toLowerCase();
+                                  if (extNorm == normalized ||
+                                      extNorm.contains(normalized) ||
+                                      normalized.contains(extNorm)) {
+                                    return;
+                                  }
+                                }
+                                parts.add(trimmed);
+                              }
+
+                              addPart(p.thoroughfare);
+                              addPart(p.subLocality);
+                              addPart(p.locality);
+                              addPart(p.subAdministrativeArea);
+                              addPart(p.administrativeArea);
+                              addPart(p.country);
+
+                              locationText = parts.isNotEmpty
+                                  ? parts.take(2).join(', ')
+                                  : '${displayGem.latitude.toStringAsFixed(3)}°, ${displayGem.longitude.toStringAsFixed(3)}°';
+                            } else {
+                              locationText = displayGem.category.isNotEmpty
+                                  ? '${displayGem.category} · ${displayGem.latitude.toStringAsFixed(3)}°'
+                                  : '${displayGem.latitude.toStringAsFixed(3)}°, ${displayGem.longitude.toStringAsFixed(3)}°';
+                            }
+                            return Text(
+                              locationText,
+                              style: TextStyleHelper.instance.body14MediumInter.copyWith(
+                                color: const Color(0xFF4D6353),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
                   if (isOwner) _buildStatusBadge(displayGem.status),
                   FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
+                    future: FirebaseFirestore.instanceFor(
+                      app: Firebase.app(),
+                      databaseId: 'default',
+                    )
                         .collection('users')
                         .doc(displayGem.contributorId)
                         .get(),
@@ -489,7 +543,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                   _buildDynamicBusyTimes(displayGem.category),
                   const SizedBox(height: 24),
                   FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
+                    future: FirebaseFirestore.instanceFor(
+                      app: Firebase.app(),
+                      databaseId: 'default',
+                    )
                         .collection('users')
                         .doc(displayGem.contributorId)
                         .get(),
@@ -1018,7 +1075,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         image: DecorationImage(
-                          image: NetworkImage(gem.imageUrl),
+                          image: CachedNetworkImageProvider(gem.imageUrl),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -1167,7 +1224,7 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           CircleAvatar(
                             radius: 14,
                             backgroundImage: review.avatarUrl.isNotEmpty
-                                ? NetworkImage(review.avatarUrl)
+                                ? CachedNetworkImageProvider(review.avatarUrl)
                                 : null,
                             backgroundColor: Color(0xFFD7E8DE),
                             child: review.avatarUrl.isEmpty
@@ -1693,32 +1750,156 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       );
       return;
     }
+
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Report Inaccurate Info'),
-        content: const Text(
-          'Is something wrong with this place? Our moderators will verify your report.',
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Icon(Icons.report_gmailerrorred_outlined, color: Colors.red[900], size: 28),
+            const SizedBox(width: 10),
+            Text(
+              'Report This Place',
+              style: TextStyleHelper.instance.title18SemiBoldInter.copyWith(
+                color: const Color(0xFF1B3022),
+              ),
+            ),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Help us keep the community safe. What is wrong with "${gem.name}"?',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF4D6353)),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Reason for report',
+                  hintText: 'e.g. Inaccurate location, Spam, Closed',
+                  labelStyle: const TextStyle(color: Color(0xFF1B3022)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Color(0xFF1B3022), width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter a reason';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: descCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Detailed description',
+                  hintText: 'Provide details to help moderators review...',
+                  labelStyle: const TextStyle(color: Color(0xFF1B3022)),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Color(0xFF1B3022), width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF4D6353), fontWeight: FontWeight.bold),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1B3022),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
             onPressed: () {
-              Provider.of<GemsProvider>(
-                context,
-                listen: false,
-              ).updateGem(gem.id, {'reportCount': FieldValue.increment(1)});
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Report submitted. Thank you!')),
-              );
+              if (formKey.currentState!.validate()) {
+                final reportReason = nameCtrl.text.trim();
+                final reportDesc = descCtrl.text.trim();
+
+                // Close the dialog instantly and show user feedback immediately
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Report submitted. Thank you for making LikeLocal safer!'),
+                    backgroundColor: Color(0xFF1B3022),
+                  ),
+                );
+
+                // Run database updates in the background with a timeout so they don't block/hang
+                try {
+                  FirebaseFirestore.instanceFor(
+                    app: Firebase.app(),
+                    databaseId: 'default',
+                  ).collection('alert').add({
+                    'name': reportReason,
+                    'description': reportDesc,
+                    'placeId': gem.id,
+                    'placeName': gem.name,
+                    'reporterId': currentUser.id,
+                    'reporterName': currentUser.fullName,
+                    'timestamp': FieldValue.serverTimestamp(),
+                  }).timeout(const Duration(seconds: 1)).then((_) {
+                    debugPrint('✅ Firestore report created successfully.');
+                  }).catchError((e) {
+                    debugPrint('⚠️ Firestore report background write timeout/error: $e');
+                  });
+                } catch (e) {
+                  debugPrint('⚠️ Firestore Offline/Error starting alert write: $e');
+                }
+
+                try {
+                  Provider.of<GemsProvider>(
+                    context,
+                    listen: false,
+                  ).updateGem(gem.id, {'reportCount': FieldValue.increment(1)})
+                   .timeout(const Duration(seconds: 1)).then((_) {
+                    debugPrint('✅ Firestore gem reportCount updated successfully.');
+                  }).catchError((e) {
+                    debugPrint('⚠️ Firestore updateGem background write timeout/error: $e');
+                  });
+                } catch (e) {
+                  debugPrint('⚠️ updateGem Firestore Error starting write: $e');
+                }
+              }
             },
             child: const Text(
-              'Report',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              'Submit Report',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -1914,7 +2095,10 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   }
   Widget _buildChatActionButton(BuildContext context, HiddenGem gem, UserModel? currentUser) {
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(gem.contributorId).get(),
+      future: FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('users').doc(gem.contributorId).get(),
       builder: (context, snapshot) {
         bool isAvailable = true;
         if (snapshot.hasData && snapshot.data!.exists) {

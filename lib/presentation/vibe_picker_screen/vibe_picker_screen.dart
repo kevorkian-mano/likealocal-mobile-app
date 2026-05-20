@@ -69,9 +69,10 @@ class _VibePickerScreenState extends State<VibePickerScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).pushReplacementNamed(AppRoutes.explorePageWithNotifScreen);
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRoutes.initialRoute,
+                    (route) => false,
+                  );
                 },
                 child: Text(
                   'Skip',

@@ -11,6 +11,7 @@ import '../presentation/settings_page/settings_page.dart';
 import '../presentation/sign_in_page/sign_in_page.dart';
 import '../presentation/sign_up_page/sign_up_page.dart';
 import '../presentation/vibe_picker_screen/vibe_picker_screen.dart';
+import '../presentation/email_verification_screen/email_verification_screen.dart';
 import '../presentation/pricing_page/pricing_page.dart';
 import '../presentation/admin_dashboard_screen/admin_dashboard_screen.dart';
 import '../presentation/admin_moderation_queue_screen/admin_moderation_queue_screen.dart';
@@ -31,6 +32,7 @@ import '../core/role_guard.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/onboarding_screen';
+  static const String emailVerificationScreen = '/email_verification_screen';
   static const String shareHiddenGemScreen = '/share_hidden_gem_screen';
   static const String shareHiddenGemScreenInitialPage =
       '/share_hidden_gem_screen_initial_page';
@@ -66,6 +68,7 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> get routes => {
     onboardingScreen: OnboardingScreen.builder,
+    emailVerificationScreen: (context) => const EmailVerificationScreen(),
     vibePickerScreen: (context) => const VibePickerScreen(),
     preferenceSummaryScreen: (context) =>
         const RoleGuard(requireAuth: true, child: PreferenceSummaryScreen()),

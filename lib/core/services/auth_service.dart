@@ -34,8 +34,10 @@ class AuthService {
         password: password,
       );
 
-      // FR1-11: Mandatory email verification
-      await result.user?.sendEmailVerification();
+      // FR1-11: Mandatory email verification (sent in background without blocking)
+      result.user?.sendEmailVerification().catchError((error) {
+        print('Error sending verification email: $error');
+      });
 
       // Create a user document in Firestore with ALL required fields
       await _firestore.collection('users').doc(result.user!.uid).set({
@@ -79,13 +81,6 @@ class AuthService {
         email: email.trim().toLowerCase(),
         password: password,
       );
-
-      // FR1-2: Force email verification
-      if (!credential.user!.emailVerified) {
-        await credential.user!.sendEmailVerification();
-        await _auth.signOut();
-        throw 'VERIFICATION_REQUIRED';
-      }
 
       // FR11-6: Check if user is banned
       final userDoc = await _firestore

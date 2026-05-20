@@ -34,7 +34,10 @@ class UserProvider extends ChangeNotifier {
           try {
             NotificationService().getDeviceToken().then((token) async {
               if (token != null) {
-                await FirebaseFirestore.instance
+                await FirebaseFirestore.instanceFor(
+                  app: Firebase.app(),
+                  databaseId: 'default',
+                )
                     .collection('users')
                     .doc(firebaseUser.uid)
                     .update({'fcmToken': token});
@@ -365,4 +368,16 @@ class UserProvider extends ChangeNotifier {
     // Reputation Score = (Approved Gems * 50) + (Total Views * 1) + (Total Saves * 5)
     return (approvedGemsCount * 50.0) + (totalViews * 1.0) + (totalSaves * 5.0);
   }
+
+  /// Reloads the Firebase User session, updates the local UserModel, and notifies listeners.
+  Future<void> reloadUser() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      await firebaseUser.reload();
+      final userData = await _authService.getUserData(firebaseUser.uid);
+      _user = userData;
+      notifyListeners();
+    }
+  }
 }
+

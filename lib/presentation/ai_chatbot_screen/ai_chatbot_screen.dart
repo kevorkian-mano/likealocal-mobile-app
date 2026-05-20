@@ -5,6 +5,7 @@ import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
 import '../../core/models/hidden_gem_model.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../widgets/safe_image.dart';
 
 class AIChatbotScreen extends StatefulWidget {
   const AIChatbotScreen({super.key});
@@ -172,8 +173,8 @@ class _AIChatbotScreenState extends State<AIChatbotScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16.h)),
-              child: Image.network(
-                gem.imageUrl,
+              child: SafeImage(
+                imageUrl: gem.imageUrl,
                 height: 100.h,
                 width: double.infinity,
                 fit: BoxFit.cover,

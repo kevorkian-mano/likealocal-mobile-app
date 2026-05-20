@@ -63,19 +63,28 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
+        final email = _emailController.text.trim();
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         await userProvider.signUp(
-          _emailController.text.trim(),
+          email,
           _passwordController.text.trim(),
           _nameController.text.trim(),
         );
-        Navigator.pushReplacementNamed(context, AppRoutes.vibePickerScreen);
+
+        if (!mounted) return;
+        
+        // Navigate directly to the Email Verification Blocker Screen
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.emailVerificationScreen,
+        );
+
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration Failed: ${e.toString()}')),
         );
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }

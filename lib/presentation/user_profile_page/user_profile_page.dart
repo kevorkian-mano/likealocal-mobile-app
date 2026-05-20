@@ -819,10 +819,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: gem.imageUrl.isNotEmpty
-                            ? Image.network(
-                                gem.imageUrl,
+                            ? SafeImage(
+                                imageUrl: gem.imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
+                                placeholder: const Icon(
                                   Icons.image_not_supported,
                                   color: Color(0xFF1B3022),
                                 ),
@@ -956,12 +956,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: gem.imageUrl.isNotEmpty
-                                ? Image.network(
-                                    gem.imageUrl,
+                                ? SafeImage(
+                                    imageUrl: gem.imageUrl,
                                     width: 56,
                                     height: 56,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
+                                    placeholder: Container(
                                       width: 56,
                                       height: 56,
                                       color: const Color(0xFFD7E8DE),
@@ -1177,12 +1177,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       bottomLeft: Radius.circular(20),
                     ),
                     child: gem.imageUrl.isNotEmpty
-                        ? Image.network(
-                            gem.imageUrl,
+                        ? SafeImage(
+                            imageUrl: gem.imageUrl,
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            placeholder: Container(
                               width: 80,
                               height: 80,
                               color: const Color(0xFFD7E8DE),

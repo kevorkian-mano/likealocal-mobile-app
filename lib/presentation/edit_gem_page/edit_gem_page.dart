@@ -8,6 +8,7 @@ import '../../core/app_export.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_edit_text.dart';
 import '../share_hidden_gem_screen/provider/share_hidden_gem_provider.dart';
+import '../../widgets/safe_image.dart';
 
 /// A standalone page that lets the current user edit one of their shared gems.
 /// Uses [ShareHiddenGemProvider] seeded with the existing gem data so all
@@ -391,9 +392,13 @@ class _MediaUploadArea extends StatelessWidget {
 
   Widget _buildImageWidget(String src, double w, double h) {
     if (src.startsWith('http')) {
-      return Image.network(src,
-          width: w, height: h, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _placeholder(w, h));
+      return SafeImage(
+        imageUrl: src,
+        width: w,
+        height: h,
+        fit: BoxFit.cover,
+        placeholder: _placeholder(w, h),
+      );
     }
     // local file path
     if (src.startsWith('/') ||

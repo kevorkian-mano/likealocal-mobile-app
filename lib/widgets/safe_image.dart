@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SafeImage extends StatelessWidget {
   final String? imageUrl;
@@ -9,13 +10,13 @@ class SafeImage extends StatelessWidget {
   final Widget? placeholder;
 
   const SafeImage({
-    Key? key,
+    super.key,
     required this.imageUrl,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
     this.placeholder,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +62,27 @@ class SafeImage extends StatelessWidget {
 
     // 2. Network Image
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(
-        path,
+      return CachedNetworkImage(
+        imageUrl: path,
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => fallback(),
+        placeholder: (context, url) => placeholder ?? Container(
+          width: width,
+          height: height,
+          color: const Color(0xFFE8F2E9),
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B3022)),
+              ),
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => fallback(),
       );
     }
 

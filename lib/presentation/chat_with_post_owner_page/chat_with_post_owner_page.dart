@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatWithPostOwnerPage extends StatelessWidget {
   const ChatWithPostOwnerPage({super.key});
@@ -21,7 +22,7 @@ class ChatWithPostOwnerPage extends StatelessWidget {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage('https://placehold.co/47x47/png'),
+              backgroundImage: CachedNetworkImageProvider('https://placehold.co/47x47/png'),
             ),
             SizedBox(width: 12),
             Text(

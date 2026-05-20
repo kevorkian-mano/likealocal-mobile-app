@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -76,15 +77,43 @@ class NotificationService {
 
     // 7. Real-time broadcast notification listener for active sessions
     final startTime = Timestamp.now();
-    FirebaseFirestore.instance
+    FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'default',
+    )
         .collection('notifications')
         .where('createdAt', isGreaterThan: startTime)
         .snapshots()
         .listen((snapshot) {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
           if (data != null) {
+            final recipientId = data['recipientId'] as String?;
+            final createdBy = data['createdBy'] as String?;
+            final type = data['type'] as String?;
+
+            // 1. Skip chat notifications (ChatProvider handles individual chat messages specifically)
+            if (type == 'chat') {
+              continue;
+            }
+
+            // 2. Skip if targeted notification is not meant for the current user
+            if (recipientId != null && recipientId.isNotEmpty) {
+              if (recipientId != currentUserId) {
+                continue;
+              }
+            }
+
+            // 3. Skip if notification was created by the current user themselves
+            if (createdBy != null && createdBy.isNotEmpty) {
+              if (createdBy == currentUserId) {
+                continue;
+              }
+            }
+
             final title = data['title'] ?? 'Broadcast Alert';
             final message = data['message'] ?? '';
             showLocalNotification(
@@ -150,7 +179,10 @@ class NotificationService {
         try {
           final currentUserId = FirebaseAuth.instance.currentUser?.uid;
           if (currentUserId != null) {
-            final doc = await FirebaseFirestore.instance
+            final doc = await FirebaseFirestore.instanceFor(
+              app: Firebase.app(),
+              databaseId: 'default',
+            )
                 .collection('chats')
                 .doc(idStr)
                 .get();
@@ -199,7 +231,10 @@ class NotificationService {
       // Since we don't have a server-side key or service account here,
       // we'll simulate the "backend" by sending a message to Firestore 'broadcasts' collection.
       // A Cloud Function would then trigger on this document to send the real FCM.
-      await FirebaseFirestore.instance.collection('broadcasts').add({
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('broadcasts').add({
         'title': title,
         'message': message,
         'timestamp': FieldValue.serverTimestamp(),

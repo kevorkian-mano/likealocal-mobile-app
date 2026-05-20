@@ -37,7 +37,10 @@ Future<bool> _handleProximityCheck() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return true;
 
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userDoc = await FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'default',
+    ).collection('users').doc(userId).get();
     if (!userDoc.exists) return true;
     final user = UserModel.fromMap(userDoc.data()!, userDoc.id);
 
@@ -54,7 +57,10 @@ Future<bool> _handleProximityCheck() async {
     }
 
     for (var chunk in chunks) {
-      final gemsSnapshot = await FirebaseFirestore.instance
+      final gemsSnapshot = await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      )
           .collection('gems')
           .where(FieldPath.documentId, whereIn: chunk)
           .get();
@@ -95,7 +101,10 @@ Future<bool> _handleWeeklySummary() async {
     if (userId == null) return true;
 
     // Calculate sum of views and saves from the user's gems
-    final gemsSnapshot = await FirebaseFirestore.instance
+    final gemsSnapshot = await FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'default',
+    )
         .collection('gems')
         .where('contributorId', isEqualTo: userId)
         .where('status', isEqualTo: 'approved')

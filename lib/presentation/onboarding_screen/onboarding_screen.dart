@@ -141,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       ],
                                     ),
                                     child: Text(
-                                      'Sign Up to Contribute',
+                                      'Join the Community',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,

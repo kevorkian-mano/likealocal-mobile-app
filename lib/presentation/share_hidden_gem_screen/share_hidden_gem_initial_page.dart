@@ -9,6 +9,7 @@ import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_edit_text.dart';
 import '../../widgets/custom_icon_button.dart';
 import '../../widgets/custom_image_view.dart';
+import '../../widgets/safe_image.dart';
 import './provider/share_hidden_gem_provider.dart';
 
 class ShareHiddenGemInitialPage extends StatelessWidget {
@@ -283,9 +284,11 @@ class ShareHiddenGemInitialPage extends StatelessWidget {
                   final bytes = base64Decode(path.split(',').last);
                   imageWidget = Image.memory(bytes, fit: BoxFit.cover);
                 } else if (path.startsWith('http') || path.startsWith('https')) {
-                  // Remote URL
-                  imageWidget = Image.network(path, fit: BoxFit.cover,
-                    errorBuilder: (ctx, e, st) => const Icon(Icons.broken_image));
+                  imageWidget = SafeImage(
+                    imageUrl: path,
+                    fit: BoxFit.cover,
+                    placeholder: const Icon(Icons.broken_image),
+                  );
                 } else {
                   // Local file path (from image_picker)
                   imageWidget = Image.file(File(path), fit: BoxFit.cover,

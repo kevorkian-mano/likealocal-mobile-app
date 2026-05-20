@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '../../core/app_export.dart';
 import '../../core/models/super_user_insight_model.dart';
+import '../../widgets/safe_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SuperUserDashboardScreen extends StatelessWidget {
   const SuperUserDashboardScreen({super.key});
@@ -442,16 +444,16 @@ class SuperUserDashboardScreen extends StatelessWidget {
                 return ListTile(
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      gem.imageUrl,
+                    child: SafeImage(
+                      imageUrl: gem.imageUrl,
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
+                      placeholder: Container(
                         width: 48,
                         height: 48,
-                        color: Color(0xFFD7E8DE),
-                        child: Icon(Icons.place),
+                        color: const Color(0xFFD7E8DE),
+                        child: const Icon(Icons.place),
                       ),
                     ),
                   ),
@@ -595,7 +597,7 @@ class SuperUserDashboardScreen extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(32),
             image: const DecorationImage(
-              image: NetworkImage(
+              image: CachedNetworkImageProvider(
                 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80',
               ),
               fit: BoxFit.cover,

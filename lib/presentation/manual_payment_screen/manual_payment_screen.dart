@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../../core/app_export.dart';
 import '../../widgets/custom_button.dart';
 import '../../core/providers/user_provider.dart';
@@ -162,7 +163,10 @@ class _ManualPaymentScreenState extends State<ManualPaymentScreen> {
     if (user == null) return;
 
     try {
-      await FirebaseFirestore.instance.collection('payments').add({
+      await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      ).collection('payments').add({
         'userId': user.id,
         'userEmail': user.email,
         'referenceId': refId,

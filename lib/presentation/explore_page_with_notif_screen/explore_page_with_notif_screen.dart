@@ -45,6 +45,8 @@ class _ExplorePageWithNotifScreenState
           listen: false,
         ).startListeningForNewMessages(user.id);
       }
+      // Refresh location on page load to guarantee nearest gem is perfectly calculated
+      Provider.of<GemsProvider>(context, listen: false).updateLocation();
     });
   }
 
@@ -360,41 +362,9 @@ class _ExplorePageWithNotifScreenState
                                 return const SizedBox.shrink();
                               }
 
-                              double currentLat = 38.7223;
-                              double currentLng = -9.1393;
-
-                              if (gemsProvider.userLocation != null) {
-                                currentLat = gemsProvider.userLocation!.latitude;
-                                currentLng = gemsProvider.userLocation!.longitude;
-                              } else if (currentUser != null) {
-                                if (currentUser.savedGems.isNotEmpty) {
-                                  final savedGem = gemsProvider.gems.firstWhere(
-                                    (g) => g.id == currentUser.savedGems.last,
-                                    orElse: () => null as dynamic,
-                                  );
-                                  if (savedGem != null) {
-                                    currentLat = savedGem.latitude;
-                                    currentLng = savedGem.longitude;
-                                  }
-                                } else {
-                                  final contributed = gemsProvider.gems.where((g) => g.contributorId == currentUser.id).toList();
-                                  if (contributed.isNotEmpty) {
-                                    currentLat = contributed.last.latitude;
-                                    currentLng = contributed.last.longitude;
-                                  } else {
-                                    double totalLat = 0;
-                                    double totalLng = 0;
-                                    for (final g in gemsProvider.approvedGems) {
-                                      totalLat += g.latitude;
-                                      totalLng += g.longitude;
-                                    }
-                                    if (gemsProvider.approvedGems.isNotEmpty) {
-                                      currentLat = totalLat / gemsProvider.approvedGems.length;
-                                      currentLng = totalLng / gemsProvider.approvedGems.length;
-                                    }
-                                  }
-                                }
-                              }
+                              final coords = gemsProvider.getEffectiveCoordinates(currentUser);
+                              final currentLat = coords['latitude']!;
+                              final currentLng = coords['longitude']!;
 
                               final distance =
                                   LocationService.calculateDistance(
@@ -682,22 +652,17 @@ class _ExplorePageWithNotifScreenState
                                     .toList();
                               }
 
-                              // 2. Personalization: Direct Preference Matching
+                              // 2. Personalization: Direct Preference Matching & Sorting
                               bool showingMatches = false;
-                              if (_searchQuery.isEmpty && userVibes.isNotEmpty) {
-                                final separated = GemRankingHelper.separateByPreferences(
-                                  displayGems,
-                                  userVibes,
-                                );
-                                
-                                final matchingGems = separated['matching'] ?? [];
-                                final nonMatchingGems = separated['nonMatching'] ?? [];
-                                
-                                if (matchingGems.isNotEmpty) {
-                                  // Show matches first, then non-matches
-                                  displayGems = [...matchingGems, ...nonMatchingGems];
-                                  showingMatches = true;
-                                }
+                              if (userVibes.isNotEmpty) {
+                                final sortedGems = List<HiddenGem>.from(displayGems);
+                                sortedGems.sort((a, b) {
+                                  final pctA = GemRankingHelper.calculateMatchPercentage(a, userVibes);
+                                  final pctB = GemRankingHelper.calculateMatchPercentage(b, userVibes);
+                                  return pctB.compareTo(pctA);
+                                });
+                                displayGems = sortedGems;
+                                showingMatches = displayGems.any((g) => GemRankingHelper.calculateMatchPercentage(g, userVibes) > 0);
                               }
 
                               if (displayGems.isEmpty) {
@@ -1009,19 +974,24 @@ class _ExplorePageWithNotifScreenState
 
   Widget _buildCard(BuildContext context, HiddenGem gem) {
     final gemsProvider = Provider.of<GemsProvider>(context, listen: false);
-    final userLoc = gemsProvider.userLocation;
+    final currentUser = Provider.of<UserProvider>(context, listen: false).user;
     final isLocalLegend = gem.contributorIsSuperUser;
 
-    String distanceText = '--- km away';
-    if (userLoc != null) {
-      double dist = LocationService.calculateDistance(
-        userLoc.latitude,
-        userLoc.longitude,
-        gem.latitude,
-        gem.longitude,
-      );
-      distanceText = '${dist.toStringAsFixed(1)} km away';
-    }
+    final matchPct = GemRankingHelper.calculateMatchPercentage(gem, currentUser?.selectedVibes ?? []);
+
+    final coords = gemsProvider.getEffectiveCoordinates(currentUser);
+    final refLat = coords['latitude']!;
+    final refLng = coords['longitude']!;
+    final dist = LocationService.calculateDistance(
+      refLat,
+      refLng,
+      gem.latitude,
+      gem.longitude,
+    );
+
+    final distanceText = dist < 1.0
+        ? '${(dist * 1000).toStringAsFixed(0)} m away'
+        : '${dist.toStringAsFixed(1)} km away';
 
     return GestureDetector(
       onTap: () {
@@ -1112,6 +1082,44 @@ class _ExplorePageWithNotifScreenState
                       ),
                     ),
                   ),
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B3022), // Forest Green
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: Color(0xFFFFD700), // Gold Star Sparkle
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$matchPct% Match',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
             Padding(

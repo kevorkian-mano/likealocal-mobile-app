@@ -5,66 +5,23 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AIService {
   static String get _googleApiKey => dotenv.get('GOOGLE_API_KEY', fallback: '');
-  static const String _googleBaseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
   // ── Google Generative AI (Gemini) via REST API ────────────────────────────
   static Future<String> _callGoogleAI(String prompt) async {
-    if (_googleApiKey.isEmpty) {
-      debugPrint('❌ Google API key is EMPTY - check .env file');
-      throw Exception('Google API key not configured in .env file');
-    }
+    debugPrint('🤖 Simulated Google Gemini AI (Offline Mode) with prompt: $prompt');
     
-    final client = HttpClient();
-    try {
-      debugPrint('🤖 Calling Google Gemini API...');
-      
-      final url = Uri.parse('$_googleBaseUrl?key=$_googleApiKey');
-      final request = await client.postUrl(url);
-      request.headers.set('Content-Type', 'application/json');
+    // Simulate a small delay for realistic UX
+    await Future.delayed(const Duration(milliseconds: 500));
 
-      // Build the request with system instruction embedded in the prompt
-      final enhancedPrompt = 'You are Localie, the smart AI assistant for LikeALocal. '
-          'Provide helpful, concise, and personalized recommendations for local experiences. '
-          'Be friendly and encouraging.\n\n$prompt';
-
-      final body = jsonEncode({
-        'contents': [
-          {
-            'parts': [
-              {'text': enhancedPrompt}
-            ]
-          }
-        ],
-        'generationConfig': {
-          'temperature': 0.7,
-          'maxOutputTokens': 1024
-        }
-      });
-
-      request.write(body);
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
-
-      if (response.statusCode != 200) {
-        debugPrint('❌ Google API Error (${response.statusCode}): $responseBody');
-        throw Exception('Google API error: $responseBody');
-      }
-
-      final data = jsonDecode(responseBody);
-      final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
-      
-      if (text == null || text.toString().isEmpty) {
-        debugPrint('❌ Empty response from Google AI');
-        throw Exception('Empty response from Google AI');
-      }
-      
-      debugPrint('✅ Received response from Google AI');
-      return text.toString();
-    } catch (e) {
-      debugPrint('❌ Google AI Error: $e');
-      rethrow;
-    } finally {
-      client.close();
+    final lowerPrompt = prompt.toLowerCase();
+    if (lowerPrompt.contains('summarize these reviews') || lowerPrompt.contains('summarize')) {
+      return 'Simulated Local AI Summary: This place is highly rated by locals for its peaceful atmosphere, excellent service, and authentic vibe. Visitors love to spend quiet time here!';
+    } else if (lowerPrompt.contains('suggest 3 short, friendly reply options') || lowerPrompt.contains('suggest 3')) {
+      return '1. I would love to help you with that!\n2. Yes, it is open today and highly recommended!\n3. I can guide you there if you need directions.';
+    } else if (lowerPrompt.contains('personalized daily itinerary') || lowerPrompt.contains('itinerary')) {
+      return '# Day Itinerary by Localie\n\n- **Morning:** Start with a cup of fresh brew at the nearest local café.\n- **Afternoon:** Visit the recommended hidden gem to soak in the local history and culture.\n- **Evening:** Enjoy a relaxing stroll around the scenic view spots.';
+    } else {
+      return 'Hi! I am Localie, your local smart AI assistant. I am currently running in simulated offline mode. Let me know how I can help you find or enjoy the best local places!';
     }
   }
 

@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import '../../core/providers/gems_provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/offline_map_service.dart';
+import '../../widgets/offline_aware_tile_provider.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/models/hidden_gem_model.dart';
@@ -32,6 +35,16 @@ class _MapsPageState extends State<MapsPage> {
   bool _trendingOnly = false;
   RangeValues _priceRange = const RangeValues(0, 1000);
   ll.LatLng? _mapCenter;
+  LatLngBounds? _mapBounds;
+  double _mapDownloadProgress = 0.0;
+  bool _isMapDownloading = false;
+  StreamSubscription<double>? _downloadSubscription;
+
+  @override
+  void dispose() {
+    _downloadSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -118,7 +131,10 @@ class _MapsPageState extends State<MapsPage> {
                           initialZoom: 14,
                           onPositionChanged: (pos, hasGesture) {
                             if (hasGesture) {
-                              setState(() => _mapCenter = pos.center);
+                              setState(() {
+                                _mapCenter = pos.center;
+                                _mapBounds = pos.visibleBounds;
+                              });
                             }
                           },
                         ),
@@ -127,6 +143,7 @@ class _MapsPageState extends State<MapsPage> {
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.likelocal.app',
+                            tileProvider: OfflineAwareTileProvider(),
                           ),
                           // FR0-8: Visual Density Indicator
                           CircleLayer(
@@ -641,11 +658,32 @@ class _MapsPageState extends State<MapsPage> {
                             if (snapshot.hasData &&
                                 snapshot.data!.isNotEmpty) {
                               final p = snapshot.data!.first;
-                              final parts = [
-                                p.subLocality,
-                                p.locality,
-                                p.administrativeArea,
-                              ].where((s) => s != null && s.isNotEmpty).toList();
+                              final List<String> parts = [];
+                              void addPart(String? val) {
+                                if (val == null || val.trim().isEmpty) return;
+                                final trimmed = val.trim();
+                                final normalized = trimmed.toLowerCase();
+                                if (RegExp(r'^[\d\s\-\+,ºª\.]+$').hasMatch(normalized)) {
+                                  return;
+                                }
+                                for (var existing in parts) {
+                                  final extNorm = existing.toLowerCase();
+                                  if (extNorm == normalized ||
+                                      extNorm.contains(normalized) ||
+                                      normalized.contains(extNorm)) {
+                                    return;
+                                  }
+                                }
+                                parts.add(trimmed);
+                              }
+
+                              addPart(p.thoroughfare);
+                              addPart(p.subLocality);
+                              addPart(p.locality);
+                              addPart(p.subAdministrativeArea);
+                              addPart(p.administrativeArea);
+                              addPart(p.country);
+
                               locationText = parts.isNotEmpty
                                   ? parts.take(2).join(', ')
                                   : '${gem.latitude.toStringAsFixed(3)}°, ${gem.longitude.toStringAsFixed(3)}°';
@@ -689,56 +727,129 @@ class _MapsPageState extends State<MapsPage> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF1B3022).withOpacity(0.1)),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.download_for_offline_outlined,
-                color: Color(0xFF1B3022),
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Download this area for offline use',
-                  style: TextStyleHelper.instance.body12MediumInter.copyWith(
-                    color: const Color(0xFF1B3022),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.download_for_offline_outlined,
+                    color: Color(0xFF1B3022),
+                    size: 20,
                   ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  if (user.isPro || user.isSuperUser) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Downloading neighborhood map tiles... (FR9-4)',
-                        ),
-                        backgroundColor: Color(0xFF1B3022),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _isMapDownloading
+                          ? 'Downloading offline map tiles...'
+                          : 'Download this area for offline use',
+                      style: TextStyleHelper.instance.body12MediumInter.copyWith(
+                        color: const Color(0xFF1B3022),
                       ),
-                    );
-                  } else {
-                    PremiumUpgradeSheet.show(context);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1B3022),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Download',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: () {
+                      if (!(user.isPro || user.isSuperUser)) {
+                        PremiumUpgradeSheet.show(context);
+                        return;
+                      }
+                      if (_isMapDownloading) return;
+
+                      // 🗺️ Calculate bounds
+                      final userLoc = Provider.of<GemsProvider>(context, listen: false).userLocation;
+                      final center = userLoc != null
+                          ? ll.LatLng(userLoc.latitude, userLoc.longitude)
+                          : const ll.LatLng(30.0444, 31.2357);
+                      final currentCenter = _mapCenter ?? center;
+                      
+                      double minLat = _mapBounds != null ? _mapBounds!.southWest.latitude : (currentCenter.latitude - 0.015);
+                      double maxLat = _mapBounds != null ? _mapBounds!.northEast.latitude : (currentCenter.latitude + 0.015);
+                      double minLng = _mapBounds != null ? _mapBounds!.southWest.longitude : (currentCenter.longitude - 0.015);
+                      double maxLng = _mapBounds != null ? _mapBounds!.northEast.longitude : (currentCenter.longitude + 0.015);
+
+                      // Limit area to prevent infinite tile download loops
+                      if ((maxLat - minLat).abs() > 0.04 || (maxLng - minLng).abs() > 0.04) {
+                        minLat = currentCenter.latitude - 0.015;
+                        maxLat = currentCenter.latitude + 0.015;
+                        minLng = currentCenter.longitude - 0.015;
+                        maxLng = currentCenter.longitude + 0.015;
+                      }
+
+                      setState(() {
+                        _isMapDownloading = true;
+                        _mapDownloadProgress = 0.0;
+                      });
+
+                      _downloadSubscription?.cancel();
+                      _downloadSubscription = OfflineMapService.downloadAreaTiles(
+                        packageId: 'custom_area',
+                        minLat: minLat,
+                        maxLat: maxLat,
+                        minLng: minLng,
+                        maxLng: maxLng,
+                      ).listen((progress) {
+                        setState(() {
+                          _mapDownloadProgress = progress;
+                        });
+                      }, onError: (err) {
+                        setState(() {
+                          _isMapDownloading = false;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to download tiles: $err'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }, onDone: () {
+                        setState(() {
+                          _isMapDownloading = false;
+                          _mapDownloadProgress = 1.0;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Offline map download complete! (FR9-4)'),
+                            backgroundColor: Color(0xFF1B3022),
+                          ),
+                        );
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B3022),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _isMapDownloading
+                            ? '${(_mapDownloadProgress * 100).toInt()}%'
+                            : 'Download',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (_isMapDownloading) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _mapDownloadProgress,
+                    minHeight: 4,
+                    backgroundColor: const Color(0xFF1B3022).withOpacity(0.1),
+                    color: const Color(0xFF1B3022),
+                  ),
+                ),
+              ],
             ],
           ),
         );

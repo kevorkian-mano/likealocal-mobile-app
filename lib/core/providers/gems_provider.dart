@@ -21,6 +21,7 @@ class GemsProvider extends ChangeNotifier {
   );
   StreamSubscription? _gemsSubscription;
   StreamSubscription? _usersSubscription;
+  StreamSubscription<Position>? _positionSubscription;
   List<HiddenGem> _gems = [];
   bool _isLoading = true;
   Position? _userLocation;
@@ -43,12 +44,46 @@ class GemsProvider extends ChangeNotifier {
   void dispose() {
     _gemsSubscription?.cancel();
     _usersSubscription?.cancel();
+    _positionSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> updateLocation() async {
-    _userLocation = await LocationService.getCurrentLocation();
-    notifyListeners();
+    try {
+      _userLocation = await LocationService.getCurrentLocation();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[GemsProvider] Error getting initial location: $e');
+    }
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (serviceEnabled &&
+          (permission == LocationPermission.whileInUse ||
+              permission == LocationPermission.always)) {
+        await _positionSubscription?.cancel();
+        _positionSubscription = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 5,
+          ),
+        ).listen(
+          (Position position) {
+            debugPrint(
+              '[GemsProvider] Live GPS location update: ${position.latitude}, ${position.longitude}',
+            );
+            _userLocation = position;
+            notifyListeners();
+          },
+          onError: (error) {
+            debugPrint('[GemsProvider] Position stream error: $error');
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('[GemsProvider] Error subscribing to position stream: $e');
+    }
   }
 
   List<HiddenGem> get approvedGems {
@@ -73,22 +108,24 @@ class GemsProvider extends ChangeNotifier {
       if (a.contributorIsSuperUser && !b.contributorIsSuperUser) return -1;
       if (!a.contributorIsSuperUser && b.contributorIsSuperUser) return 1;
 
-      if (_userLocation != null) {
-        double distA = LocationService.calculateDistance(
-          _userLocation!.latitude,
-          _userLocation!.longitude,
-          a.latitude,
-          a.longitude,
-        );
-        double distB = LocationService.calculateDistance(
-          _userLocation!.latitude,
-          _userLocation!.longitude,
-          b.latitude,
-          b.longitude,
-        );
-        return distA.compareTo(distB);
-      }
-      return 0;
+      // Real-time or smart fallback sorting (by proximity)
+      final coords = getEffectiveCoordinates(null);
+      final refLat = coords['latitude']!;
+      final refLng = coords['longitude']!;
+
+      double distA = LocationService.calculateDistance(
+        refLat,
+        refLng,
+        a.latitude,
+        a.longitude,
+      );
+      double distB = LocationService.calculateDistance(
+        refLat,
+        refLng,
+        b.latitude,
+        b.longitude,
+      );
+      return distA.compareTo(distB);
     });
     return approved;
   }
@@ -97,49 +134,93 @@ class GemsProvider extends ChangeNotifier {
     return approvedGems.where((gem) => gem.contributorIsSuperUser).toList();
   }
 
+  /// Get the effective reference coordinates for a user (actual location or smart fallbacks)
+  Map<String, double> getEffectiveCoordinates(UserModel? currentUser) {
+    double currentLat = 38.7223; // Global base fallback (Lisbon Center)
+    double currentLng = -9.1393;
+
+    bool useGPS = false;
+    if (_userLocation != null) {
+      // Check if user location is excessively far from all approved gems.
+      final approvedList = _gems.where((gem) => gem.status == GemStatus.approved).toList();
+      if (approvedList.isNotEmpty) {
+        double minDistance = double.infinity;
+        for (final gem in approvedList) {
+          final distance = LocationService.calculateDistance(
+            _userLocation!.latitude,
+            _userLocation!.longitude,
+            gem.latitude,
+            gem.longitude,
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+          }
+        }
+        // If the closest gem is more than 3000 km away, we treat it as excessively far/remote mock location.
+        if (minDistance <= 3000.0) {
+          useGPS = true;
+        } else {
+          debugPrint(
+            '[GemsProvider] Live GPS location (${_userLocation!.latitude}, ${_userLocation!.longitude}) is excessively far from all active gems (min distance: ${minDistance.toStringAsFixed(1)} km). Falling back to regional context.',
+          );
+        }
+      } else {
+        // If there are no approved gems in the DB yet, we can trust the GPS location.
+        useGPS = true;
+      }
+    }
+
+    if (useGPS && _userLocation != null) {
+      currentLat = _userLocation!.latitude;
+      currentLng = _userLocation!.longitude;
+    } else {
+      bool foundFallback = false;
+      if (currentUser != null) {
+        // 1. Fallback to most recently saved gem if available
+        if (currentUser.savedGems.isNotEmpty) {
+          final savedGemId = currentUser.savedGems.last;
+          if (_gems.any((g) => g.id == savedGemId)) {
+            final savedGem = _gems.firstWhere((g) => g.id == savedGemId);
+            currentLat = savedGem.latitude;
+            currentLng = savedGem.longitude;
+            foundFallback = true;
+          }
+        }
+        // 2. Or fallback to their contributed gems if available
+        if (!foundFallback) {
+          final contributed = _gems.where((g) => g.contributorId == currentUser.id).toList();
+          if (contributed.isNotEmpty) {
+            currentLat = contributed.last.latitude;
+            currentLng = contributed.last.longitude;
+            foundFallback = true;
+          }
+        }
+      }
+      // 3. Or fallback to collective center of all active platform gems in the DB
+      if (!foundFallback) {
+        final approvedList = _gems.where((gem) => gem.status == GemStatus.approved).toList();
+        if (approvedList.isNotEmpty) {
+          double totalLat = 0;
+          double totalLng = 0;
+          for (final g in approvedList) {
+            totalLat += g.latitude;
+            totalLng += g.longitude;
+          }
+          currentLat = totalLat / approvedList.length;
+          currentLng = totalLng / approvedList.length;
+        }
+      }
+    }
+    return {'latitude': currentLat, 'longitude': currentLng};
+  }
+
   /// Get the nearest approved gem from current user location or smart dynamic fallback reference
   HiddenGem? getNearestGem(UserModel? currentUser) {
     if (approvedGems.isEmpty) return null;
 
-    double currentLat = 38.7223; // Global base fallback (Lisbon Center)
-    double currentLng = -9.1393;
-
-    if (_userLocation != null) {
-      currentLat = _userLocation!.latitude;
-      currentLng = _userLocation!.longitude;
-    } else if (currentUser != null) {
-      // 1. Fallback to most recently saved gem if available
-      if (currentUser.savedGems.isNotEmpty) {
-        final savedGemId = currentUser.savedGems.last;
-        final savedGem = _gems.firstWhere(
-          (g) => g.id == savedGemId,
-          orElse: () => null as dynamic,
-        );
-        if (savedGem != null) {
-          currentLat = savedGem.latitude;
-          currentLng = savedGem.longitude;
-        }
-      }
-      // 2. Or fallback to their contributed gems if available
-      else {
-        final contributed = _gems.where((g) => g.contributorId == currentUser.id).toList();
-        if (contributed.isNotEmpty) {
-          currentLat = contributed.last.latitude;
-          currentLng = contributed.last.longitude;
-        }
-        // 3. Or fallback to collective center of all active platform gems in the DB
-        else {
-          double totalLat = 0;
-          double totalLng = 0;
-          for (final g in approvedGems) {
-            totalLat += g.latitude;
-            totalLng += g.longitude;
-          }
-          currentLat = totalLat / approvedGems.length;
-          currentLng = totalLng / approvedGems.length;
-        }
-      }
-    }
+    final coords = getEffectiveCoordinates(currentUser);
+    final currentLat = coords['latitude']!;
+    final currentLng = coords['longitude']!;
 
     HiddenGem? nearest;
     double minDistance = double.infinity;

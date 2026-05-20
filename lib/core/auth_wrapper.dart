@@ -4,6 +4,8 @@ import '../core/providers/user_provider.dart';
 import '../core/providers/connectivity_provider.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
 import '../presentation/explore_page_with_notif_screen/explore_page_with_notif_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../presentation/email_verification_screen/email_verification_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -85,6 +87,10 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (userProvider.isAuthenticated) {
+          final firebaseUser = FirebaseAuth.instance.currentUser;
+          if (firebaseUser != null && !firebaseUser.emailVerified) {
+            return const EmailVerificationScreen();
+          }
           return const ExplorePageWithNotifScreen();
         } else {
           return OnboardingScreen.builder(context);

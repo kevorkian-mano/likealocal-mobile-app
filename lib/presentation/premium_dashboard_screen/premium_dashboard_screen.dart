@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/providers/gems_provider.dart';
 import '../../core/services/ai_service.dart';
+import '../../core/services/offline_map_service.dart';
 
 class PremiumDashboardScreen extends StatefulWidget {
   const PremiumDashboardScreen({super.key});
@@ -14,6 +16,36 @@ class PremiumDashboardScreen extends StatefulWidget {
 class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
   String _itinerary = '';
   bool _isGenerating = false;
+  final Map<String, double> _downloadProgress = {};
+  final Map<String, StreamSubscription<double>> _subscriptions = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDownloadStates();
+  }
+
+  Future<void> _loadDownloadStates() async {
+    final zamalekDone = await OfflineMapService.isPackageDownloaded('Zamalek');
+    final zamalekProgress = await OfflineMapService.getPackageProgress('Zamalek');
+    final maadiDone = await OfflineMapService.isPackageDownloaded('Maadi');
+    final maadiProgress = await OfflineMapService.getPackageProgress('Maadi');
+
+    if (mounted) {
+      setState(() {
+        _downloadProgress['Zamalek & Downtown Cairo'] = zamalekDone ? 1.0 : zamalekProgress;
+        _downloadProgress['Maadi & Heliopolis'] = maadiDone ? 1.0 : maadiProgress;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final sub in _subscriptions.values) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +232,6 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
     );
   }
 
-  final Map<String, double> _downloadProgress = {};
-
   Widget _buildOfflineMapCard(bool isPremium) {
     return Container(
       padding: EdgeInsets.all(20.h),
@@ -278,20 +308,53 @@ class _PremiumDashboardScreenState extends State<PremiumDashboardScreen> {
   }
 
   void _simulateDownload(String title) async {
-    for (double i = 0.0; i <= 1.0; i += 0.1) {
-      if (!mounted) return;
-      setState(() {
-        _downloadProgress[title] = i;
-      });
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title is now available offline!'),
-        backgroundColor: const Color(0xFF1B3022),
-      ),
-    );
+    final packageId = title.contains('Zamalek') ? 'Zamalek' : 'Maadi';
+    final bounds = OfflineMapService.getPackageBounds(packageId);
+
+    setState(() {
+      _downloadProgress[title] = 0.01;
+    });
+
+    _subscriptions[title]?.cancel();
+    final sub = OfflineMapService.downloadAreaTiles(
+      packageId: packageId,
+      minLat: bounds['minLat']!,
+      maxLat: bounds['maxLat']!,
+      minLng: bounds['minLng']!,
+      maxLng: bounds['maxLng']!,
+    ).listen((progress) {
+      if (mounted) {
+        setState(() {
+          _downloadProgress[title] = progress;
+        });
+      }
+    }, onError: (err) {
+      if (mounted) {
+        setState(() {
+          _downloadProgress[title] = 0.0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download $title: $err'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }, onDone: () {
+      if (mounted) {
+        setState(() {
+          _downloadProgress[title] = 1.0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title is now available offline! (FR10-5)'),
+            backgroundColor: const Color(0xFF1B3022),
+          ),
+        );
+      }
+    });
+
+    _subscriptions[title] = sub;
   }
 
   void _generateAIItinerary() async {

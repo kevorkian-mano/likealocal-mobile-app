@@ -16,10 +16,15 @@ import 'presentation/onboarding_screen/provider/onboarding_provider.dart';
 import 'core/utils/database_seeder.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/background_task_service.dart';
+import 'core/services/offline_map_service.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🗺️ Initialize Offline Map Directory & Cache Service
+  await OfflineMapService.initialize();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await dotenv.load(fileName: ".env");

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/models/user_model.dart';
 
 class LeaderboardScreen extends StatelessWidget {
@@ -23,7 +25,10 @@ class LeaderboardScreen extends StatelessWidget {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
+        stream: FirebaseFirestore.instanceFor(
+          app: Firebase.app(),
+          databaseId: 'default',
+        )
             .collection('users')
             .orderBy('karmaPoints', descending: true)
             .limit(20)
@@ -114,7 +119,7 @@ class LeaderboardScreen extends StatelessWidget {
               child: CircleAvatar(
                 radius: rank == 1 ? 40.h : 30.h,
                 backgroundImage: user.avatarUrl.isNotEmpty
-                    ? NetworkImage(user.avatarUrl)
+                    ? CachedNetworkImageProvider(user.avatarUrl)
                     : null,
                 child: user.avatarUrl.isEmpty
                     ? Icon(Icons.person, size: 30.h)
@@ -165,7 +170,7 @@ class LeaderboardScreen extends StatelessWidget {
         CircleAvatar(
           radius: 20.h,
           backgroundImage: user.avatarUrl.isNotEmpty
-              ? NetworkImage(user.avatarUrl)
+              ? CachedNetworkImageProvider(user.avatarUrl)
               : null,
           child: user.avatarUrl.isEmpty ? Icon(Icons.person, size: 16.h) : null,
         ),

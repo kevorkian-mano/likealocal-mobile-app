@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../widgets/safe_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MapViewPage extends StatelessWidget {
   const MapViewPage({super.key});
@@ -18,8 +20,8 @@ class MapViewPage extends StatelessWidget {
             Positioned.fill(
               child: Opacity(
                 opacity: 0.60,
-                child: Image.network(
-                  "https://placehold.co/390x820/png",
+                child: SafeImage(
+                  imageUrl: "https://placehold.co/390x820/png",
                   fit: BoxFit.cover,
                 ),
               ),
@@ -74,7 +76,7 @@ class MapViewPage extends StatelessWidget {
                     ),
                     CircleAvatar(
                       radius: 23,
-                      backgroundImage: NetworkImage(
+                      backgroundImage: CachedNetworkImageProvider(
                         "https://placehold.co/47x47/png",
                       ),
                     ),
@@ -140,8 +142,8 @@ class MapViewPage extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: Image.network(
-                                    "https://placehold.co/298x165/png",
+                                  child: SafeImage(
+                                    imageUrl: "https://placehold.co/298x165/png",
                                     fit: BoxFit.cover,
                                   ),
                                 ),

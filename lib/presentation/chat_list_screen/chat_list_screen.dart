@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/app_export.dart';
 import '../../core/models/chat_model.dart';
 import '../../core/providers/chat_provider.dart';
@@ -108,10 +110,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF1B3022)),
-        onPressed: () => Navigator.pop(context),
-      ),
+      automaticallyImplyLeading: false,
       title: Text(
         _activeTab == 0 ? 'Conversations' : 'System Broadcasts',
         style: TextStyleHelper.instance.headline30ExtraBoldOutfit.copyWith(
@@ -144,7 +143,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '💬 Chats',
+                      'Chats',
                       style: TextStyle(
                         color: _activeTab == 0 ? Colors.white : const Color(0xFF1B3022),
                         fontWeight: FontWeight.bold,
@@ -166,7 +165,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '📢 Broadcasts',
+                      'Broadcasts',
                       style: TextStyle(
                         color: _activeTab == 1 ? Colors.white : const Color(0xFF1B3022),
                         fontWeight: FontWeight.bold,
@@ -211,7 +210,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildBroadcastsStream() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
+      stream: FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'default',
+      )
           .collection('notifications')
           .orderBy('createdAt', descending: true)
           .snapshots(),
@@ -226,7 +228,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
             child: Text('No broadcast alerts received yet.'),
           );
         }
-        final docs = snapshot.data!.docs;
+        final docs = snapshot.data!.docs.where((doc) {
+          final data = doc.data();
+          final type = data['type'] as String?;
+          final recipientId = data['recipientId'] as String?;
+          // Only show public broadcasts (not chats, and not targeted direct notifications)
+          return (type != 'chat') && (recipientId == null || recipientId.isEmpty);
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const Center(
+            child: Text('No broadcast alerts received yet.'),
+          );
+        }
+
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: docs.length,
@@ -327,7 +342,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundImage: NetworkImage(chat.userAvatar),
+                  backgroundImage: CachedNetworkImageProvider(chat.userAvatar),
                 ),
                 Positioned(
                   right: 0,

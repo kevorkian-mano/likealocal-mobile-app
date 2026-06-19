@@ -1,4 +1,4 @@
-# LikeALocal - Milestone 1 Report
+# LikeALocal - Report
 
 > **Experience the city like a local.**
 

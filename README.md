@@ -2,24 +2,20 @@
 
 > **Experience the city like a local.**
 
----
 
-## Project Overview
-- **Course:** Software Mobile Development
-- **Semester:** Spring 2026
-- **Instructor:** Dr. Milad Ghantous
-- **TAs:** Donia Ali, Amr Samir
-- **Deadline:** April 16, 2026
-- **Team:** Eyad and Payroll
+<table>
+  <tr>
+    <td><img src="1.jpeg" alt="Dashboard" width="250"/></td>
+    <td><img src="2.jpeg" alt="Dashboard" width="250"/></td>
+    <td><img src="3.jpeg" alt="Dashboard" width="250"/></td>
+    <td><img src="4.jpeg" alt="Dashboard" width="250"/></td>
+  </tr>
+</table>
 
-### Team Members
-| Name | Student ID | Email | Lab |
-| :--- | :--- | :--- | :--- |
-| Eyad Ahmed | 13005238 | eyad.elmaleh@student.giu-uni.de | P24 |
-| Manuel Youssef | 13006600 | manuel.kevorkian@student.giu-uni.de | P21 |
-| Chantal Sheriff | 13007034 | chantal.andrawes@student.giu-uni.de | P21 |
-| Ebram Nageh | 13006318 | ebram.attia@student.giu-uni.de | P25 |
-| Youstina Raouf | 13001755 | youstina.boutrous@student.giu-uni.de | P21 |
+
+
+
+
 
 ---
 
